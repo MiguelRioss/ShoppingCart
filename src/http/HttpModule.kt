@@ -22,7 +22,8 @@ class HttpModule(
         return HttpRequest(
             method = requestMethod,
             path = requestURI.path,
-            body = requestBody
+            body = requestBody,
+            headers = requestHeaders.mapValues { it.value.toList() }
         )
     }
 

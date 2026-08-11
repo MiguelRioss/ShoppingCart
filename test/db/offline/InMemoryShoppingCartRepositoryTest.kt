@@ -8,6 +8,7 @@ import java.math.BigDecimal
 import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class InMemoryShoppingCartRepositoryTest {
     private lateinit var repository: InMemoryShoppingCartRepository
@@ -33,5 +34,17 @@ class InMemoryShoppingCartRepositoryTest {
     @Test
     fun `saves a cart`() {
         assertEquals(cart, repository.saveCart(cart))
+    }
+
+    @Test
+    fun `gets a cart by user id`() {
+        repository.saveCart(cart)
+
+        assertEquals(cart, repository.getCartByUserId(cart.userId))
+    }
+
+    @Test
+    fun `returns null when user has no cart`() {
+        assertNull(repository.getCartByUserId(UUID.fromString("00000000-0000-0000-0000-000000000004")))
     }
 }
