@@ -14,6 +14,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
+import kotlin.test.assertNotNull
 
 class LoginHandlerTest {
     private val clock = Clock.fixed(Instant.parse("2026-08-07T13:30:00Z"), ZoneOffset.UTC)
@@ -42,6 +43,7 @@ class LoginHandlerTest {
         val laterAuthService = DefaultAuthService(userRepository, authTokenRepository, clock = laterClock)
 
         assertEquals(200, response.statusCode)
+        assertNotNull(token)
         assertEquals(registeredUser, laterAuthService.getUserFromBearerToken("Bearer $token"))
     }
 }

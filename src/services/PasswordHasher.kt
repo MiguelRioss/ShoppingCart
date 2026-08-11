@@ -1,13 +1,27 @@
 package services
 
-import java.security.MessageDigest
+import org.mindrot.jbcrypt.BCrypt
 
+/**
+ * Hashes and verifies passwords.
+ */
 class PasswordHasher {
-    fun hash(password: String): String {
-        val bytes = MessageDigest.getInstance("SHA-256").digest(password.toByteArray())
-        return bytes.joinToString("") { "%02x".format(it) }
-    }
+    /**
+     * Hashes a plain text password with BCrypt.
+     *
+     * @param password plain text password
+     * @return salted BCrypt hash
+     */
+    fun hash(password: String): String =
+        BCrypt.hashpw(password, BCrypt.gensalt())
 
+    /**
+     * Checks whether a plain text password matches a stored hash.
+     *
+     * @param password plain text candidate password
+     * @param passwordHash stored hash to compare against
+     * @return true when the hashes match
+     */
     fun matches(password: String, passwordHash: String): Boolean =
-        hash(password) == passwordHash
+        BCrypt.checkpw(password, passwordHash)
 }

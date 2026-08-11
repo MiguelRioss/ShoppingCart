@@ -12,11 +12,27 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
 
+/**
+ * HTTP-backed data source for the external De Ferranti product catalog.
+ *
+ * @param httpClient Java HTTP client used to call the external catalog API
+ */
 class ProductCatalogDataSource(
     private val httpClient: HttpClient = HttpClient.newHttpClient()
 ) : ProductDataAccess {
+    /**
+     * Fetches all products from the external catalog.
+     *
+     * @return raw JSON response body
+     */
     fun getAllProducts(): String = get("products-all")
 
+    /**
+     * Fetches a single product by slug.
+     *
+     * @param productSlug URL slug for the product
+     * @return raw JSON response body for the product
+     */
     fun getProductBySlug(productSlug: String): String {
         val encodedSlug = URLEncoder.encode(productSlug, StandardCharsets.UTF_8)
             .replace("+", "%20")
@@ -24,10 +40,20 @@ class ProductCatalogDataSource(
         return get("product-by-slug/$encodedSlug")
     }
 
+    /**
+     * Checks the external catalog response for a matching product id.
+     */
     override fun productExists(productId: Long): Boolean = Json.parseToJsonElement(getAllProducts())
         .jsonArray
         .any { product -> product.jsonObject["id"]?.jsonPrimitive?.longOrNull == productId }
 
+    /**
+     * Performs a GET request against the external catalog.
+     *
+     * @param path API path appended to [BASE_URL]
+     * @return raw response body
+     * @throws IllegalStateException when the external API returns a non-2xx status
+     */
     private fun get(path: String): String {
         val request = HttpRequest.newBuilder()
             .uri(URI.create("$BASE_URL/$path"))

@@ -7,10 +7,26 @@ import kotlinx.serialization.json.booleanOrNull
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 
+/**
+ * Full user-registration payload.
+ *
+ * @param firstName required first name
+ * @param lastName required last name
+ * @param email required email address
+ * @param password required password
+ * @param phone required phone number
+ * @param customerType required customer classification
+ * @param deliveryAddress required delivery address
+ * @param sameAsDeliveryAddress whether invoice address should reuse delivery address
+ * @param invoiceAddress required only when [sameAsDeliveryAddress] is false
+ * @param vatNumber optional VAT number for business customers
+ * @param projectNotes optional notes about the customer's project
+ */
 data class RegisterUserRequest(
     val firstName: String?,
     val lastName: String?,
     val email: String?,
+    val password: String?,
     val phone: String?,
     val customerType: CustomerType?,
     val deliveryAddress: RegisterAddressRequest?,
@@ -20,6 +36,14 @@ data class RegisterUserRequest(
     val projectNotes: String?
 ) {
     companion object {
+        /**
+         * Parses and validates a registration request from raw JSON.
+         *
+         * @param requestBody raw HTTP body
+         * @param json JSON parser, injectable for tests
+         * @throws IllegalArgumentException when required fields are missing
+         * @throws kotlinx.serialization.SerializationException when the body is not valid JSON
+         */
         fun fromJson(requestBody: String, json: Json = Json): RegisterUserRequest {
             val body = json.parseToJsonElement(requestBody).jsonObject
             val sameAsDeliveryAddress = body.booleanValue("sameAsDeliveryAddress") ?: true
@@ -29,6 +53,7 @@ data class RegisterUserRequest(
                 firstName = body.stringValue("firstName"),
                 lastName = body.stringValue("lastName"),
                 email = body.stringValue("email"),
+                password = body.stringValue("password"),
                 phone = body.stringValue("phone"),
                 customerType = CustomerType.from(body.stringValue("customerType")),
                 deliveryAddress = deliveryAddress,
@@ -43,20 +68,33 @@ data class RegisterUserRequest(
             ).validateRequiredFields()
         }
 
+        /**
+         * Reads a nullable nested JSON object, treating explicit JSON null as absent.
+         */
         private fun JsonObject.objectValue(name: String): JsonObject? =
             this[name]?.takeUnless { it is JsonNull }?.jsonObject
 
+        /**
+         * Reads a nullable string field, treating explicit JSON null as absent.
+         */
         private fun JsonObject.stringValue(name: String): String? =
             this[name]?.takeUnless { it is JsonNull }?.jsonPrimitive?.content
 
+        /**
+         * Reads a nullable boolean field.
+         */
         private fun JsonObject.booleanValue(name: String): Boolean? =
             this[name]?.jsonPrimitive?.booleanOrNull
     }
 
+    /**
+     * Enforces all fields needed to create a complete registration request.
+     */
     private fun validateRequiredFields(): RegisterUserRequest {
         require(!firstName.isNullOrBlank()) { "First name is required" }
         require(!lastName.isNullOrBlank()) { "Last name is required" }
         require(!email.isNullOrBlank()) { "Email is required" }
+        require(!password.isNullOrBlank()) { "Password is required" }
         require(!phone.isNullOrBlank()) { "Phone is required" }
         require(customerType != null) { "Customer type is required" }
         requireRequiredAddress(deliveryAddress, "Delivery address")
@@ -68,6 +106,9 @@ data class RegisterUserRequest(
         return this
     }
 
+    /**
+     * Enforces the required fields for either delivery or invoice addresses.
+     */
     private fun requireRequiredAddress(address: RegisterAddressRequest?, name: String) {
         require(address != null) { "$name is required" }
         require(!address.addressLine1.isNullOrBlank()) { "$name line 1 is required" }

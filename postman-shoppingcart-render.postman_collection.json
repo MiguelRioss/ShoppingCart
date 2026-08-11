@@ -1,22 +1,30 @@
 {
   "info": {
-    "name": "ShoppingCart Render API",
-    "description": "Postman tests for the ShoppingCart service deployed on Render.",
+    "name": "ShoppingCart API",
+    "description": "Postman tests for register, login, auth status, and cart routes.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://shoppingcart-4ohf.onrender.com"
+      "value": "http://localhost:8080"
+    },
+    {
+      "key": "email",
+      "value": "buyer+{{$timestamp}}@example.com"
+    },
+    {
+      "key": "password",
+      "value": "password-123"
     },
     {
       "key": "authToken",
-      "value": "replace-with-login-token"
+      "value": ""
     }
   ],
   "item": [
     {
-      "name": "Login - unauthorized user",
+      "name": "Register - customer user",
       "request": {
         "method": "POST",
         "header": [
@@ -27,7 +35,53 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"email\":\"buyer@example.com\",\"password\":\"password-123\"}"
+          "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\",\n  \"phone\": \"+351 912 345 678\",\n  \"customerType\": \"private_customer\",\n  \"deliveryAddress\": {\n    \"addressLine1\": \"Street and house number\",\n    \"townOrCity\": \"Lisbon\",\n    \"postcode\": \"1000-001\",\n    \"country\": \"Portugal\"\n  },\n  \"sameAsDeliveryAddress\": true\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/register",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "register"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('registers a user or reports an existing user', function () {",
+              "  pm.expect([201, 409]).to.include(pm.response.code);",
+              "});",
+              "",
+              "if (pm.response.code === 201) {",
+              "  const body = pm.response.json();",
+              "  pm.test('register response includes user id and email', function () {",
+              "    pm.expect(body).to.have.property('userId');",
+              "    pm.expect(body).to.have.property('email', pm.collectionVariables.get('email'));",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Login - valid user",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/login",
@@ -45,13 +99,89 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('returns 401 because live app has no seeded users', function () {",
-              "  pm.response.to.have.status(401);",
+              "pm.test('returns 200', function () {",
+              "  pm.response.to.have.status(200);",
               "});",
               "",
-              "pm.test('response is JSON', function () {",
-              "  pm.response.to.have.header('Content-Type');",
-              "  pm.expect(pm.response.headers.get('Content-Type')).to.include('application/json');",
+              "const body = pm.response.json();",
+              "pm.test('login response includes bearer token data', function () {",
+              "  pm.expect(body).to.have.property('token');",
+              "  pm.expect(body).to.have.property('userId');",
+              "  pm.expect(body).to.have.property('expiresAt');",
+              "});",
+              "",
+              "pm.collectionVariables.set('authToken', body.token);"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth status - bearer token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/auth/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns 200 for a valid bearer token', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('auth status confirms authenticated user', function () {",
+              "  pm.expect(body).to.have.property('authenticated', true);",
+              "  pm.expect(body).to.have.property('userId');",
+              "  pm.expect(body).to.have.property('email', pm.collectionVariables.get('email').toLowerCase());",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth status - missing bearer token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns 401 without Authorization header', function () {",
+              "  pm.response.to.have.status(401);",
               "});"
             ]
           }
@@ -97,7 +227,7 @@
       ]
     },
     {
-      "name": "Login - invalid JSON",
+      "name": "Register - missing required fields",
       "request": {
         "method": "POST",
         "header": [
@@ -108,15 +238,15 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\"email\":"
+          "raw": "{\n  \"email\": \"{{email}}\",\n  \"password\": \"{{password}}\"\n}"
         },
         "url": {
-          "raw": "{{baseUrl}}/login",
+          "raw": "{{baseUrl}}/register",
           "host": [
             "{{baseUrl}}"
           ],
           "path": [
-            "login"
+            "register"
           ]
         }
       },
@@ -126,7 +256,7 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('returns 400 for invalid JSON', function () {",
+              "pm.test('returns 400 for incomplete registration payload', function () {",
               "  pm.response.to.have.status(400);",
               "});"
             ]
@@ -160,47 +290,8 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('returns 200 with a valid token and existing cart, otherwise 401 or 404', function () {",
-              "  pm.expect([200, 401, 404]).to.include(pm.response.code);",
-              "});",
-              "",
-              "if (pm.response.code === 200) {",
-              "  const body = pm.response.json();",
-              "  pm.test('cart response includes id, userId, dateTime, and products', function () {",
-              "    pm.expect(body).to.have.property('id');",
-              "    pm.expect(body).to.have.property('userId');",
-              "    pm.expect(body).to.have.property('dateTime');",
-              "    pm.expect(body).to.have.property('products').that.is.an('array');",
-              "  });",
-              "}"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Get cart - missing bearer token",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/cart",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "cart"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('returns 401 without Authorization header', function () {",
-              "  pm.response.to.have.status(401);",
+              "pm.test('returns 404 when authenticated user has no cart yet', function () {",
+              "  pm.response.to.have.status(404);",
               "});"
             ]
           }

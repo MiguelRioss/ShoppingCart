@@ -9,6 +9,8 @@ repositories {
 
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("org.mindrot:jbcrypt:0.4")
+    implementation("org.postgresql:postgresql:42.7.4")
     testImplementation(kotlin("test"))
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
 }

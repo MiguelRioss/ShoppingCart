@@ -13,6 +13,7 @@ class RegisterUserRequestTest {
               "firstName": "Jane",
               "lastName": "Smith",
               "email": "jane.smith@example.com",
+              "password": "password-123",
               "phone": "+351 912 345 678",
               "customerType": "private_customer",
               "deliveryAddress": {
@@ -49,6 +50,7 @@ class RegisterUserRequestTest {
               "firstName": "Jane",
               "lastName": "Smith",
               "email": "jane.smith@example.com",
+              "password": "password-123",
               "phone": "+351 912 345 678",
               "customerType": "business",
               "deliveryAddress": {
@@ -83,6 +85,7 @@ class RegisterUserRequestTest {
               "firstName": "Jane",
               "lastName": "Smith",
               "email": "jane.smith@example.com",
+              "password": "password-123",
               "phone": "+351 912 345 678",
               "customerType": "private_customer",
               "deliveryAddress": {
@@ -132,7 +135,8 @@ class RegisterUserRequestTest {
                 {
                   "firstName": "Jane",
                   "email": "jane.smith@example.com",
-                  "phone": "+351 912 345 678",
+              "password": "password-123",
+              "phone": "+351 912 345 678",
                   "customerType": "private_customer",
                   "deliveryAddress": {
                     "addressLine1": "Street and house number",
@@ -157,7 +161,8 @@ class RegisterUserRequestTest {
                   "firstName": "Jane",
                   "lastName": "Smith",
                   "email": "jane.smith@example.com",
-                  "phone": "+351 912 345 678",
+              "password": "password-123",
+              "phone": "+351 912 345 678",
                   "customerType": "private_customer",
                   "deliveryAddress": {
                     "townOrCity": "Lisbon",
@@ -181,7 +186,8 @@ class RegisterUserRequestTest {
                   "firstName": "Jane",
                   "lastName": "Smith",
                   "email": "jane.smith@example.com",
-                  "phone": "+351 912 345 678",
+              "password": "password-123",
+              "phone": "+351 912 345 678",
                   "customerType": "private_customer",
                   "deliveryAddress": {
                     "addressLine1": "Street and house number",
@@ -205,3 +211,5 @@ class RegisterUserRequestTest {
         }
     }
 }
+
+

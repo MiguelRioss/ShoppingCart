@@ -8,6 +8,10 @@ out/
 .gradle/
 build/
 
+### Environment ###
+.env
+
+
 ### Java ###
 *.class
 *.log
