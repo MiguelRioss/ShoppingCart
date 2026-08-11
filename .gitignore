@@ -3,10 +3,24 @@ out/
 !**/src/main/**/out/
 !**/src/test/**/out/
 
-### Kotlin ###
-.kotlin
+### Kotlin / Gradle ###
+.kotlin/
 .gradle/
 build/
+
+### Java ###
+*.class
+*.log
+*.ctxt
+*.jar
+*.war
+*.nar
+*.ear
+*.zip
+*.tar.gz
+*.rar
+hs_err_pid*
+replay_pid*
 
 ### Eclipse ###
 .apt_generated
