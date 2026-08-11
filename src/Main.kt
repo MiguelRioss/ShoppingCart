@@ -1,14 +1,24 @@
-//TIP To <b>Run</b> code, press <shortcut actionId="Run"/> or
-// click the <icon src="AllIcons.Actions.Execute"/> icon in the gutter.
-fun main() {
-    val name = "Kotlin"
-    //TIP Press <shortcut actionId="ShowIntentionActions"/> with your caret at the highlighted text
-    // to see how IntelliJ IDEA suggests fixing it.
-    println("Hello, " + name + "!")
+import db.offline.InMemoryAuthTokenRepository
+import db.offline.InMemoryUserRepository
+import http.HttpModule
+import http.Route
+import http.Server
+import http.auth.LoginHandler
+import services.DefaultAuthService
+import services.LoginService
 
-    for (i in 1..5) {
-        //TIP Press <shortcut actionId="Debug"/> to start debugging your code. We have set one <icon src="AllIcons.Debugger.Db_set_breakpoint"/> breakpoint
-        // for you, but you can always add more by pressing <shortcut actionId="ToggleLineBreakpoint"/>.
-        println("i = $i")
-    }
+fun main() {
+    val userRepository = InMemoryUserRepository()
+    val authTokenRepository = InMemoryAuthTokenRepository()
+    val authService = DefaultAuthService(userRepository, authTokenRepository)
+    val loginService = LoginService(authService)
+    val httpModule = HttpModule(
+        routes = listOf(
+            Route("POST", "/login", LoginHandler(loginService))
+        )
+    )
+    val port = System.getenv("PORT")?.toIntOrNull() ?: 8080
+
+    Server(httpModule, port).start()
+    println("ShoppingCart server listening on http://localhost:$port")
 }

@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm") version "2.0.21"
+    application
 }
 
 repositories {
@@ -20,6 +21,10 @@ java {
     toolchain {
         languageVersion.set(JavaLanguageVersion.of(22))
     }
+}
+
+application {
+    mainClass.set("MainKt")
 }
 
 sourceSets {

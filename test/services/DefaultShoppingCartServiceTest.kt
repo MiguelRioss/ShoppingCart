@@ -1,48 +1,33 @@
 package services
 
 import db.offline.InMemoryShoppingCartRepository
+import domain.ShoppingCart
+import domain.ShoppingCartProduct
 import org.junit.jupiter.api.Test
-import productdatabaseaccesslayer.ProductDataAccess
+import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertFailsWith
-import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 class DefaultShoppingCartServiceTest {
     @Test
-    fun `creates and saves an empty cart`() {
+    fun `saves a cart`() {
         val repository = InMemoryShoppingCartRepository()
-        val service = DefaultShoppingCartService(repository, ProductDataAccess { false })
+        val service = DefaultShoppingCartService(repository)
+        val cart = ShoppingCart(
+            id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+            userId = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+            dateTime = LocalDateTime.parse("2026-08-07T13:30:00"),
+            products = listOf(
+                ShoppingCartProduct(
+                    productId = 1864L,
+                    squareMeters = 12.5,
+                    amountBoxes = 3,
+                    totalPricePerProduct = BigDecimal("249.99")
+                )
+            )
+        )
 
-        val sessionId = UUID.randomUUID()
-        val cart = service.createCart(sessionId)
-
-        assertTrue(cart.items.isEmpty())
-        assertEquals(sessionId, cart.sessionId)
-        assertEquals(cart, assertNotNull(repository.getCart(cart.id)))
-    }
-
-    @Test
-    fun `adds an existing product to a cart`() {
-        val repository = InMemoryShoppingCartRepository()
-        val productId = 1864L
-        val service = DefaultShoppingCartService(repository, ProductDataAccess { it == productId })
-        val cart = service.createCart(UUID.randomUUID())
-
-        val updatedCart = service.addItem(cart.id, productId, 2)
-
-        assertEquals(listOf(db.CartItem(productId, 2)), updatedCart.items)
-    }
-
-    @Test
-    fun `does not add an unknown product`() {
-        val repository = InMemoryShoppingCartRepository()
-        val service = DefaultShoppingCartService(repository, ProductDataAccess { false })
-        val cart = service.createCart(UUID.randomUUID())
-
-        assertFailsWith<IllegalArgumentException> {
-            service.addItem(cart.id, 9999L, 1)
-        }
+        assertEquals(cart, service.saveCart(cart))
     }
 }

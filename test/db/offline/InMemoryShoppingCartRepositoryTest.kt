@@ -1,21 +1,28 @@
 package db.offline
 
-import db.CartItem
-import db.ShoppingCart
+import domain.ShoppingCart
+import domain.ShoppingCartProduct
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.math.BigDecimal
+import java.time.LocalDateTime
 import java.util.UUID
 import kotlin.test.assertEquals
-import kotlin.test.assertFalse
-import kotlin.test.assertNull
-import kotlin.test.assertTrue
 
 class InMemoryShoppingCartRepositoryTest {
     private lateinit var repository: InMemoryShoppingCartRepository
     private val cart = ShoppingCart(
-        UUID.fromString("00000000-0000-0000-0000-000000000001"),
-        UUID.fromString("00000000-0000-0000-0000-000000000003"),
-        listOf(CartItem(1864L, 1))
+        id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+        userId = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+        dateTime = LocalDateTime.parse("2026-08-07T13:30:00"),
+        products = listOf(
+            ShoppingCartProduct(
+                productId = 1864L,
+                squareMeters = 12.5,
+                amountBoxes = 3,
+                totalPricePerProduct = BigDecimal("249.99")
+            )
+        )
     )
 
     @BeforeEach
@@ -24,32 +31,7 @@ class InMemoryShoppingCartRepositoryTest {
     }
 
     @Test
-    fun `saves and gets a cart`() {
-        repository.saveCart(cart)
-
-        assertEquals(cart, repository.getCart(cart.id))
-    }
-
-    @Test
-    fun `updates an existing cart`() {
-        repository.saveCart(cart)
-        val updatedCart = cart.copy(items = listOf(CartItem(cart.items.first().productId, 2)))
-
-        repository.updateCart(updatedCart)
-
-        assertEquals(updatedCart, repository.getCart(cart.id))
-    }
-
-    @Test
-    fun `deletes an existing cart`() {
-        repository.saveCart(cart)
-
-        assertTrue(repository.deleteCart(cart.id))
-        assertNull(repository.getCart(cart.id))
-    }
-
-    @Test
-    fun `returns false when deleting an unknown cart`() {
-        assertFalse(repository.deleteCart(UUID.randomUUID()))
+    fun `saves a cart`() {
+        assertEquals(cart, repository.saveCart(cart))
     }
 }
