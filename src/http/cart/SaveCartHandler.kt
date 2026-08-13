@@ -2,11 +2,13 @@ package http.cart
 
 import dto.SaveShoppingCartRequest
 import dto.ShoppingCartResponse
+import http.AuthenticatedRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
 import kotlinx.serialization.json.Json
+import services.AuthService
 import services.ShoppingCartService
 
 /**
@@ -14,6 +16,7 @@ import services.ShoppingCartService
  */
 class SaveCartHandler(
     private val shoppingCartService: ShoppingCartService,
+    private val authService: AuthService? = null,
     private val json: Json = Json
 ) : RequestHandler {
     /**
@@ -31,11 +34,14 @@ class SaveCartHandler(
         }
 
         val cart = runCatching {
+            val authenticatedRequest = authService?.let { AuthenticatedRequest.from(request, it) }
+
             shoppingCartService.createCart(
                 sessionId = requireNotNull(saveCartRequest.sessionId),
                 products = saveCartRequest.products.map {
                     requireNotNull(it.productId) to requireNotNull(it.quantityM2)
-                }
+                },
+                userId = authenticatedRequest?.user?.id
             )
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse(it.message ?: "Invalid cart products")

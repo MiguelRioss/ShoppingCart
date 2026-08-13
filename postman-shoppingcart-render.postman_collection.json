@@ -7,7 +7,7 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "http://localhost:8080"
+      "value": "https://shopping-cart.onrender.com"
     },
     {
       "key": "email",
@@ -65,6 +65,7 @@
               "    pm.expect(body).to.have.property('expiresAt');",
               "  });",
               "  pm.collectionVariables.set('authToken', body.token);",
+              "  pm.collectionVariables.set('userId', body.userId);",
               "}"
             ]
           }
@@ -112,7 +113,8 @@
               "  pm.expect(body).to.have.property('expiresAt');",
               "});",
               "",
-              "pm.collectionVariables.set('authToken', body.token);"
+              "pm.collectionVariables.set('authToken', body.token);",
+              "pm.collectionVariables.set('userId', body.userId);"
             ]
           }
         }
@@ -347,6 +349,61 @@
               "const body = pm.response.json();",
               "pm.test('cart stores the session id', function () {",
               "  pm.expect(body.sessionId).to.match(/^postman-session-/);",
+              "});",
+              "",
+              "pm.test('cart stores product 9278 m2 quantity and calculated total', function () {",
+              "  pm.expect(body.products).to.be.an('array').with.lengthOf(1);",
+              "  pm.expect(body.products[0].productId).to.equal(9278);",
+              "  pm.expect(body.products[0].squareMeters).to.equal(0.5);",
+              "  pm.expect(body.products[0].amountBoxes).to.equal(1);",
+              "  pm.expect(body.products[0].totalPricePerProduct).to.equal('75.00');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create cart - authenticated client product 9278",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"postman-auth-session-{{$timestamp}}\",\n  \"products\": [\n    {\n      \"productId\": 9278,\n      \"quantityM2\": 0.5\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/cart",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('creates an authenticated session cart', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('cart stores the authenticated client id', function () {",
+              "  pm.expect(body.userId).to.equal(pm.collectionVariables.get('userId'));",
               "});",
               "",
               "pm.test('cart stores product 9278 m2 quantity and calculated total', function () {",

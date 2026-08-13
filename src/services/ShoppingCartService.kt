@@ -22,7 +22,7 @@ interface ShoppingCartService {
      * @param products product id and requested m2 quantity pairs
      * @return created cart
      */
-    fun createCart(sessionId: String, products: List<Pair<Long, Double>>): ShoppingCart
+    fun createCart(sessionId: String, products: List<Pair<Long, Double>>, userId: UUID? = null): ShoppingCart
 
     /**
      * Saves a cart.

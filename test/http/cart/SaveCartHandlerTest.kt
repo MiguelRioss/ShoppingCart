@@ -1,6 +1,8 @@
 package http.cart
 
+import db.offline.InMemoryAuthTokenRepository
 import db.offline.InMemoryShoppingCartRepository
+import db.offline.InMemoryUserRepository
 import http.HttpRequest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -8,7 +10,9 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 import productdatabaseaccesslayer.ProductDataAccess
+import services.DefaultAuthService
 import services.DefaultShoppingCartService
+import services.DefaultUserService
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -64,6 +68,40 @@ class SaveCartHandlerTest {
         assertEquals("0.5", responseBody["products"]?.jsonArray?.get(0)?.jsonObject?.get("squareMeters")?.jsonPrimitive?.content)
         assertEquals("1", responseBody["products"]?.jsonArray?.get(0)?.jsonObject?.get("amountBoxes")?.jsonPrimitive?.content)
         assertEquals("75.00", responseBody["products"]?.jsonArray?.get(0)?.jsonObject?.get("totalPricePerProduct")?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `creates an authenticated session cart with client id from bearer token`() {
+        val userRepository = InMemoryUserRepository()
+        val user = DefaultUserService(userRepository, clock = clock)
+            .registerUser("buyer@example.com", "password-123")
+        val authService = DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+        val token = authService.login("buyer@example.com", "password-123")
+        val handler = SaveCartHandler(
+            DefaultShoppingCartService(InMemoryShoppingCartRepository(), productDataAccess, clock),
+            authService
+        )
+
+        val response = handler.handle(
+            HttpRequest(
+                method = "POST",
+                path = "/cart",
+                body = """
+                    {
+                      "sessionId": "session-123",
+                      "products": [
+                        { "productId": 9278, "quantityM2": 0.5 }
+                      ]
+                    }
+                """.trimIndent(),
+                headers = mapOf("Authorization" to listOf("Bearer ${token.token}"))
+            )
+        )
+        val responseBody = Json.parseToJsonElement(response.body).jsonObject
+
+        assertEquals(201, response.statusCode)
+        assertEquals(user.id.toString(), responseBody["userId"]?.jsonPrimitive?.content)
+        assertEquals("session-123", responseBody["sessionId"]?.jsonPrimitive?.content)
     }
 
     @Test

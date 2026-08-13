@@ -24,10 +24,11 @@ class DefaultShoppingCartService(
     override fun getCartByUserId(userId: UUID): ShoppingCart? =
         shoppingCartRepository.getCartByUserId(userId)
 
-    override fun createCart(sessionId: String, products: List<Pair<Long, Double>>): ShoppingCart =
+    override fun createCart(sessionId: String, products: List<Pair<Long, Double>>, userId: UUID?): ShoppingCart =
         shoppingCartRepository.saveCart(
             ShoppingCart(
                 id = UUID.randomUUID(),
+                userId = userId,
                 dateTime = LocalDateTime.now(clock),
                 sessionId = sessionId,
                 products = products.map { (productId, quantityM2) ->

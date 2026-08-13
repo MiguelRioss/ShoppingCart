@@ -50,7 +50,7 @@ fun main() {
             Route("POST", "/login", LoginHandler(loginService)),
             Route("GET", "/auth/status", AuthStatusHandler(authService)),
             Route("GET", "/client/info", GetClientInfoHandler(authService)),
-            Route("POST", "/cart", SaveCartHandler(shoppingCartService)),
+            Route("POST", "/cart", SaveCartHandler(shoppingCartService, authService)),
             Route("GET", "/cart", GetCartHandler(authService, shoppingCartService))
         )
     )
