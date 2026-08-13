@@ -19,7 +19,8 @@ data class ShoppingCartResponse(
     fun toJson(): String =
         buildJsonObject {
             put("id", JsonPrimitive(cart.id.toString()))
-            put("userId", JsonPrimitive(cart.userId.toString()))
+            cart.userId?.let { put("userId", JsonPrimitive(it.toString())) }
+            cart.sessionId?.let { put("sessionId", JsonPrimitive(it)) }
             put("dateTime", JsonPrimitive(cart.dateTime.toString()))
             put(
                 "products",

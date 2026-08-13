@@ -14,6 +14,9 @@ import http.auth.AuthStatusHandler
 import http.auth.LoginHandler
 import http.auth.RegisterHandler
 import http.cart.GetCartHandler
+import http.cart.SaveCartHandler
+import http.client.GetClientInfoHandler
+import productdatabaseaccesslayer.ProductCatalogDataSource
 import services.DefaultAuthService
 import services.DefaultShoppingCartService
 import services.DefaultUserService
@@ -40,12 +43,14 @@ fun main() {
     val authService = DefaultAuthService(userRepository, authTokenRepository)
     val userService = DefaultUserService(userRepository)
     val loginService = LoginService(authService)
-    val shoppingCartService = DefaultShoppingCartService(shoppingCartRepository)
+    val shoppingCartService = DefaultShoppingCartService(shoppingCartRepository, ProductCatalogDataSource())
     val httpModule = HttpModule(
         routes = listOf(
-            Route("POST", "/register", RegisterHandler(userService)),
+            Route("POST", "/register", RegisterHandler(userService, authService)),
             Route("POST", "/login", LoginHandler(loginService)),
             Route("GET", "/auth/status", AuthStatusHandler(authService)),
+            Route("GET", "/client/info", GetClientInfoHandler(authService)),
+            Route("POST", "/cart", SaveCartHandler(shoppingCartService)),
             Route("GET", "/cart", GetCartHandler(authService, shoppingCartService))
         )
     )

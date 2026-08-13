@@ -1,11 +1,13 @@
 package http.auth
 
 import db.offline.InMemoryUserRepository
+import db.offline.InMemoryAuthTokenRepository
 import http.HttpRequest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
+import services.DefaultAuthService
 import services.DefaultUserService
 import services.PasswordHasher
 import java.time.Clock
@@ -37,7 +39,9 @@ class RegisterHandlerTest {
     @Test
     fun `registers a user`() {
         val userRepository = InMemoryUserRepository()
-        val handler = RegisterHandler(DefaultUserService(userRepository, clock = clock))
+        val authTokenRepository = InMemoryAuthTokenRepository()
+        val authService = DefaultAuthService(userRepository, authTokenRepository, clock = clock)
+        val handler = RegisterHandler(DefaultUserService(userRepository, clock = clock), authService)
 
         val response = handler.handle(
             HttpRequest(
@@ -50,8 +54,9 @@ class RegisterHandlerTest {
         val user = assertNotNull(userRepository.getUserByEmail("buyer@example.com"))
 
         assertEquals(201, response.statusCode)
+        assertNotNull(responseBody["token"]?.jsonPrimitive?.content)
         assertEquals(user.id.toString(), responseBody["userId"]?.jsonPrimitive?.content)
-        assertEquals("buyer@example.com", responseBody["email"]?.jsonPrimitive?.content)
+        assertEquals("2026-08-07T14:30", responseBody["expiresAt"]?.jsonPrimitive?.content)
         assertEquals("Jane", user.firstName)
         assertEquals("Smith", user.lastName)
         assertEquals("+351 912 345 678", user.phone)
@@ -65,7 +70,11 @@ class RegisterHandlerTest {
 
     @Test
     fun `returns bad request when email is missing`() {
-        val handler = RegisterHandler(DefaultUserService(InMemoryUserRepository(), clock = clock))
+        val userRepository = InMemoryUserRepository()
+        val handler = RegisterHandler(
+            DefaultUserService(userRepository, clock = clock),
+            DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+        )
 
         val response = handler.handle(
             HttpRequest(
@@ -95,7 +104,11 @@ class RegisterHandlerTest {
         )
 
         requiredFields.forEach { missingField ->
-            val handler = RegisterHandler(DefaultUserService(InMemoryUserRepository(), clock = clock))
+            val userRepository = InMemoryUserRepository()
+            val handler = RegisterHandler(
+                DefaultUserService(userRepository, clock = clock),
+                DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+            )
             val response = handler.handle(
                 HttpRequest(
                     method = "POST",

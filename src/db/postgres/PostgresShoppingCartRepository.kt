@@ -13,7 +13,7 @@ class PostgresShoppingCartRepository(
     override fun getCartByUserId(userId: UUID): ShoppingCart? {
         database.getConnection().use { connection ->
             val cart = connection.prepareStatement(
-                "SELECT id, user_id, date_time FROM shopping_carts WHERE user_id = ?"
+                "SELECT id, user_id, session_id, date_time FROM shopping_carts WHERE user_id = ?"
             ).use { statement ->
                 statement.setObject(1, userId)
                 statement.executeQuery().use { resultSet ->
@@ -49,16 +49,18 @@ class PostgresShoppingCartRepository(
             try {
                 connection.prepareStatement(
                     """
-                    INSERT INTO shopping_carts (id, user_id, date_time)
-                    VALUES (?, ?, ?)
+                    INSERT INTO shopping_carts (id, user_id, session_id, date_time)
+                    VALUES (?, ?, ?, ?)
                     ON CONFLICT (id) DO UPDATE SET
                         user_id = EXCLUDED.user_id,
+                        session_id = EXCLUDED.session_id,
                         date_time = EXCLUDED.date_time
                     """.trimIndent()
                 ).use { statement ->
                     statement.setObject(1, cart.id)
                     statement.setObject(2, cart.userId)
-                    statement.setTimestamp(3, Timestamp.valueOf(cart.dateTime))
+                    statement.setString(3, cart.sessionId)
+                    statement.setTimestamp(4, Timestamp.valueOf(cart.dateTime))
                     statement.executeUpdate()
                 }
 
@@ -106,7 +108,8 @@ class PostgresShoppingCartRepository(
         ShoppingCart(
             id = getObject("id", UUID::class.java),
             userId = getObject("user_id", UUID::class.java),
-            dateTime = getTimestamp("date_time").toLocalDateTime()
+            dateTime = getTimestamp("date_time").toLocalDateTime(),
+            sessionId = getString("session_id")
         )
 
     private fun ResultSet.toCartProduct(): ShoppingCartProduct =

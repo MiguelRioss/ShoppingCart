@@ -7,6 +7,7 @@ import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 import java.nio.charset.StandardCharsets
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -41,11 +42,12 @@ class ProductCatalogDataSource(
     }
 
     /**
-     * Checks the external catalog response for a matching product id.
+     * Fetches a single product by id from the external catalog list.
      */
-    override fun productExists(productId: Long): Boolean = Json.parseToJsonElement(getAllProducts())
+    override fun getProductById(productId: Long): String? = Json.parseToJsonElement(getAllProducts())
         .jsonArray
-        .any { product -> product.jsonObject["id"]?.jsonPrimitive?.longOrNull == productId }
+        .firstOrNull { product -> product.jsonObject["id"]?.jsonPrimitive?.longOrNull == productId }
+        ?.toCompactJson()
 
     /**
      * Performs a GET request against the external catalog.
@@ -71,4 +73,6 @@ class ProductCatalogDataSource(
     private companion object {
         const val BASE_URL = "https://cms.deferranti.com/wp-json/custom/v1"
     }
+
+    private fun JsonElement.toCompactJson(): String = Json.encodeToString(JsonElement.serializer(), this)
 }

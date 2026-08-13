@@ -27,4 +27,15 @@ class ProductCatalogDataSourceIntegrationTest {
         println("Product-by-slug response:")
         println(response.take(1_000))
     }
+
+    @Test
+    fun `gets a product by id`() {
+        val response = ProductCatalogDataSource().getProductById(9278)
+
+        assertTrue(!response.isNullOrBlank())
+        assertTrue(response.contains("\"id\":9278"))
+
+        println("Product-by-id response:")
+        println(response.take(1_000))
+    }
 }

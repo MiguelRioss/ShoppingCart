@@ -205,6 +205,11 @@
         });
         const body = await response.json();
 
+        if (response.ok && body.token) {
+            setToken(body.token);
+        }
+
+        renderTokenStatus();
         writeOutput({ status: response.status, body });
     }
 

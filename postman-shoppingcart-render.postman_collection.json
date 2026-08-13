@@ -59,10 +59,12 @@
               "",
               "if (pm.response.code === 201) {",
               "  const body = pm.response.json();",
-              "  pm.test('register response includes user id and email', function () {",
+              "  pm.test('register response includes bearer token data', function () {",
+              "    pm.expect(body).to.have.property('token');",
               "    pm.expect(body).to.have.property('userId');",
-              "    pm.expect(body).to.have.property('email', pm.collectionVariables.get('email'));",
+              "    pm.expect(body).to.have.property('expiresAt');",
               "  });",
+              "  pm.collectionVariables.set('authToken', body.token);",
               "}"
             ]
           }
@@ -189,6 +191,50 @@
       ]
     },
     {
+      "name": "Get client info - bearer token",
+      "request": {
+        "method": "GET",
+        "header": [
+          {
+            "key": "Authorization",
+            "value": "Bearer {{authToken}}"
+          }
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/client/info",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "client",
+            "info"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns 200 for a valid bearer token', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('client info includes profile fields', function () {",
+              "  pm.expect(body).to.have.property('userId');",
+              "  pm.expect(body).to.have.property('email', pm.collectionVariables.get('email').toLowerCase());",
+              "  pm.expect(body).to.have.property('firstName');",
+              "  pm.expect(body).to.have.property('lastName');",
+              "  pm.expect(body).to.have.property('deliveryAddress');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
       "name": "Login - missing credentials",
       "request": {
         "method": "POST",
@@ -258,6 +304,57 @@
             "exec": [
               "pm.test('returns 400 for incomplete registration payload', function () {",
               "  pm.response.to.have.status(400);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create cart - session product 9278",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"postman-session-{{$timestamp}}\",\n  \"products\": [\n    {\n      \"productId\": 9278,\n      \"quantityM2\": 0.5\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/cart",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('creates a session cart', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('cart stores the session id', function () {",
+              "  pm.expect(body.sessionId).to.match(/^postman-session-/);",
+              "});",
+              "",
+              "pm.test('cart stores product 9278 m2 quantity and calculated total', function () {",
+              "  pm.expect(body.products).to.be.an('array').with.lengthOf(1);",
+              "  pm.expect(body.products[0].productId).to.equal(9278);",
+              "  pm.expect(body.products[0].squareMeters).to.equal(0.5);",
+              "  pm.expect(body.products[0].amountBoxes).to.equal(1);",
+              "  pm.expect(body.products[0].totalPricePerProduct).to.equal('75.00');",
               "});"
             ]
           }

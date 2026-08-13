@@ -40,7 +40,7 @@ class InMemoryShoppingCartRepositoryTest {
     fun `gets a cart by user id`() {
         repository.saveCart(cart)
 
-        assertEquals(cart, repository.getCartByUserId(cart.userId))
+        assertEquals(cart, repository.getCartByUserId(requireNotNull(cart.userId)))
     }
 
     @Test
