@@ -6,8 +6,7 @@ import services.ServiceException
 
 class HttpErrorResponse(
     val status: Int,
-    val defaultMessage: String,
-    val defaultDescription: String = defaultMessage
+    val defaultMessage: String
 ) {
     fun toResponse(
         message: String = defaultMessage,
@@ -60,16 +59,14 @@ object HttpError {
         when (exception.errorCode.code) {
             1000 -> HttpErrorResponse(
                 status = HttpStatusCodes.NotFound,
-                defaultMessage = exception.message,
-                defaultDescription = exception.description
+                defaultMessage = exception.message
             )
             1001,
             1002,
             1003,
             1004 -> HttpErrorResponse(
                 status = HttpStatusCodes.BadRequest,
-                defaultMessage = exception.message,
-                defaultDescription = exception.description
+                defaultMessage = exception.message
             )
             else -> InternalServerError
         }.toResponse(description = exception.description)

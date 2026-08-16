@@ -1,3 +1,5 @@
+@file:Suppress("SqlNoDataSourceInspection")
+
 package db.postgres
 
 import db.ShoppingCartRepository
