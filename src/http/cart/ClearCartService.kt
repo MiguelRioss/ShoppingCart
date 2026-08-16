@@ -15,7 +15,7 @@ import services.ShoppingCartService
 /**
  * Handles POST /cart requests.
  */
-class SaveCartHandler(
+class ClearCartService(
     private val shoppingCartService: ShoppingCartService,
     private val authService: AuthService? = null,
     private val json: Json = Json

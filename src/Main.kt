@@ -13,9 +13,12 @@ import http.Server
 import http.auth.AuthStatusHandler
 import http.auth.LoginHandler
 import http.auth.RegisterHandler
+import http.cart.ClearCartHandler
 import http.cart.GetCartHandler
 import http.cart.SaveCartHandler
 import http.client.GetClientInfoHandler
+import http.product.GetProductByIdHandler
+import http.product.GetProductsHandler
 import productdatabaseaccesslayer.ProductCatalogDataSource
 import services.DefaultAuthService
 import services.DefaultShoppingCartService
@@ -43,15 +46,19 @@ fun main() {
     val authService = DefaultAuthService(userRepository, authTokenRepository)
     val userService = DefaultUserService(userRepository)
     val loginService = LoginService(authService)
-    val shoppingCartService = DefaultShoppingCartService(shoppingCartRepository, ProductCatalogDataSource())
+    val productCatalogDataSource = ProductCatalogDataSource()
+    val shoppingCartService = DefaultShoppingCartService(shoppingCartRepository, productCatalogDataSource)
     val httpModule = HttpModule(
         routes = listOf(
             Route("POST", "/register", RegisterHandler(userService, authService)),
             Route("POST", "/login", LoginHandler(loginService)),
             Route("GET", "/auth/status", AuthStatusHandler(authService)),
             Route("GET", "/client/info", GetClientInfoHandler(authService)),
+            Route("GET", "/products", GetProductsHandler(productCatalogDataSource)),
+            Route("GET", "/products/:id", GetProductByIdHandler(productCatalogDataSource)),
+            Route("GET", "/cart", GetCartHandler(authService, shoppingCartService)),
             Route("POST", "/cart", SaveCartHandler(shoppingCartService, authService)),
-            Route("GET", "/cart", GetCartHandler(authService, shoppingCartService))
+            Route("POST", "/cart/clear", ClearCartHandler(shoppingCartService))
         )
     )
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8080

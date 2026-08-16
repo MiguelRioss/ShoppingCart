@@ -44,6 +44,29 @@ class InMemoryShoppingCartRepositoryTest {
     }
 
     @Test
+    fun `gets a cart by session id`() {
+        val sessionCart = cart.copy(sessionId = "session-123")
+        repository.saveCart(sessionCart)
+
+        assertEquals(sessionCart, repository.getCartBySessionId("session-123"))
+        assertNull(repository.getCartBySessionId("missing-session"))
+    }
+
+    @Test
+    fun `clears a cart by session id`() {
+        val sessionCart = cart.copy(sessionId = "session-123")
+        repository.saveCart(sessionCart)
+
+        assertEquals(true, repository.clearCartBySessionId("session-123"))
+        assertNull(repository.getCartByUserId(requireNotNull(sessionCart.userId)))
+    }
+
+    @Test
+    fun `returns false when no cart exists for session id`() {
+        assertEquals(false, repository.clearCartBySessionId("missing-session"))
+    }
+
+    @Test
     fun `returns null when user has no cart`() {
         assertNull(repository.getCartByUserId(UUID.fromString("00000000-0000-0000-0000-000000000004")))
     }

@@ -16,6 +16,22 @@ interface ShoppingCartService {
     fun getCartByUserId(userId: UUID): ShoppingCart?
 
     /**
+     * Finds the cart associated with a browser/session id.
+     *
+     * @param sessionId browser/session identifier associated with the cart
+     * @return the session cart, or null when none exists
+     */
+    fun getCartBySessionId(sessionId: String): ShoppingCart?
+
+    /**
+     * Clears the cart associated with a browser/session id.
+     *
+     * @param sessionId browser/session identifier associated with the cart
+     * @return true when a cart was cleared
+     */
+    fun clearCartBySessionId(sessionId: String): Boolean
+
+    /**
      * Creates a cart for a browser session.
      *
      * @param sessionId browser/session identifier associated with the cart

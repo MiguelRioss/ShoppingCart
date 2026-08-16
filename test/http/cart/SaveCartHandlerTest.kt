@@ -17,6 +17,7 @@ import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
 import kotlin.test.assertEquals
+import kotlin.test.assertNull
 
 class SaveCartHandlerTest {
     private val clock = Clock.fixed(Instant.parse("2026-08-07T13:30:00Z"), ZoneOffset.UTC)
@@ -71,6 +72,51 @@ class SaveCartHandlerTest {
     }
 
     @Test
+    fun `updates existing session cart when saving same session id again`() {
+        val repository = InMemoryShoppingCartRepository()
+        val handler = SaveCartHandler(
+            DefaultShoppingCartService(repository, productDataAccess, clock)
+        )
+
+        val firstResponse = handler.handle(
+            HttpRequest(
+                method = "POST",
+                path = "/cart",
+                body = """
+                    {
+                      "sessionId": "session-123",
+                      "products": [
+                        { "productId": 9278, "quantityM2": 0.5 }
+                      ]
+                    }
+                """.trimIndent()
+            )
+        )
+        val secondResponse = handler.handle(
+            HttpRequest(
+                method = "POST",
+                path = "/cart",
+                body = """
+                    {
+                      "sessionId": "session-123",
+                      "products": [
+                        { "productId": 9278, "quantityM2": 1.5 }
+                      ]
+                    }
+                """.trimIndent()
+            )
+        )
+        val firstBody = Json.parseToJsonElement(firstResponse.body).jsonObject
+        val secondBody = Json.parseToJsonElement(secondResponse.body).jsonObject
+        val secondProduct = secondBody["products"]?.jsonArray?.get(0)?.jsonObject
+
+        assertEquals(201, secondResponse.statusCode)
+        assertEquals(firstBody["id"]?.jsonPrimitive?.content, secondBody["id"]?.jsonPrimitive?.content)
+        assertEquals("1.5", secondProduct?.get("squareMeters")?.jsonPrimitive?.content)
+        assertEquals("225.00", secondProduct?.get("totalPricePerProduct")?.jsonPrimitive?.content)
+    }
+
+    @Test
     fun `creates an authenticated session cart with client id from bearer token`() {
         val userRepository = InMemoryUserRepository()
         val user = DefaultUserService(userRepository, clock = clock)
@@ -113,6 +159,71 @@ class SaveCartHandlerTest {
         val response = handler.handle(HttpRequest(method = "POST", path = "/cart", body = "{}"))
 
         assertEquals(400, response.statusCode)
+    }
+
+    @Test
+    fun `returns invalid request when product is not purchasable`() {
+        val notPurchasableProductDataAccess = object : ProductDataAccess {
+            override fun getProductById(productId: Long): String =
+                """
+                {
+                  "id": 1864,
+                  "purchase_information": null
+                }
+                """.trimIndent()
+        }
+        val handler = SaveCartHandler(
+            DefaultShoppingCartService(InMemoryShoppingCartRepository(), notPurchasableProductDataAccess, clock)
+        )
+
+        val response = handler.handle(
+            HttpRequest(
+                method = "POST",
+                path = "/cart",
+                body = """
+                    {
+                      "sessionId": "session-123",
+                      "products": [
+                        { "productId": 1864, "quantityM2": 1.0 }
+                      ]
+                    }
+                """.trimIndent()
+            )
+        )
+        val responseBody = Json.parseToJsonElement(response.body).jsonObject
+
+        assertEquals(400, response.statusCode)
+        assertNull(responseBody["code"])
+        assertEquals("Product purchase information is missing", responseBody["message"]?.jsonPrimitive?.content)
+        assertEquals("Product 1864 purchase information is missing", responseBody["description"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `returns not found when product does not exist`() {
+        val handler = SaveCartHandler(
+            DefaultShoppingCartService(InMemoryShoppingCartRepository(), productDataAccess, clock)
+        )
+
+        val response = handler.handle(
+            HttpRequest(
+                method = "POST",
+                path = "/cart",
+                body = """
+                    {
+                      "sessionId": "session-123",
+                      "products": [
+                        { "productId": 9999, "quantityM2": 1.0 }
+                      ]
+                    }
+                """.trimIndent()
+            )
+        )
+        val responseBody = Json.parseToJsonElement(response.body).jsonObject
+
+        assertEquals(404, response.statusCode)
+        assertNull(responseBody["code"])
+        assertEquals("Product does not exist", responseBody["message"]?.jsonPrimitive?.content)
+        assertEquals("Product 9999 does not exist", responseBody["description"]?.jsonPrimitive?.content)
     }
 
     @Test

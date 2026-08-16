@@ -12,6 +12,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class DefaultShoppingCartServiceTest {
@@ -53,6 +54,80 @@ class DefaultShoppingCartServiceTest {
         assertEquals(0.5, cart.products[0].squareMeters)
         assertEquals(1, cart.products[0].amountBoxes)
         assertEquals(BigDecimal("75.00"), cart.products[0].totalPricePerProduct)
+    }
+
+    @Test
+    fun `updates existing cart when session id already exists`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = DefaultShoppingCartService(repository, productDataAccess, clock)
+        val firstCart = service.createCart(
+            sessionId = "session-123",
+            products = listOf(9278L to 0.5)
+        )
+
+        val updatedCart = service.createCart(
+            sessionId = "session-123",
+            products = listOf(9278L to 1.5)
+        )
+
+        assertEquals(firstCart.id, updatedCart.id)
+        assertEquals("session-123", updatedCart.sessionId)
+        assertEquals(1, updatedCart.products.size)
+        assertEquals(1.5, updatedCart.products[0].squareMeters)
+        assertEquals(BigDecimal("225.00"), updatedCart.products[0].totalPricePerProduct)
+        assertEquals(updatedCart, repository.getCartBySessionId("session-123"))
+    }
+
+    @Test
+    fun `returns clear error when product purchase information is null`() {
+        val productDataAccess = object : ProductDataAccess {
+            override fun getProductById(productId: Long): String =
+                """
+                {
+                  "id": 1864,
+                  "purchase_information": null
+                }
+                """.trimIndent()
+        }
+        val service = DefaultShoppingCartService(InMemoryShoppingCartRepository(), productDataAccess, clock)
+
+        val error = assertFailsWith<ServiceException> {
+            service.createCart(
+                sessionId = "session-123",
+                products = listOf(1864L to 1.0)
+            )
+        }
+
+        assertEquals(ServiceErrorCode.ProductPurchaseInformationMissing, error.errorCode)
+        assertEquals("Product purchase information is missing", error.message)
+        assertEquals("Product 1864 purchase information is missing", error.description)
+    }
+
+    @Test
+    fun `returns clear error when product order information is null`() {
+        val productDataAccess = object : ProductDataAccess {
+            override fun getProductById(productId: Long): String =
+                """
+                {
+                  "id": 1864,
+                  "purchase_information": {
+                    "order": null
+                  }
+                }
+                """.trimIndent()
+        }
+        val service = DefaultShoppingCartService(InMemoryShoppingCartRepository(), productDataAccess, clock)
+
+        val error = assertFailsWith<ServiceException> {
+            service.createCart(
+                sessionId = "session-123",
+                products = listOf(1864L to 1.0)
+            )
+        }
+
+        assertEquals(ServiceErrorCode.ProductOrderInformationMissing, error.errorCode)
+        assertEquals("Product order information is missing", error.message)
+        assertEquals("Product 1864 order information is missing", error.description)
     }
 
     @Test

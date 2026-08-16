@@ -18,6 +18,15 @@ class InMemoryShoppingCartRepository : ShoppingCartRepository {
     override fun getCartByUserId(userId: UUID): ShoppingCart? =
         carts.values.firstOrNull { it.userId == userId }
 
+    override fun getCartBySessionId(sessionId: String): ShoppingCart? =
+        carts.values.firstOrNull { it.sessionId == sessionId }
+
+    override fun clearCartBySessionId(sessionId: String): Boolean {
+        val cart = getCartBySessionId(sessionId) ?: return false
+        carts.remove(cart.id)
+        return true
+    }
+
     /**
      * Saves or replaces a cart by id.
      */

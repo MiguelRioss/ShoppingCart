@@ -4,7 +4,8 @@ data class HttpRequest(
     val method: String,
     val path: String,
     val body: String,
-    val headers: Map<String, List<String>> = emptyMap()
+    val headers: Map<String, List<String>> = emptyMap(),
+    val pathParameters: Map<String, String> = emptyMap()
 ) {
     /**
      * Gets the first header value matching [name], ignoring case.
@@ -13,4 +14,9 @@ data class HttpRequest(
         val values = headers.entries.firstOrNull { it.key.equals(name, ignoreCase = true) }?.value
         return values?.firstOrNull()
     }
+
+    /**
+     * Gets a path parameter captured from a route such as /products/:id.
+     */
+    fun pathParameter(name: String): String? = pathParameters[name]
 }

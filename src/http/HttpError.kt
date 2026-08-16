@@ -2,38 +2,75 @@ package http
 
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
+import services.ServiceException
 
-/**
- * Standard API errors returned by handlers.
- *
- * @param statusCode HTTP status code to send
- * @param code machine-readable error code
- * @param defaultMessage default human-readable message
- */
-enum class HttpError(
-    val statusCode: Int,
-    val code: String,
-    val defaultMessage: String
+class HttpErrorResponse(
+    val status: Int,
+    val defaultMessage: String,
+    val defaultDescription: String = defaultMessage
 ) {
-    InvalidJsonRequestBody(400, "invalid_json_request_body", "Invalid JSON request body"),
-    MissingCredentials(400, "missing_credentials", "Email and password are required"),
-    Unauthorized(401, "unauthorized", "Invalid credentials"),
-    Conflict(409, "conflict", "Conflict"),
-    NotFound(404, "not_found", "Not found"),
-    InternalServerError(500, "internal_server_error", "Internal server error");
-
-    /**
-     * Converts the error to a JSON HTTP response.
-     *
-     * @param message optional override for the response message
-     * @return response containing error code and message
-     */
-    fun toResponse(message: String = defaultMessage): HttpResponse {
+    fun toResponse(
+        message: String = defaultMessage,
+        description: String = message
+    ): HttpResponse {
         val body = buildJsonObject {
-            put("error", JsonPrimitive(code))
             put("message", JsonPrimitive(message))
+            put("description", JsonPrimitive(description))
         }.toString()
 
-        return HttpResponse(statusCode, body)
+        return HttpResponse(status, body)
     }
+}
+
+object HttpStatusCodes {
+    const val BadRequest = 400
+    const val Unauthorized = 401
+    const val NotFound = 404
+    const val Conflict = 409
+    const val InternalServerError = 500
+}
+
+object HttpError {
+    val InvalidJsonRequestBody = HttpErrorResponse(
+        status = HttpStatusCodes.BadRequest,
+        defaultMessage = "Invalid JSON request body"
+    )
+    val MissingCredentials = HttpErrorResponse(
+        status = HttpStatusCodes.BadRequest,
+        defaultMessage = "Email and password are required"
+    )
+    val Unauthorized = HttpErrorResponse(
+        status = HttpStatusCodes.Unauthorized,
+        defaultMessage = "Invalid credentials"
+    )
+    val Conflict = HttpErrorResponse(
+        status = HttpStatusCodes.Conflict,
+        defaultMessage = "Conflict"
+    )
+    val NotFound = HttpErrorResponse(
+        status = HttpStatusCodes.NotFound,
+        defaultMessage = "Not found"
+    )
+    val InternalServerError = HttpErrorResponse(
+        status = HttpStatusCodes.InternalServerError,
+        defaultMessage = "Internal error. Contact your teacher!"
+    )
+
+    fun from(exception: ServiceException): HttpResponse =
+        when (exception.errorCode.code) {
+            1000 -> HttpErrorResponse(
+                status = HttpStatusCodes.NotFound,
+                defaultMessage = exception.message,
+                defaultDescription = exception.description
+            )
+            1001,
+            1002,
+            1003,
+            1004 -> HttpErrorResponse(
+                status = HttpStatusCodes.BadRequest,
+                defaultMessage = exception.message,
+                defaultDescription = exception.description
+            )
+            else -> InternalServerError
+        }.toResponse(description = exception.description)
 }

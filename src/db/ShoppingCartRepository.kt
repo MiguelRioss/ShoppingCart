@@ -16,6 +16,22 @@ interface ShoppingCartRepository {
     fun getCartByUserId(userId: UUID): ShoppingCart?
 
     /**
+     * Finds the cart associated with a browser/session id.
+     *
+     * @param sessionId browser/session identifier associated with the cart
+     * @return the session cart, or null when none exists
+     */
+    fun getCartBySessionId(sessionId: String): ShoppingCart?
+
+    /**
+     * Deletes the cart associated with a browser/session id.
+     *
+     * @param sessionId browser/session identifier associated with the cart
+     * @return true when a cart was deleted
+     */
+    fun clearCartBySessionId(sessionId: String): Boolean
+
+    /**
      * Stores a shopping cart.
      *
      * @param cart cart domain object to persist

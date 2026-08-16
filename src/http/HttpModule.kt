@@ -25,9 +25,10 @@ class HttpModule(
         }
 
         val request = exchange.toHttpRequest()
-        val response = routes.firstOrNull { it.matches(request) }
+        val matchedRoute = routes.firstOrNull { it.matches(request) }
+        val response = matchedRoute
             ?.handler
-            ?.handle(request)
+            ?.handle(matchedRoute.requestWithPathParameters(request))
             ?: HttpError.NotFound.toResponse()
 
         exchange.writeJson(response)

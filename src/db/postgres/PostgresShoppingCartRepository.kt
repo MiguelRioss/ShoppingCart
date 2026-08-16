@@ -21,7 +21,28 @@ class PostgresShoppingCartRepository(
                 }
             } ?: return null
 
-            val products = connection.prepareStatement(
+            return cart.copy(products = getProductsByCartId(cart.id))
+        }
+    }
+
+    override fun getCartBySessionId(sessionId: String): ShoppingCart? {
+        database.getConnection().use { connection ->
+            val cart = connection.prepareStatement(
+                "SELECT id, user_id, session_id, date_time FROM shopping_carts WHERE session_id = ?"
+            ).use { statement ->
+                statement.setString(1, sessionId)
+                statement.executeQuery().use { resultSet ->
+                    if (resultSet.next()) resultSet.toCartWithoutProducts() else null
+                }
+            } ?: return null
+
+            return cart.copy(products = getProductsByCartId(cart.id))
+        }
+    }
+
+    private fun getProductsByCartId(cartId: UUID): List<ShoppingCartProduct> {
+        database.getConnection().use { connection ->
+            return connection.prepareStatement(
                 """
                 SELECT product_id, square_meters, amount_boxes, total_price_per_product
                 FROM shopping_cart_products
@@ -29,7 +50,7 @@ class PostgresShoppingCartRepository(
                 ORDER BY product_id
                 """.trimIndent()
             ).use { statement ->
-                statement.setObject(1, cart.id)
+                statement.setObject(1, cartId)
                 statement.executeQuery().use { resultSet ->
                     buildList {
                         while (resultSet.next()) {
@@ -38,8 +59,15 @@ class PostgresShoppingCartRepository(
                     }
                 }
             }
+        }
+    }
 
-            return cart.copy(products = products)
+    override fun clearCartBySessionId(sessionId: String): Boolean {
+        database.getConnection().use { connection ->
+            connection.prepareStatement("DELETE FROM shopping_carts WHERE session_id = ?").use { statement ->
+                statement.setString(1, sessionId)
+                return statement.executeUpdate() > 0
+            }
         }
     }
 

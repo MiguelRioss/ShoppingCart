@@ -3,271 +3,967 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>ShoppingCart Login Tester</title>
+    <title>ShoppingCart Frontend Tester</title>
     <style>
         :root {
             color-scheme: light;
-            font-family: Arial, sans-serif;
-            background: #f4f6f8;
-            color: #17202a;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            background: #f7f5ef;
+            color: #18211f;
+        }
+
+        * {
+            box-sizing: border-box;
         }
 
         body {
             margin: 0;
             min-height: 100vh;
+            background:
+                radial-gradient(circle at top left, rgba(49, 97, 91, 0.18), transparent 30rem),
+                linear-gradient(135deg, #f7f5ef 0%, #eef3f1 55%, #f6f0e4 100%);
+        }
+
+        button,
+        input,
+        select {
+            font: inherit;
+        }
+
+        button {
+            border: 0;
+            cursor: pointer;
+        }
+
+        .app-shell {
+            width: min(1240px, calc(100% - 32px));
+            margin: 0 auto;
+            padding: 28px 0;
+        }
+
+        .topbar {
+            align-items: center;
+            display: flex;
+            gap: 18px;
+            justify-content: space-between;
+            margin-bottom: 22px;
+        }
+
+        .brand {
             display: grid;
-            place-items: center;
-            padding: 32px;
+            gap: 3px;
         }
 
-        main {
-            width: min(720px, 100%);
+        .brand h1 {
+            font-size: clamp(24px, 4vw, 42px);
+            letter-spacing: 0;
+            line-height: 1;
+            margin: 0;
+        }
+
+        .brand span,
+        .muted {
+            color: #68736f;
+        }
+
+        .session-pill {
+            align-items: center;
             background: #ffffff;
-            border: 1px solid #d8dee6;
-            border-radius: 8px;
-            padding: 24px;
-            box-shadow: 0 12px 30px rgba(23, 32, 42, 0.08);
+            border: 1px solid #d8ded8;
+            border-radius: 999px;
+            box-shadow: 0 10px 24px rgba(21, 42, 37, 0.08);
+            display: flex;
+            gap: 10px;
+            min-width: min(100%, 280px);
+            padding: 10px 14px;
         }
 
-        h1 {
-            margin: 0 0 20px;
-            font-size: 24px;
+        .session-dot {
+            border-radius: 999px;
+            flex: 0 0 12px;
+            height: 12px;
+            width: 12px;
+        }
+
+        .session-dot.offline {
+            background: #b84b3f;
+        }
+
+        .session-dot.online {
+            background: #16825d;
+            box-shadow: 0 0 0 5px rgba(22, 130, 93, 0.12);
+        }
+
+        .layout {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.4fr);
+        }
+
+        .panel {
+            background: rgba(255, 255, 255, 0.84);
+            border: 1px solid #dce1dc;
+            border-radius: 8px;
+            box-shadow: 0 18px 50px rgba(21, 42, 37, 0.09);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            align-items: center;
+            border-bottom: 1px solid #e4e8e3;
+            display: flex;
+            gap: 12px;
+            justify-content: space-between;
+            padding: 16px 18px;
+        }
+
+        .panel-header h2 {
+            font-size: 17px;
+            margin: 0;
+        }
+
+        .panel-body {
+            padding: 18px;
+        }
+
+        .auth-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
         label {
+            color: #3d4845;
             display: grid;
+            font-size: 12px;
+            font-weight: 800;
             gap: 6px;
-            margin-bottom: 14px;
-            font-weight: 700;
+            letter-spacing: 0;
+            text-transform: uppercase;
         }
 
-        input {
-            border: 1px solid #c7d0db;
-            border-radius: 6px;
-            font: inherit;
-            padding: 10px 12px;
+        label.wide {
+            grid-column: 1 / -1;
+        }
+
+        input,
+        select {
+            background: #fbfcfb;
+            border: 1px solid #cdd6d1;
+            border-radius: 7px;
+            color: #18211f;
+            min-width: 0;
+            padding: 10px 11px;
+        }
+
+        input:focus,
+        select:focus {
+            border-color: #31615b;
+            box-shadow: 0 0 0 3px rgba(49, 97, 91, 0.14);
+            outline: 0;
         }
 
         .actions {
             display: flex;
             flex-wrap: wrap;
             gap: 10px;
-            margin: 18px 0;
+            margin-top: 16px;
         }
 
-        button {
-            border: 0;
-            border-radius: 6px;
-            cursor: pointer;
-            font: inherit;
-            font-weight: 700;
-            padding: 10px 14px;
-            background: #1769aa;
+        .btn {
+            align-items: center;
+            background: #31615b;
+            border-radius: 7px;
             color: #ffffff;
+            display: inline-flex;
+            font-weight: 800;
+            gap: 8px;
+            justify-content: center;
+            min-height: 42px;
+            padding: 10px 14px;
         }
 
-        button.secondary {
-            background: #eef2f6;
-            color: #17202a;
+        .btn.secondary {
+            background: #e8ede8;
+            color: #24302d;
         }
 
-        button.danger {
-            background: #b42318;
+        .btn.danger {
+            background: #a53f35;
         }
 
-        .status {
-            border-radius: 6px;
-            padding: 10px 12px;
-            background: #eef2f6;
-            margin-bottom: 14px;
+        .btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.55;
+        }
+
+        .product-grid {
+            display: grid;
+            gap: 12px;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+        }
+
+        .product-card {
+            background: #fbfcfb;
+            border: 1px solid #dce3dd;
+            border-radius: 8px;
+            display: grid;
+            gap: 12px;
+            padding: 14px;
+        }
+
+        .product-card h3 {
+            font-size: 16px;
+            margin: 0;
+        }
+
+        .product-meta {
+            color: #68736f;
+            font-size: 13px;
+            min-height: 38px;
+        }
+
+        .cart-list {
+            display: grid;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .cart-row {
+            align-items: center;
+            background: #fbfcfb;
+            border: 1px solid #dce3dd;
+            border-radius: 8px;
+            display: grid;
+            gap: 12px;
+            grid-template-columns: 1fr 112px auto;
+            padding: 11px;
+        }
+
+        .cart-row strong {
+            display: block;
+        }
+
+        .cart-row input {
+            text-align: right;
+        }
+
+        .empty {
+            border: 1px dashed #b7c3bc;
+            border-radius: 8px;
+            color: #68736f;
+            padding: 18px;
+            text-align: center;
+        }
+
+        .response-grid {
+            display: grid;
+            gap: 18px;
+            grid-template-columns: 1fr 1fr;
+            margin-top: 18px;
+        }
+
+        .response-grid.three-up {
+            grid-template-columns: repeat(3, minmax(0, 1fr));
         }
 
         pre {
-            min-height: 160px;
+            background: #101815;
+            border-radius: 8px;
+            color: #e7efe9;
+            font-size: 12px;
+            line-height: 1.5;
+            margin: 0;
+            max-height: 300px;
+            min-height: 170px;
             overflow: auto;
-            background: #111827;
-            color: #e5e7eb;
-            border-radius: 6px;
             padding: 14px;
             white-space: pre-wrap;
             word-break: break-word;
         }
+
+        pre.is-loading {
+            color: #bde0d2;
+            position: relative;
+        }
+
+        .mini-stat {
+            color: #3d4845;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 12px;
+        }
+
+        .mini-stat span {
+            background: #eef3f0;
+            border-radius: 999px;
+            padding: 7px 10px;
+        }
+
+        @media (max-width: 920px) {
+            .layout,
+            .response-grid,
+            .response-grid.three-up,
+            .product-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 620px) {
+            .app-shell {
+                width: min(100% - 20px, 1240px);
+                padding: 16px 0;
+            }
+
+            .topbar,
+            .panel-header {
+                align-items: stretch;
+                flex-direction: column;
+            }
+
+            .auth-grid,
+            .cart-row {
+                grid-template-columns: 1fr;
+            }
+
+            .btn {
+                width: 100%;
+            }
+        }
     </style>
 </head>
 <body>
-<main>
-    <h1>ShoppingCart Login Tester</h1>
-    <div class="status">Tester version: localStorage token storage</div>
+<main class="app-shell">
+    <header class="topbar">
+        <div class="brand">
+            <span>Frontend API tester</span>
+            <h1>ShoppingCart Studio</h1>
+        </div>
+        <div class="session-pill">
+            <span id="sessionDot" class="session-dot offline"></span>
+            <div>
+                <strong id="sessionTitle">Logged out</strong>
+                <div id="sessionDetail" class="muted">Register or login to attach saved carts to your user.</div>
+            </div>
+        </div>
+    </header>
 
-    <label>
-        API URL
-        <input id="apiUrl" value="http://localhost:8080">
-    </label>
+    <section class="layout">
+        <article class="panel">
+            <div class="panel-header">
+                <h2>Account Session</h2>
+                <button id="logoutButton" class="btn danger" type="button">Logout</button>
+            </div>
+            <div class="panel-body">
+                <div class="auth-grid">
+                    <label class="wide">
+                        API URL
+                        <input id="apiUrl" value="http://localhost:8080">
+                    </label>
+                    <label>
+                        First name
+                        <input id="firstName" value="Jane">
+                    </label>
+                    <label>
+                        Last name
+                        <input id="lastName" value="Smith">
+                    </label>
+                    <label class="wide">
+                        Email
+                        <input id="email" type="email" value="buyer@example.com">
+                    </label>
+                    <label class="wide">
+                        Password
+                        <input id="password" type="password" value="password-123">
+                    </label>
+                    <label>
+                        Phone
+                        <input id="phone" value="+351 912 345 678">
+                    </label>
+                    <label>
+                        Customer type
+                        <select id="customerType">
+                            <option value="private_customer">Private customer</option>
+                            <option value="business">Business</option>
+                        </select>
+                    </label>
+                    <label class="wide">
+                        Address line 1
+                        <input id="addressLine1" value="Street and house number">
+                    </label>
+                    <label>
+                        Town or city
+                        <input id="townOrCity" value="Lisbon">
+                    </label>
+                    <label>
+                        Postcode
+                        <input id="postcode" value="1000-001">
+                    </label>
+                    <label class="wide">
+                        Country
+                        <input id="country" value="Portugal">
+                    </label>
+                </div>
 
-    <label>
-        First Name
-        <input id="firstName" value="Jane">
-    </label>
+                <div class="actions">
+                    <button id="registerButton" class="btn secondary" type="button">Register</button>
+                    <button id="loginButton" class="btn" type="button">Login</button>
+                    <button id="statusButton" class="btn secondary" type="button">Check auth</button>
+                    <button id="clientButton" class="btn secondary" type="button">Client info</button>
+                </div>
 
-    <label>
-        Last Name
-        <input id="lastName" value="Smith">
-    </label>
+                <div class="mini-stat">
+                    <span id="tokenPreview">No token saved</span>
+                    <span id="sessionIdPreview"></span>
+                </div>
+            </div>
+        </article>
 
-    <label>
-        Email
-        <input id="email" type="email" value="buyer@example.com">
-    </label>
+        <section>
+            <article class="panel">
+                <div class="panel-header">
+                    <h2>Available Products</h2>
+                    <span id="productsStatus" class="muted">Loading real catalog</span>
+                </div>
+                <div class="panel-body">
+                    <div id="productGrid" class="product-grid"></div>
+                </div>
+            </article>
 
-    <label>
-        Password
-        <input id="password" type="password" value="password-123">
-    </label>
+            <article class="panel" style="margin-top:18px">
+                <div class="panel-header">
+                    <h2>Draft Cart</h2>
+                    <span id="cartSummary" class="muted">0 items</span>
+                </div>
+                <div class="panel-body">
+                    <div id="cartList" class="cart-list"></div>
+                    <div class="actions">
+                        <button id="saveCartButton" class="btn" type="button">Save cart</button>
+                        <button id="getCartButton" class="btn secondary" type="button">Get cart</button>
+                        <button id="clearCartButton" class="btn secondary" type="button">Clear cart</button>
+                    </div>
+                </div>
+            </article>
+        </section>
+    </section>
 
-    <label>
-        Phone
-        <input id="phone" value="+351 912 345 678">
-    </label>
-
-    <label>
-        Address Line 1
-        <input id="addressLine1" value="Street and house number">
-    </label>
-
-    <label>
-        Town or City
-        <input id="townOrCity" value="Lisbon">
-    </label>
-
-    <label>
-        Postcode
-        <input id="postcode" value="1000-001">
-    </label>
-
-    <label>
-        Country
-        <input id="country" value="Portugal">
-    </label>
-
-    <div class="actions">
-        <button id="registerButton" class="secondary">Register</button>
-        <button id="loginButton">Login</button>
-        <button id="statusButton" class="secondary">Check Auth</button>
-        <button id="logoutButton" class="danger">Clear Token</button>
-    </div>
-
-    <div id="tokenStatus" class="status"></div>
-    <pre id="output"></pre>
+    <section class="response-grid three-up">
+        <article class="panel">
+            <div class="panel-header">
+                <h2>Last Request</h2>
+                <span id="lastAction" class="muted">Ready</span>
+            </div>
+            <pre id="requestOutput"></pre>
+        </article>
+        <article class="panel">
+            <div class="panel-header">
+                <h2>Last Response</h2>
+                <span class="muted">Backend result</span>
+            </div>
+            <pre id="responseOutput"></pre>
+        </article>
+        <article class="panel">
+            <div class="panel-header">
+                <h2>Saved Cart Verification</h2>
+                <span class="muted">POST /cart or GET /cart response</span>
+            </div>
+            <pre id="cartOutput"></pre>
+        </article>
+    </section>
 </main>
 
 <script>
     const tokenStorageKey = "shopping_cart_token";
-    const apiUrlInput = document.querySelector("#apiUrl");
-    const firstNameInput = document.querySelector("#firstName");
-    const lastNameInput = document.querySelector("#lastName");
-    const emailInput = document.querySelector("#email");
-    const passwordInput = document.querySelector("#password");
-    const phoneInput = document.querySelector("#phone");
-    const addressLine1Input = document.querySelector("#addressLine1");
-    const townOrCityInput = document.querySelector("#townOrCity");
-    const postcodeInput = document.querySelector("#postcode");
-    const countryInput = document.querySelector("#country");
-    const tokenStatus = document.querySelector("#tokenStatus");
-    const output = document.querySelector("#output");
+    const userStorageKey = "shopping_cart_user";
+    const sessionStorageKey = "shopping_cart_session_id";
+
+    let products = [
+        {
+            id: 9278,
+            name: "Stone floor sample",
+            finish: "Fallback product for local testing",
+            defaultQuantity: 0.5
+        }
+    ];
+
+    const state = {
+        cart: []
+    };
+
+    const elements = {
+        apiUrl: document.querySelector("#apiUrl"),
+        firstName: document.querySelector("#firstName"),
+        lastName: document.querySelector("#lastName"),
+        email: document.querySelector("#email"),
+        password: document.querySelector("#password"),
+        phone: document.querySelector("#phone"),
+        customerType: document.querySelector("#customerType"),
+        addressLine1: document.querySelector("#addressLine1"),
+        townOrCity: document.querySelector("#townOrCity"),
+        postcode: document.querySelector("#postcode"),
+        country: document.querySelector("#country"),
+        sessionDot: document.querySelector("#sessionDot"),
+        sessionTitle: document.querySelector("#sessionTitle"),
+        sessionDetail: document.querySelector("#sessionDetail"),
+        tokenPreview: document.querySelector("#tokenPreview"),
+        sessionIdPreview: document.querySelector("#sessionIdPreview"),
+        productsStatus: document.querySelector("#productsStatus"),
+        productGrid: document.querySelector("#productGrid"),
+        cartList: document.querySelector("#cartList"),
+        cartSummary: document.querySelector("#cartSummary"),
+        requestOutput: document.querySelector("#requestOutput"),
+        responseOutput: document.querySelector("#responseOutput"),
+        cartOutput: document.querySelector("#cartOutput"),
+        lastAction: document.querySelector("#lastAction")
+    };
 
     document.querySelector("#registerButton").addEventListener("click", register);
     document.querySelector("#loginButton").addEventListener("click", login);
+    document.querySelector("#logoutButton").addEventListener("click", logout);
     document.querySelector("#statusButton").addEventListener("click", checkAuth);
-    document.querySelector("#logoutButton").addEventListener("click", clearToken);
+    document.querySelector("#clientButton").addEventListener("click", getClientInfo);
+    document.querySelector("#saveCartButton").addEventListener("click", saveCart);
+    document.querySelector("#getCartButton").addEventListener("click", getCart);
+    document.querySelector("#clearCartButton").addEventListener("click", clearDraftCart);
 
-    renderTokenStatus();
-    writeOutput("Ready.");
+    loadProducts();
+    renderSession();
+    renderCart();
+    writeOutput("Ready. Register or login, add a product, then Save cart and Get cart.");
+    writeCartOutput("Saved cart responses will appear here.");
 
     async function register() {
-        const response = await fetch(`${apiUrl()}/register`, {
+        const result = await apiFetch("/register", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                firstName: firstNameInput.value,
-                lastName: lastNameInput.value,
-                email: emailInput.value,
-                password: passwordInput.value,
-                phone: phoneInput.value,
-                customerType: "private_customer",
+            body: {
+                firstName: elements.firstName.value,
+                lastName: elements.lastName.value,
+                email: elements.email.value,
+                password: elements.password.value,
+                phone: elements.phone.value,
+                customerType: elements.customerType.value,
                 deliveryAddress: {
-                    addressLine1: addressLine1Input.value,
-                    townOrCity: townOrCityInput.value,
-                    postcode: postcodeInput.value,
-                    country: countryInput.value
+                    addressLine1: elements.addressLine1.value,
+                    townOrCity: elements.townOrCity.value,
+                    postcode: elements.postcode.value,
+                    country: elements.country.value
                 },
                 sameAsDeliveryAddress: true
-            })
+            }
         });
-        const body = await response.json();
 
-        if (response.ok && body.token) {
-            setToken(body.token);
-        }
-
-        renderTokenStatus();
-        writeOutput({ status: response.status, body });
+        persistLogin(result);
+        writeOutput(result, "Register");
     }
 
     async function login() {
-        const response = await fetch(`${apiUrl()}/login`, {
+        const result = await apiFetch("/login", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-                email: emailInput.value,
-                password: passwordInput.value
-            })
+            body: {
+                email: elements.email.value,
+                password: elements.password.value
+            }
         });
-        const body = await response.json();
 
-        if (response.ok && body.token) {
-            setToken(body.token);
-        }
-
-        renderTokenStatus();
-        writeOutput({ status: response.status, body });
+        persistLogin(result);
+        writeOutput(result, "Login");
     }
 
     async function checkAuth() {
-        const token = getToken();
-        const response = await fetch(`${apiUrl()}/auth/status`, {
+        const result = await apiFetch("/auth/status", {
             method: "GET",
-            headers: token ? { "Authorization": `Bearer ${token}` } : {}
+            auth: true
         });
-        const body = await response.json();
 
-        writeOutput({ status: response.status, body });
+        writeOutput(result, "Check auth");
+        if (result.response.ok && result.body.email) {
+            rememberUser(result.body);
+        }
     }
 
-    function clearToken() {
+    async function getClientInfo() {
+        const result = await apiFetch("/client/info", {
+            method: "GET",
+            auth: true
+        });
+
+        writeOutput(result, "Client info");
+    }
+
+    async function loadProducts() {
+        const result = await apiFetch("/products", {
+            method: "GET"
+        });
+
+        if (result.response.ok && Array.isArray(result.body)) {
+            const purchasableProducts = result.body.filter(isPurchasableProduct);
+            products = result.body
+                .filter(isPurchasableProduct)
+                .map(normalizeProduct)
+                .slice(0, 12);
+            elements.productsStatus.textContent = `${products.length} of ${purchasableProducts.length} purchasable products loaded`;
+            writeOutput({
+                loadedProducts: products.map((product) => ({
+                    id: product.id,
+                    name: product.name
+                })),
+                skippedProducts: result.body.length - purchasableProducts.length
+            }, "Load products");
+        } else {
+            elements.productsStatus.textContent = "Using fallback product";
+            writeOutput(result, "Load products failed");
+        }
+
+        renderProducts();
+    }
+
+    async function saveCart() {
+        if (state.cart.length === 0) {
+            writeOutput("Add at least one product before saving.", "Save cart");
+            return;
+        }
+
+        const result = await apiFetch("/cart", {
+            method: "POST",
+            auth: true,
+            body: {
+                sessionId: getSessionId(),
+                products: state.cart.map((item) => ({
+                    productId: item.productId,
+                    quantityM2: Number(item.quantityM2)
+                }))
+            }
+        });
+
+        writeOutput(result, "Save cart");
+        writeCartOutput(result);
+    }
+
+    async function getCart() {
+        const result = await apiFetch("/cart", {
+            method: "GET",
+            auth: true
+        });
+
+        writeOutput(result, "Get cart");
+        writeCartOutput(result);
+    }
+
+    function logout() {
         localStorage.removeItem(tokenStorageKey);
-        renderTokenStatus();
-        writeOutput("Token cleared.");
+        localStorage.removeItem(userStorageKey);
+        renderSession();
+        writeOutput("Logged out locally. The backend has no logout route, so this clears the saved browser token.", "Logout");
+    }
+
+    async function clearDraftCart() {
+        const result = await apiFetch("/cart/clear", {
+            method: "POST",
+            body: {
+                sessionId: getSessionId()
+            }
+        });
+
+        if (result.response.ok) {
+            state.cart = [];
+            renderCart();
+        }
+
+        writeOutput(result, "Clear cart");
+        writeCartOutput(result);
+    }
+
+    function persistLogin(result) {
+        if (result.response.ok && result.body.token) {
+            localStorage.setItem(tokenStorageKey, result.body.token);
+            rememberUser({
+                userId: result.body.userId,
+                email: elements.email.value
+            });
+        }
+        renderSession();
+    }
+
+    function rememberUser(user) {
+        localStorage.setItem(userStorageKey, JSON.stringify(user));
+        renderSession();
+    }
+
+    async function apiFetch(path, options) {
+        const headers = {
+            "Content-Type": "application/json"
+        };
+        const token = getToken();
+
+        if (options.auth && token) {
+            headers.Authorization = `Bearer ${token}`;
+        }
+
+        const requestDetails = {
+            method: options.method,
+            path,
+            url: `${apiUrl()}${path}`,
+            authenticated: Boolean(headers.Authorization),
+            body: options.body || null
+        };
+        const activeButton = document.activeElement instanceof HTMLButtonElement
+            ? document.activeElement
+            : null;
+
+        writePendingRequest(requestDetails);
+        setBusy(activeButton, true);
+
+        try {
+            const response = await fetch(`${apiUrl()}${path}`, {
+                method: options.method,
+                headers,
+                body: options.body ? JSON.stringify(options.body) : undefined
+            });
+            const text = await response.text();
+            const body = text ? JSON.parse(text) : null;
+
+            return {
+                request: requestDetails,
+                response: {
+                    status: response.status,
+                    ok: response.ok
+                },
+                body
+            };
+        } catch (error) {
+            return {
+                request: requestDetails,
+                response: {
+                    ok: false
+                },
+                error: error.message
+            };
+        } finally {
+            setBusy(activeButton, false);
+        }
+    }
+
+    function renderProducts() {
+        elements.productGrid.innerHTML = "";
+        products.forEach((product, index) => {
+            const card = document.createElement("article");
+            card.className = "product-card";
+            card.innerHTML = `
+                <div>
+                    <h3>${product.name}</h3>
+                    <div class="product-meta">${product.finish}<br>Product ID ${product.id}</div>
+                </div>
+                <label>
+                    m2 quantity
+                    <input type="number" min="0.1" step="0.1" value="${product.defaultQuantity}" data-product-qty="${index}">
+                </label>
+                <button class="btn secondary" type="button" data-product-index="${index}">Add to cart</button>
+            `;
+            elements.productGrid.appendChild(card);
+        });
+
+        elements.productGrid.addEventListener("click", (event) => {
+            const button = event.target.closest("[data-product-index]");
+            if (!button) {
+                return;
+            }
+
+            const index = Number(button.dataset.productIndex);
+            const product = products[index];
+            const quantityInput = elements.productGrid.querySelector(`[data-product-qty="${index}"]`);
+            addToCart(product, Number(quantityInput.value));
+        });
+    }
+
+    function normalizeProduct(product) {
+        const order = product.purchase_information.order;
+        const name = product.name || product.title || product.post_title || product.slug || `Product ${product.id}`;
+        const finish = [
+            product.slug ? `Slug: ${product.slug}` : "",
+            order.m2_per_box ? `${order.m2_per_box} m2 per box` : "",
+            order.client_price_per_m2 ? `${order.client_price_per_m2} per m2` : ""
+        ].filter(Boolean).join(" | ");
+
+        return {
+            id: Number(product.id),
+            name: String(name),
+            finish: finish || "Real catalog product",
+            defaultQuantity: Number(order.m2_per_box) || 1
+        };
+    }
+
+    function isPurchasableProduct(product) {
+        const order = product && product.purchase_information && product.purchase_information.order;
+
+        return Boolean(
+            product &&
+            Number(product.id) &&
+            product.for_sale === true &&
+            order &&
+            Number(order.m2_per_box) > 0 &&
+            Number(order.client_price_per_m2) > 0
+        );
+    }
+
+    function addToCart(product, quantityM2) {
+        if (!Number.isFinite(quantityM2) || quantityM2 <= 0) {
+            writeOutput("Quantity must be greater than zero.", "Add to cart");
+            return;
+        }
+
+        const existing = state.cart.find((item) => item.name === product.name);
+        if (existing) {
+            existing.quantityM2 = Number((existing.quantityM2 + quantityM2).toFixed(2));
+        } else {
+            state.cart.push({
+                productId: product.id,
+                name: product.name,
+                quantityM2
+            });
+        }
+
+        renderCart();
+        writeOutput({
+            draftCart: state.cart,
+            nextSavePayload: {
+                sessionId: getSessionId(),
+                products: state.cart.map((item) => ({
+                    productId: item.productId,
+                    quantityM2: item.quantityM2
+                }))
+            }
+        }, "Add to cart");
+    }
+
+    function renderCart() {
+        elements.cartList.innerHTML = "";
+
+        if (state.cart.length === 0) {
+            elements.cartList.innerHTML = `<div class="empty">No draft items yet. Add products above to build a cart.</div>`;
+        } else {
+            state.cart.forEach((item, index) => {
+                const row = document.createElement("div");
+                row.className = "cart-row";
+                row.innerHTML = `
+                    <div>
+                        <strong>${item.name}</strong>
+                        <span class="muted">Product ID ${item.productId}</span>
+                    </div>
+                    <input type="number" min="0.1" step="0.1" value="${item.quantityM2}" data-cart-qty="${index}" aria-label="Quantity in square meters">
+                    <button class="btn secondary" type="button" data-remove-index="${index}">Remove</button>
+                `;
+                elements.cartList.appendChild(row);
+            });
+        }
+
+        elements.cartSummary.textContent = `${state.cart.length} item${state.cart.length === 1 ? "" : "s"}`;
+    }
+
+    elements.cartList.addEventListener("input", (event) => {
+        const input = event.target.closest("[data-cart-qty]");
+        if (!input) {
+            return;
+        }
+
+        const quantity = Number(input.value);
+        if (Number.isFinite(quantity) && quantity > 0) {
+            state.cart[Number(input.dataset.cartQty)].quantityM2 = quantity;
+        }
+    });
+
+    elements.cartList.addEventListener("click", (event) => {
+        const button = event.target.closest("[data-remove-index]");
+        if (!button) {
+            return;
+        }
+
+        state.cart.splice(Number(button.dataset.removeIndex), 1);
+        renderCart();
+    });
+
+    function renderSession() {
+        const token = getToken();
+        const user = getUser();
+        elements.sessionDot.className = `session-dot ${token ? "online" : "offline"}`;
+        elements.sessionTitle.textContent = token ? "Logged in" : "Logged out";
+        elements.sessionDetail.textContent = token
+            ? `${user.email || "Token saved"}${user.userId ? ` - ${user.userId}` : ""}`
+            : "Register or login to attach saved carts to your user.";
+        elements.tokenPreview.textContent = token ? `Token: ${token.slice(0, 8)}...${token.slice(-6)}` : "No token saved";
+        elements.sessionIdPreview.textContent = `Session: ${getSessionId()}`;
     }
 
     function apiUrl() {
-        return apiUrlInput.value.replace(/\/$/, "");
-    }
-
-    function setToken(token) {
-        localStorage.setItem(tokenStorageKey, token);
+        return elements.apiUrl.value.replace(/\/$/, "");
     }
 
     function getToken() {
         return localStorage.getItem(tokenStorageKey);
     }
 
-    function renderTokenStatus() {
-        const token = getToken();
-        tokenStatus.textContent = token ? `Token saved: ${token}` : "No token saved.";
+    function getUser() {
+        return JSON.parse(localStorage.getItem(userStorageKey) || "{}");
     }
 
-    function writeOutput(value) {
-        output.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    function getSessionId() {
+        let sessionId = localStorage.getItem(sessionStorageKey);
+        if (!sessionId) {
+            sessionId = `browser-${crypto.randomUUID()}`;
+            localStorage.setItem(sessionStorageKey, sessionId);
+        }
+
+        return sessionId;
+    }
+
+    function writeOutput(value, action = "Ready") {
+        elements.lastAction.textContent = action;
+        elements.responseOutput.classList.remove("is-loading");
+
+        if (typeof value === "string") {
+            elements.requestOutput.textContent = action;
+            elements.responseOutput.textContent = value;
+            return;
+        }
+
+        elements.requestOutput.textContent = JSON.stringify(value.request || value, null, 2);
+        elements.responseOutput.textContent = JSON.stringify({
+            response: value.response || null,
+            body: value.body || null,
+            error: value.error || null
+        }, null, 2);
+    }
+
+    function writeCartOutput(value) {
+        elements.cartOutput.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+    }
+
+    function writePendingRequest(request) {
+        elements.lastAction.textContent = `${request.method} ${request.path}`;
+        elements.requestOutput.textContent = JSON.stringify(request, null, 2);
+        elements.responseOutput.classList.add("is-loading");
+        elements.responseOutput.textContent = JSON.stringify({
+            response: "Loading...",
+            body: null,
+            error: null
+        }, null, 2);
+    }
+
+    function setBusy(button, busy) {
+        if (!button) {
+            return;
+        }
+
+        if (busy) {
+            button.dataset.originalText = button.textContent;
+            button.textContent = "Loading...";
+            button.disabled = true;
+            return;
+        }
+
+        button.textContent = button.dataset.originalText || button.textContent;
+        button.disabled = false;
+        delete button.dataset.originalText;
     }
 </script>
 </body>

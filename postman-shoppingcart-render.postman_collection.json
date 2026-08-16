@@ -7,11 +7,11 @@
   "variable": [
     {
       "key": "baseUrl",
-      "value": "https://shopping-cart.onrender.com"
+      "value": "https://shoppingcart-4ohf.onrender.com"
     },
     {
       "key": "email",
-      "value": "buyer+{{$timestamp}}@example.com"
+      "value": "buyer+1786637589179@example.com"
     },
     {
       "key": "password",
@@ -20,8 +20,13 @@
     {
       "key": "authToken",
       "value": ""
+    },
+    {
+      "key": "userId",
+      "value": ""
     }
   ],
+  "event": [],
   "item": [
     {
       "name": "Register - customer user",
@@ -53,20 +58,23 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('registers a user or reports an existing user', function () {",
-              "  pm.expect([201, 409]).to.include(pm.response.code);",
+              "pm.test('register returns 201', function () {",
+              "  pm.response.to.have.status(201);",
               "});",
               "",
-              "if (pm.response.code === 201) {",
-              "  const body = pm.response.json();",
-              "  pm.test('register response includes bearer token data', function () {",
-              "    pm.expect(body).to.have.property('token');",
-              "    pm.expect(body).to.have.property('userId');",
-              "    pm.expect(body).to.have.property('expiresAt');",
-              "  });",
-              "  pm.collectionVariables.set('authToken', body.token);",
-              "  pm.collectionVariables.set('userId', body.userId);",
-              "}"
+              "pm.test('auth response is not empty', function () {",
+              "  pm.expect(pm.response.text(), 'response body').to.not.be.empty;",
+              "});",
+              "",
+              "var body = pm.response.json();",
+              "pm.test('auth response includes bearer token data', function () {",
+              "  pm.expect(body).to.have.property('token');",
+              "  pm.expect(body).to.have.property('userId');",
+              "  pm.expect(body).to.have.property('expiresAt');",
+              "});",
+              "",
+              "pm.collectionVariables.set('authToken', body.token);",
+              "pm.collectionVariables.set('userId', body.userId);"
             ]
           }
         }
@@ -102,12 +110,16 @@
           "script": {
             "type": "text/javascript",
             "exec": [
-              "pm.test('returns 200', function () {",
+              "pm.test('login returns 200', function () {",
               "  pm.response.to.have.status(200);",
               "});",
               "",
-              "const body = pm.response.json();",
-              "pm.test('login response includes bearer token data', function () {",
+              "pm.test('auth response is not empty', function () {",
+              "  pm.expect(pm.response.text(), 'response body').to.not.be.empty;",
+              "});",
+              "",
+              "var body = pm.response.json();",
+              "pm.test('auth response includes bearer token data', function () {",
               "  pm.expect(body).to.have.property('token');",
               "  pm.expect(body).to.have.property('userId');",
               "  pm.expect(body).to.have.property('expiresAt');",
@@ -124,12 +136,7 @@
       "name": "Auth status - bearer token",
       "request": {
         "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{authToken}}"
-          }
-        ],
+        "header": [],
         "url": {
           "raw": "{{baseUrl}}/auth/status",
           "host": [
@@ -138,6 +145,16 @@
           "path": [
             "auth",
             "status"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{authToken}}",
+              "type": "string"
+            }
           ]
         }
       },
@@ -196,12 +213,7 @@
       "name": "Get client info - bearer token",
       "request": {
         "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{authToken}}"
-          }
-        ],
+        "header": [],
         "url": {
           "raw": "{{baseUrl}}/client/info",
           "host": [
@@ -210,6 +222,16 @@
           "path": [
             "client",
             "info"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{authToken}}",
+              "type": "string"
+            }
           ]
         }
       },
@@ -346,6 +368,10 @@
               "  pm.response.to.have.status(201);",
               "});",
               "",
+              "pm.test('cart response is not empty', function () {",
+              "  pm.expect(pm.response.text(), 'response body').to.not.be.empty;",
+              "});",
+              "",
               "const body = pm.response.json();",
               "pm.test('cart stores the session id', function () {",
               "  pm.expect(body.sessionId).to.match(/^postman-session-/);",
@@ -371,10 +397,6 @@
           {
             "key": "Content-Type",
             "value": "application/json"
-          },
-          {
-            "key": "Authorization",
-            "value": "Bearer {{authToken}}"
           }
         ],
         "body": {
@@ -389,6 +411,16 @@
           "path": [
             "cart"
           ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{authToken}}",
+              "type": "string"
+            }
+          ]
         }
       },
       "event": [
@@ -399,6 +431,10 @@
             "exec": [
               "pm.test('creates an authenticated session cart', function () {",
               "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "pm.test('cart response is not empty', function () {",
+              "  pm.expect(pm.response.text(), 'response body').to.not.be.empty;",
               "});",
               "",
               "const body = pm.response.json();",
@@ -422,12 +458,7 @@
       "name": "Get cart - bearer token",
       "request": {
         "method": "GET",
-        "header": [
-          {
-            "key": "Authorization",
-            "value": "Bearer {{authToken}}"
-          }
-        ],
+        "header": [],
         "url": {
           "raw": "{{baseUrl}}/cart",
           "host": [
@@ -435,6 +466,16 @@
           ],
           "path": [
             "cart"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{authToken}}",
+              "type": "string"
+            }
           ]
         }
       },
