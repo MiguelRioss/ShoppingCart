@@ -10,10 +10,12 @@ import kotlinx.serialization.json.jsonPrimitive
  *
  * @param email user's login email; nullable so validation can report missing credentials cleanly
  * @param password user's plain text password from the request; nullable for the same reason
+ * @param sessionId optional browser/session cart id to attach to the logged-in user
  */
 data class LoginRequest(
     val email: String?,
-    val password: String?
+    val password: String?,
+    val sessionId: String? = null
 ) {
     companion object {
         /**
@@ -28,7 +30,8 @@ data class LoginRequest(
 
             return LoginRequest(
                 email = body.stringValue("email"),
-                password = body.stringValue("password")
+                password = body.stringValue("password"),
+                sessionId = body.stringValue("sessionId")
             )
         }
 

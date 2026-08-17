@@ -8,7 +8,8 @@ import dto.LoginResponse
  * @param authService authentication dependency that validates credentials and issues tokens
  */
 class LoginService(
-    private val authService: AuthService
+    private val authService: AuthService,
+    private val shoppingCartService: ShoppingCartService? = null
 ) {
     /**
      * Validates login input, creates an auth token, and maps it to an API response.
@@ -17,12 +18,15 @@ class LoginService(
      * @param password nullable password from the HTTP request body
      * @throws IllegalArgumentException when either field is missing or blank
      */
-    fun login(email: String?, password: String?): LoginResponse {
+    fun login(email: String?, password: String?, sessionId: String? = null): LoginResponse {
         require(!email.isNullOrBlank() && !password.isNullOrBlank()) {
             "Email and password are required"
         }
 
         val token = authService.login(email, password)
+        if (!sessionId.isNullOrBlank()) {
+            shoppingCartService?.associateCartWithUser(sessionId, token.userId)
+        }
 
         return LoginResponse(
             token = token.token,

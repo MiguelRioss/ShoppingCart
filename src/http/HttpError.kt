@@ -64,8 +64,17 @@ object HttpError {
             1001,
             1002,
             1003,
-            1004 -> HttpErrorResponse(
+            1004,
+            2001 -> HttpErrorResponse(
                 status = HttpStatusCodes.BadRequest,
+                defaultMessage = exception.message
+            )
+            2000 -> HttpErrorResponse(
+                status = HttpStatusCodes.NotFound,
+                defaultMessage = exception.message
+            )
+            2002 -> HttpErrorResponse(
+                status = HttpStatusCodes.InternalServerError,
                 defaultMessage = exception.message
             )
             else -> InternalServerError

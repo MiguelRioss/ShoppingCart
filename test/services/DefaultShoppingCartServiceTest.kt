@@ -79,6 +79,23 @@ class DefaultShoppingCartServiceTest {
     }
 
     @Test
+    fun `associates an existing session cart with a user`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = DefaultShoppingCartService(repository, productDataAccess, clock)
+        val userId = UUID.fromString("00000000-0000-0000-0000-000000000003")
+        val sessionCart = service.createCart(
+            sessionId = "session-123",
+            products = listOf(9278L to 0.5)
+        )
+
+        val associatedCart = service.associateCartWithUser("session-123", userId)
+
+        assertEquals(sessionCart.id, associatedCart?.id)
+        assertEquals(userId, associatedCart?.userId)
+        assertEquals(associatedCart, service.getCartByUserId(userId))
+    }
+
+    @Test
     fun `returns clear error when product purchase information is null`() {
         val productDataAccess = object : ProductDataAccess {
             override fun getProductById(productId: Long): String =

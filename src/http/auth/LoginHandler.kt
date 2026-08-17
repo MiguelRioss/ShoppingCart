@@ -34,7 +34,8 @@ class LoginHandler(
         val response = runCatching {
             loginService.login(
                 email = loginRequest.email,
-                password = loginRequest.password
+                password = loginRequest.password,
+                sessionId = loginRequest.sessionId
             )
         }.getOrElse {
             val error = if (it.message == HttpError.MissingCredentials.defaultMessage) {

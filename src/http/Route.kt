@@ -29,7 +29,7 @@ data class Route(
 
     private fun pathParameters(requestPath: String): Map<String, String>? {
         val routeSegments = path.trim('/').split('/').filter { it.isNotBlank() }
-        val requestSegments = requestPath.trim('/').split('/').filter { it.isNotBlank() }
+        val requestSegments = requestPath.substringBefore("?").trim('/').split('/').filter { it.isNotBlank() }
 
         if (routeSegments.size != requestSegments.size) {
             return null

@@ -19,6 +19,13 @@ class RouteTest {
     }
 
     @Test
+    fun `matches route paths with query parameters`() {
+        val route = Route("GET", "/cart", handler)
+
+        assertTrue(route.matches(HttpRequest(method = "GET", path = "/cart?sessionId=browser-123", body = "")))
+    }
+
+    @Test
     fun `matches route paths with parameters`() {
         val route = Route("GET", "/products/:id", handler)
         val request = HttpRequest(method = "GET", path = "/products/9278", body = "")
@@ -32,5 +39,12 @@ class RouteTest {
         val route = Route("GET", "/products/:id", handler)
 
         assertFalse(route.matches(HttpRequest(method = "GET", path = "/products", body = "")))
+    }
+
+    @Test
+    fun `reads query parameters`() {
+        val request = HttpRequest(method = "GET", path = "/cart?sessionId=browser-123", body = "")
+
+        assertEquals("browser-123", request.queryParameter("sessionId"))
     }
 }

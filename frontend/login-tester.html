@@ -440,6 +440,7 @@
                     <div id="cartList" class="cart-list"></div>
                     <div class="actions">
                         <button id="saveCartButton" class="btn" type="button">Save cart</button>
+                        <button id="checkoutButton" class="btn" type="button">Checkout</button>
                         <button id="getCartButton" class="btn secondary" type="button">Get cart</button>
                         <button id="clearCartButton" class="btn secondary" type="button">Clear cart</button>
                     </div>
@@ -524,6 +525,7 @@
     document.querySelector("#statusButton").addEventListener("click", checkAuth);
     document.querySelector("#clientButton").addEventListener("click", getClientInfo);
     document.querySelector("#saveCartButton").addEventListener("click", saveCart);
+    document.querySelector("#checkoutButton").addEventListener("click", createCheckout);
     document.querySelector("#getCartButton").addEventListener("click", getCart);
     document.querySelector("#clearCartButton").addEventListener("click", clearDraftCart);
 
@@ -543,6 +545,7 @@
                 password: elements.password.value,
                 phone: elements.phone.value,
                 customerType: elements.customerType.value,
+                sessionId: getSessionId(),
                 deliveryAddress: {
                     addressLine1: elements.addressLine1.value,
                     townOrCity: elements.townOrCity.value,
@@ -562,7 +565,8 @@
             method: "POST",
             body: {
                 email: elements.email.value,
-                password: elements.password.value
+                password: elements.password.value,
+                sessionId: getSessionId()
             }
         });
 
@@ -641,13 +645,39 @@
     }
 
     async function getCart() {
-        const result = await apiFetch("/cart", {
+        const result = await apiFetch(`/cart?sessionId=${encodeURIComponent(getSessionId())}`, {
             method: "GET",
             auth: true
         });
 
+        if (result.response.ok && result.body && Array.isArray(result.body.products)) {
+            state.cart = result.body.products.map(cartProductFromResponse);
+            renderCart();
+        }
+
         writeOutput(result, "Get cart");
         writeCartOutput(result);
+    }
+
+    async function createCheckout() {
+        const result = await apiFetch("/checkout", {
+            method: "POST",
+            body: {
+                sessionId: getSessionId(),
+                successUrl: checkoutReturnUrl("success"),
+                cancelUrl: checkoutReturnUrl("cancel"),
+                customerEmail: elements.email.value
+            }
+        });
+
+        writeOutput(result, "Checkout");
+        if (result.response.ok) {
+            writeCartOutput(result);
+        }
+
+        if (result.response.ok && result.body && result.body.url) {
+            window.location.href = result.body.url;
+        }
     }
 
     function logout() {
@@ -836,6 +866,16 @@
         }, "Add to cart");
     }
 
+    function cartProductFromResponse(product) {
+        const matchingProduct = products.find((item) => item.id === Number(product.productId));
+
+        return {
+            productId: Number(product.productId),
+            name: matchingProduct ? matchingProduct.name : `Product ${product.productId}`,
+            quantityM2: Number(product.squareMeters)
+        };
+    }
+
     function renderCart() {
         elements.cartList.innerHTML = "";
 
@@ -914,6 +954,14 @@
         }
 
         return sessionId;
+    }
+
+    function checkoutReturnUrl(status) {
+        if (window.location.protocol === "http:" || window.location.protocol === "https:") {
+            return `${window.location.origin}${window.location.pathname}?checkout=${status}`;
+        }
+
+        return `https://example.com/checkout/${status}`;
     }
 
     function writeOutput(value, action = "Ready") {

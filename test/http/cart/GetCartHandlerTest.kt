@@ -67,15 +67,70 @@ class GetCartHandlerTest {
     }
 
     @Test
-    fun `returns unauthorized without bearer token`() {
+    fun `gets cart by session id without bearer token`() {
+        val cartRepository = InMemoryShoppingCartRepository()
+        val cart = ShoppingCart(
+            id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+            sessionId = "browser-session-123",
+            dateTime = LocalDateTime.parse("2026-08-07T13:45:00"),
+            products = listOf(
+                ShoppingCartProduct(
+                    productId = 1864L,
+                    squareMeters = 12.5,
+                    amountBoxes = 3,
+                    totalPricePerProduct = BigDecimal("249.99")
+                )
+            )
+        )
+        cartRepository.saveCart(cart)
         val handler = GetCartHandler(
             DefaultAuthService(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock),
-            DefaultShoppingCartService(InMemoryShoppingCartRepository())
+            DefaultShoppingCartService(cartRepository)
         )
 
-        val response = handler.handle(HttpRequest(method = "GET", path = "/cart", body = ""))
+        val response = handler.handle(HttpRequest(method = "GET", path = "/cart?sessionId=browser-session-123", body = ""))
+        val responseBody = Json.parseToJsonElement(response.body).jsonObject
 
-        assertEquals(401, response.statusCode)
+        assertEquals(200, response.statusCode)
+        assertEquals(cart.id.toString(), responseBody["id"]?.jsonPrimitive?.content)
+        assertEquals("browser-session-123", responseBody["sessionId"]?.jsonPrimitive?.content)
+    }
+
+    @Test
+    fun `gets session cart before authenticated user cart`() {
+        val userRepository = InMemoryUserRepository()
+        val authTokenRepository = InMemoryAuthTokenRepository()
+        val cartRepository = InMemoryShoppingCartRepository()
+        val user = DefaultUserService(userRepository, clock = clock)
+            .registerUser("buyer@example.com", "password-123")
+        val authService = DefaultAuthService(userRepository, authTokenRepository, clock = clock)
+        val token = authService.login("buyer@example.com", "password-123")
+        val userCart = ShoppingCart(
+            id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+            userId = user.id,
+            dateTime = LocalDateTime.parse("2026-08-07T13:45:00")
+        )
+        val sessionCart = ShoppingCart(
+            id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+            sessionId = "browser-session-123",
+            dateTime = LocalDateTime.parse("2026-08-07T14:00:00")
+        )
+        cartRepository.saveCart(userCart)
+        cartRepository.saveCart(sessionCart)
+        val handler = GetCartHandler(authService, DefaultShoppingCartService(cartRepository))
+
+        val response = handler.handle(
+            HttpRequest(
+                method = "GET",
+                path = "/cart?sessionId=browser-session-123",
+                body = "",
+                headers = mapOf("Authorization" to listOf("Bearer ${token.token}"))
+            )
+        )
+        val responseBody = Json.parseToJsonElement(response.body).jsonObject
+
+        assertEquals(200, response.statusCode)
+        assertEquals(sessionCart.id.toString(), responseBody["id"]?.jsonPrimitive?.content)
     }
 
     @Test

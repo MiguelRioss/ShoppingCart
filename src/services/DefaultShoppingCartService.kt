@@ -31,6 +31,12 @@ class DefaultShoppingCartService(
     override fun clearCartBySessionId(sessionId: String): Boolean =
         shoppingCartRepository.clearCartBySessionId(sessionId)
 
+    override fun associateCartWithUser(sessionId: String, userId: UUID): ShoppingCart? {
+        val cart = shoppingCartRepository.getCartBySessionId(sessionId) ?: return null
+
+        return shoppingCartRepository.saveCart(cart.copy(userId = userId))
+    }
+
     override fun createCart(sessionId: String, products: List<Pair<Long, Double>>, userId: UUID?): ShoppingCart {
         val existingCart = shoppingCartRepository.getCartBySessionId(sessionId)
         val updatedCart = ShoppingCart(

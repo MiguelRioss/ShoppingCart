@@ -51,7 +51,7 @@ class HttpModule(
 
         return HttpRequest(
             method = requestMethod,
-            path = requestURI.path,
+            path = requestURI.rawQuery?.let { "${requestURI.path}?$it" } ?: requestURI.path,
             body = requestBody,
             headers = requestHeaders.mapValues { it.value.toList() }
         )

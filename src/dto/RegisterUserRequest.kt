@@ -21,6 +21,7 @@ import kotlinx.serialization.json.jsonPrimitive
  * @param invoiceAddress required only when [sameAsDeliveryAddress] is false
  * @param vatNumber optional VAT number for business customers
  * @param projectNotes optional notes about the customer's project
+ * @param sessionId optional browser/session cart id to attach after registration
  */
 data class RegisterUserRequest(
     val firstName: String?,
@@ -33,7 +34,8 @@ data class RegisterUserRequest(
     val sameAsDeliveryAddress: Boolean,
     val invoiceAddress: RegisterAddressRequest?,
     val vatNumber: String?,
-    val projectNotes: String?
+    val projectNotes: String?,
+    val sessionId: String? = null
 ) {
     companion object {
         /**
@@ -64,7 +66,8 @@ data class RegisterUserRequest(
                     RegisterAddressRequest.fromJsonObject(body.objectValue("invoiceAddress"))
                 },
                 vatNumber = body.stringValue("vatNumber"),
-                projectNotes = body.stringValue("projectNotes")
+                projectNotes = body.stringValue("projectNotes"),
+                sessionId = body.stringValue("sessionId")
             ).validateRequiredFields()
         }
 

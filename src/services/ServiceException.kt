@@ -29,6 +29,21 @@ enum class ServiceErrorCode(
         code = 1004,
         defaultMessage = "Product client price per m2 is missing",
         defaultDescription = "The product cannot be added to the cart because client_price_per_m2 is missing or invalid"
+    ),
+    CartNotFound(
+        code = 2000,
+        defaultMessage = "Shopping cart not found",
+        defaultDescription = "No shopping cart exists for the provided sessionId"
+    ),
+    CartIsEmpty(
+        code = 2001,
+        defaultMessage = "Shopping cart is empty",
+        defaultDescription = "The shopping cart must contain at least one product before checkout"
+    ),
+    CheckoutCreationFailed(
+        code = 2002,
+        defaultMessage = "Checkout creation failed",
+        defaultDescription = "The payment provider could not create a checkout session"
     )
 }
 

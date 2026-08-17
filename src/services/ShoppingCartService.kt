@@ -32,6 +32,15 @@ interface ShoppingCartService {
     fun clearCartBySessionId(sessionId: String): Boolean
 
     /**
+     * Attaches an existing session cart to a user.
+     *
+     * @param sessionId browser/session identifier associated with the cart
+     * @param userId authenticated user's id
+     * @return the associated cart, or null when no session cart exists
+     */
+    fun associateCartWithUser(sessionId: String, userId: UUID): ShoppingCart?
+
+    /**
      * Creates a cart for a browser session.
      *
      * @param sessionId browser/session identifier associated with the cart

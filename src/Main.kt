@@ -16,14 +16,17 @@ import http.auth.RegisterHandler
 import http.cart.ClearCartHandler
 import http.cart.GetCartHandler
 import http.cart.SaveCartHandler
+import http.checkout.CreateCheckoutHandler
 import http.client.GetClientInfoHandler
 import http.product.GetProductByIdHandler
 import http.product.GetProductsHandler
 import productdatabaseaccesslayer.ProductCatalogDataSource
 import services.DefaultAuthService
+import services.DefaultCheckoutService
 import services.DefaultShoppingCartService
 import services.DefaultUserService
 import services.LoginService
+import services.StripePaymentProvider
 
 /**
  * Application entry point.
@@ -45,12 +48,13 @@ fun main() {
     val shoppingCartRepository = database?.let { PostgresShoppingCartRepository(it) } ?: InMemoryShoppingCartRepository()
     val authService = DefaultAuthService(userRepository, authTokenRepository)
     val userService = DefaultUserService(userRepository)
-    val loginService = LoginService(authService)
     val productCatalogDataSource = ProductCatalogDataSource()
     val shoppingCartService = DefaultShoppingCartService(shoppingCartRepository, productCatalogDataSource)
+    val loginService = LoginService(authService, shoppingCartService)
+    val checkoutService = DefaultCheckoutService(shoppingCartService, StripePaymentProvider())
     val httpModule = HttpModule(
         routes = listOf(
-            Route("POST", "/register", RegisterHandler(userService, authService)),
+            Route("POST", "/register", RegisterHandler(userService, authService, shoppingCartService)),
             Route("POST", "/login", LoginHandler(loginService)),
             Route("GET", "/auth/status", AuthStatusHandler(authService)),
             Route("GET", "/client/info", GetClientInfoHandler(authService)),
@@ -58,7 +62,8 @@ fun main() {
             Route("GET", "/products/:id", GetProductByIdHandler(productCatalogDataSource)),
             Route("GET", "/cart", GetCartHandler(authService, shoppingCartService)),
             Route("POST", "/cart", SaveCartHandler(shoppingCartService, authService)),
-            Route("POST", "/cart/clear", ClearCartHandler(shoppingCartService))
+            Route("POST", "/cart/clear", ClearCartHandler(shoppingCartService)),
+            Route("POST", "/checkout", CreateCheckoutHandler(checkoutService))
         )
     )
     val port = System.getenv("PORT")?.toIntOrNull() ?: 8080

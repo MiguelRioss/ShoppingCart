@@ -8,11 +8,13 @@ import http.HttpResponse
 import http.RequestHandler
 import kotlinx.serialization.json.Json
 import services.AuthService
+import services.ShoppingCartService
 import services.UserService
 
 class RegisterHandler(
     private val userService: UserService,
     private val authService: AuthService,
+    private val shoppingCartService: ShoppingCartService? = null,
     private val json: Json = Json
 ) : RequestHandler {
     override fun handle(request: HttpRequest): HttpResponse {
@@ -36,6 +38,9 @@ class RegisterHandler(
             email = requireNotNull(registerRequest.email),
             password = requireNotNull(registerRequest.password)
         )
+        if (!registerRequest.sessionId.isNullOrBlank()) {
+            shoppingCartService?.associateCartWithUser(registerRequest.sessionId, authToken.userId)
+        }
 
         return HttpResponse(
             statusCode = 201,
