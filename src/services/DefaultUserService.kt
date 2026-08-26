@@ -3,6 +3,7 @@ package services
 import db.UserRepository
 import domain.User
 import dto.RegisterUserRequest
+import dto.UpdateAccountRequest
 import java.time.Clock
 import java.time.LocalDateTime
 import java.util.UUID
@@ -83,4 +84,41 @@ class DefaultUserService(
      */
     override fun getUser(userId: UUID): User? =
         userRepository.getUser(userId)
+
+    override fun updateUser(userId: UUID, request: UpdateAccountRequest): User {
+        val user = requireNotNull(userRepository.getUser(userId)) { "User not found" }
+        val normalizedEmail = request.email?.trim()?.lowercase()
+        if (!normalizedEmail.isNullOrBlank() && normalizedEmail != user.email) {
+            require(userRepository.getUserByEmail(normalizedEmail) == null) { "User already exists" }
+        }
+
+        val updatedUser = user.copy(
+            email = normalizedEmail?.takeIf { it.isNotBlank() } ?: user.email,
+            passwordHash = request.password?.takeIf { it.isNotBlank() }?.let { passwordHasher.hash(it) } ?: user.passwordHash,
+            firstName = request.firstName?.trim() ?: user.firstName,
+            lastName = request.lastName?.trim() ?: user.lastName,
+            phone = request.phone?.trim() ?: user.phone,
+            customerType = request.customerType?.name ?: user.customerType,
+            deliveryCompany = request.deliveryAddress?.company ?: user.deliveryCompany,
+            deliveryAddressLine1 = request.deliveryAddress?.addressLine1 ?: user.deliveryAddressLine1,
+            deliveryAddressLine2 = request.deliveryAddress?.addressLine2 ?: user.deliveryAddressLine2,
+            deliveryTownOrCity = request.deliveryAddress?.townOrCity ?: user.deliveryTownOrCity,
+            deliveryPostcode = request.deliveryAddress?.postcode ?: user.deliveryPostcode,
+            deliveryCountry = request.deliveryAddress?.country ?: user.deliveryCountry,
+            sameAsDeliveryAddress = request.sameAsDeliveryAddress ?: user.sameAsDeliveryAddress,
+            invoiceCompany = request.invoiceAddress?.company ?: user.invoiceCompany,
+            invoiceAddressLine1 = request.invoiceAddress?.addressLine1 ?: user.invoiceAddressLine1,
+            invoiceAddressLine2 = request.invoiceAddress?.addressLine2 ?: user.invoiceAddressLine2,
+            invoiceTownOrCity = request.invoiceAddress?.townOrCity ?: user.invoiceTownOrCity,
+            invoicePostcode = request.invoiceAddress?.postcode ?: user.invoicePostcode,
+            invoiceCountry = request.invoiceAddress?.country ?: user.invoiceCountry,
+            vatNumber = request.vatNumber ?: user.vatNumber,
+            projectNotes = request.projectNotes ?: user.projectNotes
+        )
+
+        return userRepository.saveUser(updatedUser)
+    }
+
+    override fun deleteUser(userId: UUID): Boolean =
+        userRepository.deleteUser(userId)
 }

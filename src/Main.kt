@@ -11,6 +11,8 @@ import http.HttpModule
 import http.Route
 import http.Server
 import http.auth.AuthStatusHandler
+import http.auth.DeleteAccountHandler
+import http.auth.EditAccountHandler
 import http.auth.LoginHandler
 import http.auth.RegisterHandler
 import http.cart.ClearCartHandler
@@ -51,12 +53,14 @@ fun main() {
     val productCatalogDataSource = ProductCatalogDataSource()
     val shoppingCartService = DefaultShoppingCartService(shoppingCartRepository, productCatalogDataSource)
     val loginService = LoginService(authService, shoppingCartService)
-    val checkoutService = DefaultCheckoutService(shoppingCartService, StripePaymentProvider())
+    val checkoutService = DefaultCheckoutService(shoppingCartService, StripePaymentProvider(), productCatalogDataSource)
     val httpModule = HttpModule(
         routes = listOf(
             Route("POST", "/register", RegisterHandler(userService, authService, shoppingCartService)),
             Route("POST", "/login", LoginHandler(loginService)),
             Route("GET", "/auth/status", AuthStatusHandler(authService)),
+            Route("PUT", "/account", EditAccountHandler(authService, userService)),
+            Route("DELETE", "/account", DeleteAccountHandler(authService, userService)),
             Route("GET", "/client/info", GetClientInfoHandler(authService)),
             Route("GET", "/products", GetProductsHandler(productCatalogDataSource)),
             Route("GET", "/products/:id", GetProductByIdHandler(productCatalogDataSource)),

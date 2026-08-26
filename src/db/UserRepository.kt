@@ -30,4 +30,12 @@ interface UserRepository {
      * @return matching user, or null when no user exists
      */
     fun getUserByEmail(email: String): User?
+
+    /**
+     * Deletes a user by id.
+     *
+     * @param userId unique user id
+     * @return true when a user was deleted
+     */
+    fun deleteUser(userId: UUID): Boolean
 }

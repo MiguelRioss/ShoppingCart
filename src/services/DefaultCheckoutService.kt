@@ -1,8 +1,15 @@
 package services
 
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import productdatabaseaccesslayer.ProductDataAccess
+
 class DefaultCheckoutService(
     private val shoppingCartService: ShoppingCartService,
-    private val paymentProvider: PaymentProvider
+    private val paymentProvider: PaymentProvider,
+    private val productDataAccess: ProductDataAccess? = null,
+    private val json: Json = Json
 ) : CheckoutService {
     override fun createCheckout(
         sessionId: String,
@@ -28,14 +35,36 @@ class DefaultCheckoutService(
                 cancelUrl = cancelUrl,
                 customerEmail = customerEmail,
                 lineItems = cart.products.map { product ->
+                    val checkoutProduct = product.checkoutProduct()
+
                     CheckoutLineItem(
                         productId = product.productId,
-                        name = "Product ${product.productId}",
+                        name = checkoutProduct.name,
                         quantity = product.amountBoxes,
-                        amountTotal = product.totalPricePerProduct
+                        amountTotal = product.totalPricePerProduct,
+                        imageUrl = checkoutProduct.imageUrl
                     )
                 }
             )
         )
     }
+
+    private fun domain.ShoppingCartProduct.checkoutProduct(): CheckoutProduct {
+        val fallback = CheckoutProduct(name = "Product $productId")
+        val productJson = productDataAccess?.getProductById(productId) ?: return fallback
+
+        return runCatching {
+            val product = json.parseToJsonElement(productJson).jsonObject
+            CheckoutProduct(
+                name = product["title"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
+                    ?: fallback.name,
+                imageUrl = product["image"]?.jsonPrimitive?.content?.takeIf { it.isNotBlank() }
+            )
+        }.getOrDefault(fallback)
+    }
+
+    private data class CheckoutProduct(
+        val name: String,
+        val imageUrl: String? = null
+    )
 }

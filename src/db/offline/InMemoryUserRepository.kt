@@ -30,4 +30,10 @@ class InMemoryUserRepository : UserRepository {
      */
     override fun getUserByEmail(email: String): User? =
         users.values.firstOrNull { it.email == email }
+
+    /**
+     * Removes a user by id.
+     */
+    override fun deleteUser(userId: UUID): Boolean =
+        users.remove(userId) != null
 }

@@ -98,6 +98,15 @@ class PostgresUserRepository(
         }
     }
 
+    override fun deleteUser(userId: UUID): Boolean {
+        database.getConnection().use { connection ->
+            connection.prepareStatement("DELETE FROM users WHERE id = ?").use { statement ->
+                statement.setObject(1, userId)
+                return statement.executeUpdate() > 0
+            }
+        }
+    }
+
     private fun ResultSet.toUser(): User =
         User(
             id = getObject("id", UUID::class.java),

@@ -39,7 +39,7 @@ class HttpModule(
      */
     private fun HttpExchange.addCorsHeaders() {
         responseHeaders.add("Access-Control-Allow-Origin", "*")
-        responseHeaders.add("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+        responseHeaders.add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
         responseHeaders.add("Access-Control-Allow-Headers", "Content-Type, Authorization")
     }
 

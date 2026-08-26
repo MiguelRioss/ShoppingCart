@@ -2,6 +2,7 @@ package services
 
 import domain.User
 import dto.RegisterUserRequest
+import dto.UpdateAccountRequest
 import java.util.UUID
 
 /**
@@ -26,4 +27,21 @@ interface UserService {
      * @return matching user, or null when it does not exist
      */
     fun getUser(userId: UUID): User?
+
+    /**
+     * Updates editable account fields for an existing user.
+     *
+     * @param userId unique user id
+     * @param request requested account changes
+     * @return updated user
+     */
+    fun updateUser(userId: UUID, request: UpdateAccountRequest): User
+
+    /**
+     * Deletes a user account.
+     *
+     * @param userId unique user id
+     * @return true when a user was deleted
+     */
+    fun deleteUser(userId: UUID): Boolean
 }
