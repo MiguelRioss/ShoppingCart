@@ -1,25 +1,29 @@
+/**
+ * HTTP handler for creating a new user account and starting its cart/auth state.
+ */
 package http.auth
 
-import dto.LoginResponse
-import dto.RegisterUserRequest
+import dto.auth.LoginResponse
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
+import http.parseRegisterUserRequest
+import http.toJson
 import kotlinx.serialization.json.Json
-import services.AuthService
-import services.ShoppingCartService
-import services.UserService
+import services.auth.AuthServiceInterface
+import services.cart.ShoppingCartService
+import services.user.UserService
 
 class RegisterHandler(
     private val userService: UserService,
-    private val authService: AuthService,
+    private val authService: AuthServiceInterface,
     private val shoppingCartService: ShoppingCartService? = null,
     private val json: Json = Json
 ) : RequestHandler {
     override fun handle(request: HttpRequest): HttpResponse {
         val registerRequest = runCatching {
-            RegisterUserRequest.fromJson(request.body, json)
+            parseRegisterUserRequest(request.body, json)
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse()
         }
@@ -52,3 +56,4 @@ class RegisterHandler(
         )
     }
 }
+

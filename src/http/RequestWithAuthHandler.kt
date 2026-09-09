@@ -1,14 +1,14 @@
 package http
 
-import services.AuthService
+import services.auth.AuthServiceInterface
 
 /**
  * Base handler for routes that require a valid Authorization bearer token.
  *
- * @param authService service used to resolve the authenticated user
+ * @param AuthServiceInterface service used to resolve the authenticated user
  */
 abstract class RequestWithAuthHandler(
-    private val authService: AuthService
+    private val authService: AuthServiceInterface
 ) : RequestHandler {
     /**
      * Authenticates the request before passing it to the route-specific handler.
@@ -31,3 +31,4 @@ abstract class RequestWithAuthHandler(
      */
     protected abstract fun handleAuthenticated(request: AuthenticatedRequest): HttpResponse
 }
+

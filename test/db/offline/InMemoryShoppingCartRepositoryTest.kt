@@ -1,7 +1,7 @@
 package db.offline
 
-import domain.ShoppingCart
-import domain.ShoppingCartProduct
+import domain.cart.ShoppingCart
+import domain.cart.ShoppingCartProduct
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -71,3 +71,5 @@ class InMemoryShoppingCartRepositoryTest {
         assertNull(repository.getCartByUserId(UUID.fromString("00000000-0000-0000-0000-000000000004")))
     }
 }
+
+

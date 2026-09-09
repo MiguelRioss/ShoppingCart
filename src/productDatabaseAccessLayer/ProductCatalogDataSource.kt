@@ -70,6 +70,14 @@ class ProductCatalogDataSource(
     override fun getProductById(productId: Long): String? = productsById()[productId]
         ?.toCompactJson()
 
+    /**
+     * Fetches a single product by id from the detailed product endpoint.
+     */
+    override fun getProductDetailsById(productId: Long): String? =
+        runCatching { get("product/$productId") }.getOrElse {
+            getProductById(productId)
+        }
+
     @Synchronized
     private fun productElements(): List<JsonElement> =
         productElementsCache ?: Json.parseToJsonElement(getAllProducts())
@@ -149,3 +157,4 @@ class ProductCatalogDataSource(
                 (order["client_price_per_m2"]?.jsonPrimitive?.doubleOrNull ?: 0.0) > 0.0
         }
 }
+

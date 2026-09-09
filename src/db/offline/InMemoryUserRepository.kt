@@ -1,7 +1,7 @@
 package db.offline
 
 import db.UserRepository
-import domain.User
+import domain.user.User
 import java.util.UUID
 
 /**

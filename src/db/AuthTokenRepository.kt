@@ -1,6 +1,6 @@
 package db
 
-import domain.AuthToken
+import domain.auth.AuthToken
 
 /**
  * Persistence boundary for authentication tokens.

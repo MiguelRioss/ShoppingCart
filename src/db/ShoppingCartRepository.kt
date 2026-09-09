@@ -1,6 +1,6 @@
 package db
 
-import domain.ShoppingCart
+import domain.cart.ShoppingCart
 import java.util.UUID
 
 /**

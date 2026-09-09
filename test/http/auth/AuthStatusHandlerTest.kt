@@ -7,8 +7,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
-import services.DefaultAuthService
-import services.DefaultUserService
+import services.auth.AuthManager
+import services.user.UserManager
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -21,9 +21,9 @@ class AuthStatusHandlerTest {
     fun `returns authenticated user when bearer token is valid`() {
         val userRepository = InMemoryUserRepository()
         val authTokenRepository = InMemoryAuthTokenRepository()
-        val user = DefaultUserService(userRepository, clock = clock)
+        val user = UserManager(userRepository, clock = clock)
             .registerUser("buyer@example.com", "password-123")
-        val authService = DefaultAuthService(userRepository, authTokenRepository, clock = clock)
+        val authService = AuthManager(userRepository, authTokenRepository, clock = clock)
         val token = authService.login("buyer@example.com", "password-123")
         val handler = AuthStatusHandler(authService)
 
@@ -46,7 +46,7 @@ class AuthStatusHandlerTest {
     @Test
     fun `returns unauthorized when bearer token is missing`() {
         val handler = AuthStatusHandler(
-            DefaultAuthService(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock)
+            AuthManager(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock)
         )
 
         val response = handler.handle(HttpRequest(method = "GET", path = "/auth/status", body = ""))
@@ -54,3 +54,4 @@ class AuthStatusHandlerTest {
         assertEquals(401, response.statusCode)
     }
 }
+

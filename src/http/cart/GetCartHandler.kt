@@ -1,13 +1,14 @@
 package http.cart
 
-import dto.ShoppingCartResponse
+import dto.cart.toResponse
 import http.AuthenticatedRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
-import services.AuthService
-import services.ShoppingCartService
+import http.toJson
+import services.auth.AuthServiceInterface
+import services.cart.ShoppingCartService
 
 /**
  * Handles GET /cart requests.
@@ -16,7 +17,7 @@ import services.ShoppingCartService
  * @param shoppingCartService service used to load session or authenticated user carts
  */
 class GetCartHandler(
-    private val authService: AuthService,
+    private val authService: AuthServiceInterface,
     private val shoppingCartService: ShoppingCartService
 ) : RequestHandler {
     /**
@@ -33,6 +34,7 @@ class GetCartHandler(
         val cart = sessionCart ?: authenticatedUser?.let { shoppingCartService.getCartByUserId(it.id) }
             ?: return HttpError.NotFound.toResponse("Shopping cart not found")
 
-        return HttpResponse(200, ShoppingCartResponse(cart).toJson())
+        return HttpResponse(200, cart.toResponse().toJson())
     }
 }
+

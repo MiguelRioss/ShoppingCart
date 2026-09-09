@@ -1,7 +1,10 @@
+/**
+ * PostgreSQL-backed storage for customer accounts and profile details.
+ */
 package db.postgres
 
 import db.UserRepository
-import domain.User
+import domain.user.User
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.util.UUID

@@ -11,10 +11,10 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 import productdatabaseaccesslayer.ProductDataAccess
-import services.DefaultAuthService
-import services.DefaultShoppingCartService
-import services.DefaultUserService
-import services.LoginService
+import services.auth.AuthManager
+import services.cart.ShoppingCartManager
+import services.user.UserManager
+import services.auth.LoginService
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -46,8 +46,8 @@ class LoginHandlerTest {
     fun `registered user can login through http and be recognized from bearer token later`() {
         val userRepository = InMemoryUserRepository()
         val authTokenRepository = InMemoryAuthTokenRepository()
-        val userService = DefaultUserService(userRepository, clock = clock)
-        val authService = DefaultAuthService(userRepository, authTokenRepository, clock = clock)
+        val userService = UserManager(userRepository, clock = clock)
+        val authService = AuthManager(userRepository, authTokenRepository, clock = clock)
         val loginHandler = LoginHandler(LoginService(authService))
         val registeredUser = userService.registerUser("buyer@example.com", "password-123")
 
@@ -63,7 +63,7 @@ class LoginHandlerTest {
             ?.jsonPrimitive
             ?.content
         val laterClock = Clock.fixed(Instant.parse("2026-08-07T14:00:00Z"), ZoneOffset.UTC)
-        val laterAuthService = DefaultAuthService(userRepository, authTokenRepository, clock = laterClock)
+        val laterAuthService = AuthManager(userRepository, authTokenRepository, clock = laterClock)
 
         assertEquals(200, response.statusCode)
         assertNotNull(token)
@@ -75,9 +75,9 @@ class LoginHandlerTest {
         val userRepository = InMemoryUserRepository()
         val authTokenRepository = InMemoryAuthTokenRepository()
         val cartRepository = InMemoryShoppingCartRepository()
-        val userService = DefaultUserService(userRepository, clock = clock)
-        val authService = DefaultAuthService(userRepository, authTokenRepository, clock = clock)
-        val shoppingCartService = DefaultShoppingCartService(cartRepository, productDataAccess, clock)
+        val userService = UserManager(userRepository, clock = clock)
+        val authService = AuthManager(userRepository, authTokenRepository, clock = clock)
+        val shoppingCartService = ShoppingCartManager(cartRepository, productDataAccess, clock)
         userService.registerUser("buyer@example.com", "password-123")
         shoppingCartService.createCart(
             sessionId = "browser-session-123",
@@ -118,3 +118,4 @@ class LoginHandlerTest {
         assertEquals("9278", cartBody["products"]?.jsonArray?.get(0)?.jsonObject?.get("productId")?.jsonPrimitive?.content)
     }
 }
+

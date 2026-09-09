@@ -1,6 +1,6 @@
 package db.offline
 
-import domain.User
+import domain.user.User
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
@@ -42,3 +42,5 @@ class InMemoryUserRepositoryTest {
         assertNull(repository.getUserByEmail("missing@example.com"))
     }
 }
+
+

@@ -1,10 +1,13 @@
 @file:Suppress("SqlNoDataSourceInspection")
 
+/**
+ * PostgreSQL-backed storage for carts and their line items.
+ */
 package db.postgres
 
 import db.ShoppingCartRepository
-import domain.ShoppingCart
-import domain.ShoppingCartProduct
+import domain.cart.ShoppingCart
+import domain.cart.ShoppingCartProduct
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.util.UUID

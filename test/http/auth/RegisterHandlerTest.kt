@@ -7,9 +7,9 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
-import services.DefaultAuthService
-import services.DefaultUserService
-import services.PasswordHasher
+import services.auth.AuthManager
+import services.user.UserManager
+import services.auth.PasswordHasher
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -40,8 +40,8 @@ class RegisterHandlerTest {
     fun `registers a user`() {
         val userRepository = InMemoryUserRepository()
         val authTokenRepository = InMemoryAuthTokenRepository()
-        val authService = DefaultAuthService(userRepository, authTokenRepository, clock = clock)
-        val handler = RegisterHandler(DefaultUserService(userRepository, clock = clock), authService)
+        val authService = AuthManager(userRepository, authTokenRepository, clock = clock)
+        val handler = RegisterHandler(UserManager(userRepository, clock = clock), authService)
 
         val response = handler.handle(
             HttpRequest(
@@ -72,8 +72,8 @@ class RegisterHandlerTest {
     fun `returns bad request when email is missing`() {
         val userRepository = InMemoryUserRepository()
         val handler = RegisterHandler(
-            DefaultUserService(userRepository, clock = clock),
-            DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+            UserManager(userRepository, clock = clock),
+            AuthManager(userRepository, InMemoryAuthTokenRepository(), clock = clock)
         )
 
         val response = handler.handle(
@@ -106,8 +106,8 @@ class RegisterHandlerTest {
         requiredFields.forEach { missingField ->
             val userRepository = InMemoryUserRepository()
             val handler = RegisterHandler(
-                DefaultUserService(userRepository, clock = clock),
-                DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+                UserManager(userRepository, clock = clock),
+                AuthManager(userRepository, InMemoryAuthTokenRepository(), clock = clock)
             )
             val response = handler.handle(
                 HttpRequest(
@@ -149,3 +149,4 @@ class RegisterHandlerTest {
         return "{ ${fields.joinToString(", ")} }"
     }
 }
+

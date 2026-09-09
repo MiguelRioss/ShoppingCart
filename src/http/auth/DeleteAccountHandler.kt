@@ -4,14 +4,14 @@ import http.AuthenticatedRequest
 import http.HttpError
 import http.HttpResponse
 import http.RequestWithAuthHandler
-import services.AuthService
-import services.UserService
+import services.auth.AuthServiceInterface
+import services.user.UserService
 
 /**
  * Handles authenticated DELETE /account requests.
  */
 class DeleteAccountHandler(
-    authService: AuthService,
+    authService: AuthServiceInterface,
     private val userService: UserService
 ) : RequestWithAuthHandler(authService) {
     override fun handleAuthenticated(request: AuthenticatedRequest): HttpResponse {
@@ -22,3 +22,4 @@ class DeleteAccountHandler(
         return HttpResponse(statusCode = 200, body = "{}")
     }
 }
+

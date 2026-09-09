@@ -3,17 +3,17 @@ package http.cart
 import db.offline.InMemoryAuthTokenRepository
 import db.offline.InMemoryShoppingCartRepository
 import db.offline.InMemoryUserRepository
-import domain.ShoppingCart
-import domain.ShoppingCartProduct
+import domain.cart.ShoppingCart
+import domain.cart.ShoppingCartProduct
 import http.HttpRequest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
-import services.DefaultAuthService
-import services.DefaultShoppingCartService
-import services.DefaultUserService
+import services.auth.AuthManager
+import services.cart.ShoppingCartManager
+import services.user.UserManager
 import java.math.BigDecimal
 import java.time.Clock
 import java.time.Instant
@@ -30,9 +30,9 @@ class GetCartHandlerTest {
         val userRepository = InMemoryUserRepository()
         val authTokenRepository = InMemoryAuthTokenRepository()
         val cartRepository = InMemoryShoppingCartRepository()
-        val user = DefaultUserService(userRepository, clock = clock)
+        val user = UserManager(userRepository, clock = clock)
             .registerUser("buyer@example.com", "password-123")
-        val authService = DefaultAuthService(userRepository, authTokenRepository, clock = clock)
+        val authService = AuthManager(userRepository, authTokenRepository, clock = clock)
         val token = authService.login("buyer@example.com", "password-123")
         val cart = ShoppingCart(
             id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
@@ -48,7 +48,7 @@ class GetCartHandlerTest {
             )
         )
         cartRepository.saveCart(cart)
-        val handler = GetCartHandler(authService, DefaultShoppingCartService(cartRepository))
+        val handler = GetCartHandler(authService, ShoppingCartManager(cartRepository))
 
         val response = handler.handle(
             HttpRequest(
@@ -84,8 +84,8 @@ class GetCartHandlerTest {
         )
         cartRepository.saveCart(cart)
         val handler = GetCartHandler(
-            DefaultAuthService(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock),
-            DefaultShoppingCartService(cartRepository)
+            AuthManager(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock),
+            ShoppingCartManager(cartRepository)
         )
 
         val response = handler.handle(HttpRequest(method = "GET", path = "/cart?sessionId=browser-session-123", body = ""))
@@ -101,9 +101,9 @@ class GetCartHandlerTest {
         val userRepository = InMemoryUserRepository()
         val authTokenRepository = InMemoryAuthTokenRepository()
         val cartRepository = InMemoryShoppingCartRepository()
-        val user = DefaultUserService(userRepository, clock = clock)
+        val user = UserManager(userRepository, clock = clock)
             .registerUser("buyer@example.com", "password-123")
-        val authService = DefaultAuthService(userRepository, authTokenRepository, clock = clock)
+        val authService = AuthManager(userRepository, authTokenRepository, clock = clock)
         val token = authService.login("buyer@example.com", "password-123")
         val userCart = ShoppingCart(
             id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
@@ -117,7 +117,7 @@ class GetCartHandlerTest {
         )
         cartRepository.saveCart(userCart)
         cartRepository.saveCart(sessionCart)
-        val handler = GetCartHandler(authService, DefaultShoppingCartService(cartRepository))
+        val handler = GetCartHandler(authService, ShoppingCartManager(cartRepository))
 
         val response = handler.handle(
             HttpRequest(
@@ -136,10 +136,10 @@ class GetCartHandlerTest {
     @Test
     fun `returns not found when authenticated user has no cart`() {
         val userRepository = InMemoryUserRepository()
-        val authService = DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
-        DefaultUserService(userRepository, clock = clock).registerUser("buyer@example.com", "password-123")
+        val authService = AuthManager(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+        UserManager(userRepository, clock = clock).registerUser("buyer@example.com", "password-123")
         val token = authService.login("buyer@example.com", "password-123")
-        val handler = GetCartHandler(authService, DefaultShoppingCartService(InMemoryShoppingCartRepository()))
+        val handler = GetCartHandler(authService, ShoppingCartManager(InMemoryShoppingCartRepository()))
 
         val response = handler.handle(
             HttpRequest(
@@ -153,3 +153,5 @@ class GetCartHandlerTest {
         assertEquals(404, response.statusCode)
     }
 }
+
+

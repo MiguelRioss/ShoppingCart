@@ -1,6 +1,6 @@
 package db.offline
 
-import domain.AuthToken
+import domain.auth.AuthToken
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.time.LocalDateTime
@@ -33,3 +33,5 @@ class InMemoryAuthTokenRepositoryTest {
         assertNull(repository.getToken("missing-token"))
     }
 }
+
+

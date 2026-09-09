@@ -1,13 +1,13 @@
 package http.cart
 
 import db.offline.InMemoryShoppingCartRepository
-import domain.ShoppingCart
+import domain.cart.ShoppingCart
 import http.HttpRequest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
-import services.DefaultShoppingCartService
+import services.cart.ShoppingCartManager
 import java.time.Clock
 import java.time.Instant
 import java.time.LocalDateTime
@@ -22,7 +22,7 @@ class ClearCartHandlerTest {
     @Test
     fun `clears a cart by session id`() {
         val repository = InMemoryShoppingCartRepository()
-        val service = DefaultShoppingCartService(repository, clock = clock)
+        val service = ShoppingCartManager(repository, clock = clock)
         val cart = ShoppingCart(
             id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
             userId = UUID.fromString("00000000-0000-0000-0000-000000000002"),
@@ -50,7 +50,7 @@ class ClearCartHandlerTest {
     @Test
     fun `returns not found when session has no cart`() {
         val handler = ClearCartHandler(
-            DefaultShoppingCartService(InMemoryShoppingCartRepository(), clock = clock)
+            ShoppingCartManager(InMemoryShoppingCartRepository(), clock = clock)
         )
 
         val response = handler.handle(
@@ -69,7 +69,7 @@ class ClearCartHandlerTest {
     @Test
     fun `returns bad request when session id is missing`() {
         val handler = ClearCartHandler(
-            DefaultShoppingCartService(InMemoryShoppingCartRepository(), clock = clock)
+            ShoppingCartManager(InMemoryShoppingCartRepository(), clock = clock)
         )
 
         val response = handler.handle(HttpRequest(method = "POST", path = "/cart/clear", body = "{}"))
@@ -77,3 +77,5 @@ class ClearCartHandlerTest {
         assertEquals(400, response.statusCode)
     }
 }
+
+

@@ -1,3 +1,6 @@
+/**
+ * Chooses whether the application runs against local memory or external services.
+ */
 package config
 
 enum class AppMode {
@@ -12,3 +15,4 @@ enum class AppMode {
             }
     }
 }
+

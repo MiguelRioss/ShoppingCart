@@ -1,7 +1,7 @@
 package db.offline
 
 import db.ShoppingCartRepository
-import domain.ShoppingCart
+import domain.cart.ShoppingCart
 import java.util.UUID
 
 /**

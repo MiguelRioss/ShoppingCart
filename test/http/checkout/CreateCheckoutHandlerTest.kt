@@ -7,9 +7,9 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
 import productdatabaseaccesslayer.ProductDataAccess
-import services.DefaultCheckoutService
-import services.DefaultShoppingCartService
-import services.StripePaymentProvider
+import services.checkout.CheckoutManager
+import services.cart.ShoppingCartManager
+import services.payment.StripePaymentProvider
 import com.sun.net.httpserver.HttpServer
 import java.net.InetSocketAddress
 import java.net.URLDecoder
@@ -45,7 +45,7 @@ class CreateCheckoutHandlerTest {
 
     @Test
     fun `creates pending stripe checkout when api link is not configured yet`() {
-        val shoppingCartService = DefaultShoppingCartService(
+        val shoppingCartService = ShoppingCartManager(
             InMemoryShoppingCartRepository(),
             productDataAccess,
             clock
@@ -56,7 +56,7 @@ class CreateCheckoutHandlerTest {
             userId = null
         )
         val handler = CreateCheckoutHandler(
-            DefaultCheckoutService(
+            CheckoutManager(
                 shoppingCartService,
                 StripePaymentProvider(checkoutApiUrl = null)
             )
@@ -109,7 +109,7 @@ class CreateCheckoutHandlerTest {
         }
 
         try {
-            val shoppingCartService = DefaultShoppingCartService(
+            val shoppingCartService = ShoppingCartManager(
                 InMemoryShoppingCartRepository(),
                 productDataAccess,
                 clock
@@ -120,7 +120,7 @@ class CreateCheckoutHandlerTest {
                 userId = null
             )
             val handler = CreateCheckoutHandler(
-                DefaultCheckoutService(
+                CheckoutManager(
                     shoppingCartService,
                     StripePaymentProvider(
                         checkoutApiUrl = "http://localhost:${server.address.port}/v1/checkout/sessions",
@@ -139,7 +139,16 @@ class CreateCheckoutHandlerTest {
                           "sessionId": "session-123",
                           "successUrl": "https://example.com/success",
                           "cancelUrl": "https://example.com/cancel",
-                          "customerEmail": "buyer@example.com"
+                          "customerEmail": "buyer@example.com",
+                          "shippingCharge": {
+                            "serviceType": "STANDARD_DELIVERY",
+                            "serviceName": "Standard delivery",
+                            "amountTotal": "408.96",
+                            "currency": "eur",
+                            "estimatedDeliveryDate": "unavailable",
+                            "originalAmount": "408.96",
+                            "originalCurrency": "USD"
+                          }
                         }
                     """.trimIndent()
                 )
@@ -176,6 +185,15 @@ class CreateCheckoutHandlerTest {
                 form["line_items[0][price_data][product_data][images][0]"]
             )
             assertEquals("9278", form["line_items[0][price_data][product_data][metadata][product_id]"])
+            assertEquals("1", form["line_items[1][quantity]"])
+            assertEquals("eur", form["line_items[1][price_data][currency]"])
+            assertEquals("40896", form["line_items[1][price_data][unit_amount]"])
+            assertEquals(
+                "Standard delivery",
+                form["line_items[1][price_data][product_data][name]"]
+            )
+            assertNull(form["line_items[1][price_data][product_data][description]"])
+            assertEquals("0", form["line_items[1][price_data][product_data][metadata][product_id]"])
         } finally {
             server.stop(0)
         }
@@ -183,13 +201,13 @@ class CreateCheckoutHandlerTest {
 
     @Test
     fun `returns not found when session cart does not exist`() {
-        val shoppingCartService = DefaultShoppingCartService(
+        val shoppingCartService = ShoppingCartManager(
             InMemoryShoppingCartRepository(),
             productDataAccess,
             clock
         )
         val handler = CreateCheckoutHandler(
-            DefaultCheckoutService(
+            CheckoutManager(
                 shoppingCartService,
                 StripePaymentProvider(checkoutApiUrl = null)
             )
@@ -216,10 +234,52 @@ class CreateCheckoutHandlerTest {
     }
 
     @Test
+    fun `returns bad request when checkout square meters are not a multiple of half`() {
+        val shoppingCartService = ShoppingCartManager(
+            InMemoryShoppingCartRepository(),
+            productDataAccess,
+            clock
+        )
+        shoppingCartService.createCart(
+            sessionId = "session-123",
+            products = listOf(9278L to 1.25),
+            userId = null
+        )
+        val handler = CreateCheckoutHandler(
+            CheckoutManager(
+                shoppingCartService,
+                StripePaymentProvider(checkoutApiUrl = null)
+            )
+        )
+
+        val response = handler.handle(
+            HttpRequest(
+                method = "POST",
+                path = "/checkout",
+                body = """
+                    {
+                      "sessionId": "session-123",
+                      "successUrl": "https://example.com/success",
+                      "cancelUrl": "https://example.com/cancel"
+                    }
+                """.trimIndent()
+            )
+        )
+        val body = Json.parseToJsonElement(response.body).jsonObject
+
+        assertEquals(400, response.statusCode)
+        assertEquals("Invalid product quantity", body["message"]?.jsonPrimitive?.content)
+        assertEquals(
+            "Product 9278 has 1.25 m2, but checkout quantities must be multiples of 0.5 m2",
+            body["description"]?.jsonPrimitive?.content
+        )
+    }
+
+    @Test
     fun `returns bad request when required fields are missing`() {
         val handler = CreateCheckoutHandler(
-            DefaultCheckoutService(
-                DefaultShoppingCartService(InMemoryShoppingCartRepository(), productDataAccess, clock),
+            CheckoutManager(
+                ShoppingCartManager(InMemoryShoppingCartRepository(), productDataAccess, clock),
                 StripePaymentProvider(checkoutApiUrl = null)
             )
         )
@@ -245,4 +305,7 @@ class CreateCheckoutHandlerTest {
         private fun decode(value: String): String =
             URLDecoder.decode(value, StandardCharsets.UTF_8)
     }
+
 }
+
+

@@ -1,16 +1,17 @@
 package http.auth
 
-import dto.AuthStatusResponse
+import dto.auth.AuthStatusResponse
 import http.AuthenticatedRequest
 import http.HttpResponse
 import http.RequestWithAuthHandler
-import services.AuthService
+import http.toJson
+import services.auth.AuthServiceInterface
 
 /**
  * Handles authenticated GET /auth/status requests.
  */
 class AuthStatusHandler(
-    authService: AuthService
+    authService: AuthServiceInterface
 ) : RequestWithAuthHandler(authService) {
     override fun handleAuthenticated(request: AuthenticatedRequest): HttpResponse =
         HttpResponse(
@@ -22,3 +23,4 @@ class AuthStatusHandler(
             ).toJson()
         )
 }
+

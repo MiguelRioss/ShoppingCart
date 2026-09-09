@@ -1,17 +1,22 @@
+/**
+ * HTTP handler that returns whether the current request belongs to a logged-in user.
+ */
 package http.client
 
-import dto.ClientInfoResponse
+import dto.user.toResponse
 import http.AuthenticatedRequest
 import http.HttpResponse
 import http.RequestWithAuthHandler
-import services.AuthService
+import http.toJson
+import services.auth.AuthServiceInterface
 
 class GetClientInfoHandler(
-    authService: AuthService
+    authService: AuthServiceInterface
 ) : RequestWithAuthHandler(authService) {
     override fun handleAuthenticated(request: AuthenticatedRequest): HttpResponse =
         HttpResponse(
             statusCode = 200,
-            body = ClientInfoResponse(request.user).toJson()
+            body = request.toUserInfoRequest().toResponse().toJson()
         )
 }
+

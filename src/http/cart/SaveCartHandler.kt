@@ -1,23 +1,26 @@
 package http.cart
 
-import dto.SaveShoppingCartRequest
-import dto.ShoppingCartResponse
+import dto.cart.SaveShoppingCartRequest
+import dto.cart.toEntity
+import dto.cart.toResponse
 import http.AuthenticatedRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
+import http.parseSaveShoppingCartRequest
+import http.toJson
 import kotlinx.serialization.json.Json
-import services.AuthService
-import services.ServiceException
-import services.ShoppingCartService
+import services.auth.AuthServiceInterface
+import services.common.ServiceException
+import services.cart.ShoppingCartService
 
 /**
  * Handles POST /cart requests.
  */
 class SaveCartHandler(
     private val shoppingCartService: ShoppingCartService,
-    private val authService: AuthService? = null,
+    private val authService: AuthServiceInterface? = null,
     private val json: Json = Json
 ) : RequestHandler {
     /**
@@ -25,12 +28,12 @@ class SaveCartHandler(
      */
     override fun handle(request: HttpRequest): HttpResponse {
         val saveCartRequest = runCatching {
-            SaveShoppingCartRequest.fromJson(request.body, json)
+            parseSaveShoppingCartRequest(request.body, json)
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse()
         }
 
-        if (!saveCartRequest.isValid) {
+        if (!saveCartRequest.isValid()) {
             return HttpError.InvalidJsonRequestBody.toResponse("sessionId and at least one product with quantityM2 are required")
         }
 
@@ -39,9 +42,7 @@ class SaveCartHandler(
 
             shoppingCartService.createCart(
                 sessionId = requireNotNull(saveCartRequest.sessionId),
-                products = saveCartRequest.products.map {
-                    requireNotNull(it.productId) to requireNotNull(it.quantityM2)
-                },
+                products = saveCartRequest.products.map { it.toEntity() },
                 userId = authenticatedRequest?.user?.id
             )
         }.getOrElse {
@@ -52,6 +53,12 @@ class SaveCartHandler(
             return HttpError.InvalidJsonRequestBody.toResponse(it.message ?: "Invalid cart products")
         }
 
-        return HttpResponse(201, ShoppingCartResponse(cart).toJson())
+        return HttpResponse(201, cart.toResponse().toJson())
     }
+
+    private fun SaveShoppingCartRequest.isValid(): Boolean =
+        !sessionId.isNullOrBlank() &&
+            products.isNotEmpty() &&
+            products.all { it.productId != null && it.quantityM2 != null && it.quantityM2 > 0.0 }
 }
+

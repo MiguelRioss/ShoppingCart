@@ -1,7 +1,7 @@
 package db.offline
 
 import db.AuthTokenRepository
-import domain.AuthToken
+import domain.auth.AuthToken
 
 /**
  * In-memory token repository used for local development and tests.

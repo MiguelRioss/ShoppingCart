@@ -1,8 +1,11 @@
+/**
+ * Shared HTTP exception type used by handlers to return intentional client-facing errors.
+ */
 package http
 
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import services.ServiceException
+import services.common.ServiceException
 
 class HttpErrorResponse(
     val status: Int,
@@ -26,6 +29,7 @@ object HttpStatusCodes {
     const val Unauthorized = 401
     const val NotFound = 404
     const val Conflict = 409
+    const val BadGateway = 502
     const val InternalServerError = 500
 }
 
@@ -54,6 +58,10 @@ object HttpError {
         status = HttpStatusCodes.InternalServerError,
         defaultMessage = "Internal error. Contact your teacher!"
     )
+    val UpstreamServiceError = HttpErrorResponse(
+        status = HttpStatusCodes.BadGateway,
+        defaultMessage = "External service request failed"
+    )
 
     fun from(exception: ServiceException): HttpResponse =
         when (exception.errorCode.code) {
@@ -65,7 +73,11 @@ object HttpError {
             1002,
             1003,
             1004,
-            2001 -> HttpErrorResponse(
+            2001,
+            2003,
+            2004,
+            3000,
+            3001 -> HttpErrorResponse(
                 status = HttpStatusCodes.BadRequest,
                 defaultMessage = exception.message
             )
@@ -80,3 +92,18 @@ object HttpError {
             else -> InternalServerError
         }.toResponse(description = exception.description)
 }
+
+fun Throwable.serviceExceptionOrNull(): ServiceException? {
+    var current: Throwable? = this
+
+    while (current != null) {
+        if (current is ServiceException) {
+            return current
+        }
+
+        current = current.cause
+    }
+
+    return null
+}
+

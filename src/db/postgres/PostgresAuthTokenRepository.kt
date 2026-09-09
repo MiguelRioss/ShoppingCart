@@ -1,7 +1,10 @@
+/**
+ * PostgreSQL-backed storage for bearer auth tokens.
+ */
 package db.postgres
 
 import db.AuthTokenRepository
-import domain.AuthToken
+import domain.auth.AuthToken
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.util.UUID

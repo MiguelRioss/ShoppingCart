@@ -1,10 +1,10 @@
 package db.postgres
 
 import config.AppMode
-import domain.AuthToken
-import domain.ShoppingCart
-import domain.ShoppingCartProduct
-import domain.User
+import domain.auth.AuthToken
+import domain.cart.ShoppingCart
+import domain.cart.ShoppingCartProduct
+import domain.user.User
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeEach
@@ -118,3 +118,5 @@ class PostgresRepositoryIntegrationTest {
         }
     }
 }
+
+

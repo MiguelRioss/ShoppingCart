@@ -27,3 +27,4 @@ class GetProductByIdHandler(
         return HttpResponse(200, product)
     }
 }
+

@@ -14,7 +14,10 @@ dependencies {
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("org.postgresql:postgresql:42.7.4")
     testImplementation(kotlin("test"))
+    testImplementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
+    testImplementation("org.apache.poi:poi:5.4.1")
+    testImplementation("org.apache.poi:poi-ooxml:5.4.1")
 }
 
 kotlin {
@@ -34,14 +37,17 @@ application {
 sourceSets {
     main {
         kotlin.srcDir("src")
+        kotlin.srcDir("fedex/src")
     }
     test {
         kotlin.srcDir("test")
+        kotlin.srcDir("fedex/test")
     }
 }
 
 tasks.test {
     useJUnitPlatform()
+    outputs.upToDateWhen { false }
     testLogging {
         showStandardStreams = true
     }

@@ -1,12 +1,13 @@
 package http.auth
 
-import dto.LoginRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
+import http.parseLoginRequest
+import http.toJson
 import kotlinx.serialization.json.Json
-import services.LoginService
+import services.auth.LoginServiceInterface
 
 /**
  * Handles POST /login requests.
@@ -15,7 +16,7 @@ import services.LoginService
  * @param json JSON parser used for request-body parsing
  */
 class LoginHandler(
-    private val loginService: LoginService,
+    private val loginService: LoginServiceInterface,
     private val json: Json = Json
 ) : RequestHandler {
     /**
@@ -26,7 +27,7 @@ class LoginHandler(
      */
     override fun handle(request: HttpRequest): HttpResponse {
         val loginRequest = runCatching {
-            LoginRequest.fromJson(request.body, json)
+            parseLoginRequest(request.body, json)
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse()
         }
@@ -50,3 +51,4 @@ class LoginHandler(
         return HttpResponse(200, response.toJson())
     }
 }
+

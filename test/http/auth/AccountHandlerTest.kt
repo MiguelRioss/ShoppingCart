@@ -7,8 +7,8 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import org.junit.jupiter.api.Test
-import services.DefaultAuthService
-import services.DefaultUserService
+import services.auth.AuthManager
+import services.user.UserManager
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -21,9 +21,9 @@ class AccountHandlerTest {
     @Test
     fun `edits authenticated account`() {
         val userRepository = InMemoryUserRepository()
-        val userService = DefaultUserService(userRepository, clock = clock)
+        val userService = UserManager(userRepository, clock = clock)
         val user = userService.registerUser("buyer@example.com", "password-123")
-        val authService = DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+        val authService = AuthManager(userRepository, InMemoryAuthTokenRepository(), clock = clock)
         val token = authService.login("buyer@example.com", "password-123")
         val handler = EditAccountHandler(authService, userService)
 
@@ -53,7 +53,7 @@ class AccountHandlerTest {
         val body = Json.parseToJsonElement(response.body).jsonObject
 
         assertEquals(200, response.statusCode)
-        assertEquals(user.id.toString(), body["userId"]?.jsonPrimitive?.content)
+        assertEquals(user.id.toString(), body["id"]?.jsonPrimitive?.content)
         assertEquals("Jane2", body["firstName"]?.jsonPrimitive?.content)
         assertEquals("Jane2", userRepository.getUser(user.id)?.firstName)
     }
@@ -61,9 +61,9 @@ class AccountHandlerTest {
     @Test
     fun `deletes authenticated account`() {
         val userRepository = InMemoryUserRepository()
-        val userService = DefaultUserService(userRepository, clock = clock)
+        val userService = UserManager(userRepository, clock = clock)
         val user = userService.registerUser("buyer@example.com", "password-123")
-        val authService = DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+        val authService = AuthManager(userRepository, InMemoryAuthTokenRepository(), clock = clock)
         val token = authService.login("buyer@example.com", "password-123")
         val handler = DeleteAccountHandler(authService, userService)
 
@@ -81,3 +81,4 @@ class AccountHandlerTest {
         assertNull(userRepository.getUser(user.id))
     }
 }
+

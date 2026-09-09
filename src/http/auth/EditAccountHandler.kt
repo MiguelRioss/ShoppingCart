@@ -1,26 +1,29 @@
 package http.auth
 
-import dto.ClientInfoResponse
-import dto.UpdateAccountRequest
+import dto.user.UserInfoRequest
+import dto.user.toResponse
+import dto.auth.UpdateAccountRequest
 import http.AuthenticatedRequest
 import http.HttpError
 import http.HttpResponse
 import http.RequestWithAuthHandler
+import http.parseUpdateAccountRequest
+import http.toJson
 import kotlinx.serialization.json.Json
-import services.AuthService
-import services.UserService
+import services.auth.AuthServiceInterface
+import services.user.UserService
 
 /**
  * Handles authenticated PUT /account requests.
  */
 class EditAccountHandler(
-    authService: AuthService,
+    authService: AuthServiceInterface,
     private val userService: UserService,
     private val json: Json = Json
 ) : RequestWithAuthHandler(authService) {
     override fun handleAuthenticated(request: AuthenticatedRequest): HttpResponse {
         val updateRequest = runCatching {
-            UpdateAccountRequest.fromJson(request.request.body, json)
+            parseUpdateAccountRequest(request.request.body, json)
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse()
         }
@@ -37,7 +40,8 @@ class EditAccountHandler(
 
         return HttpResponse(
             statusCode = 200,
-            body = ClientInfoResponse(updatedUser).toJson()
+            body = UserInfoRequest(updatedUser).toResponse().toJson()
         )
     }
 }
+

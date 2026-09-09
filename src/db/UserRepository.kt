@@ -1,6 +1,6 @@
 package db
 
-import domain.User
+import domain.user.User
 import java.util.UUID
 
 /**

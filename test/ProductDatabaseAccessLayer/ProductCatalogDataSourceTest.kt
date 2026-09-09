@@ -229,3 +229,4 @@ class ProductCatalogDataSourceTest {
         override fun version(): HttpClient.Version = HttpClient.Version.HTTP_2
     }
 }
+

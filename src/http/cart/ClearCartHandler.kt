@@ -1,14 +1,15 @@
 package http.cart
 
-import dto.ClearShoppingCartRequest
+import dto.cart.ClearShoppingCartRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
+import http.parseClearShoppingCartRequest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
-import services.ShoppingCartService
+import services.cart.ShoppingCartService
 
 /**
  * Handles POST /cart/clear requests.
@@ -19,12 +20,12 @@ class ClearCartHandler(
 ) : RequestHandler {
     override fun handle(request: HttpRequest): HttpResponse {
         val clearCartRequest = runCatching {
-            ClearShoppingCartRequest.fromJson(request.body, json)
+            parseClearShoppingCartRequest(request.body, json)
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse()
         }
 
-        if (!clearCartRequest.isValid) {
+        if (clearCartRequest.sessionId.isNullOrBlank()) {
             return HttpError.InvalidJsonRequestBody.toResponse("sessionId is required")
         }
 
@@ -42,3 +43,4 @@ class ClearCartHandler(
         )
     }
 }
+

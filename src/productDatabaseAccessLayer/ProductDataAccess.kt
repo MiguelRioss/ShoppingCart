@@ -13,6 +13,14 @@ interface ProductDataAccess {
     fun getProductById(productId: Long): String?
 
     /**
+     * Finds a detailed product record by external catalog id.
+     *
+     * The detailed endpoint may include heavier product metadata such as shipping,
+     * customs, and packing rows that is intentionally omitted from list endpoints.
+     */
+    fun getProductDetailsById(productId: Long): String? = getProductById(productId)
+
+    /**
      * Checks whether a product id exists in the catalog.
      *
      * @param productId external catalog product id
@@ -20,3 +28,4 @@ interface ProductDataAccess {
      */
     fun productExists(productId: Long): Boolean = getProductById(productId) != null
 }
+

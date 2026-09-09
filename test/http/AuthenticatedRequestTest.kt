@@ -3,8 +3,8 @@ package http
 import db.offline.InMemoryAuthTokenRepository
 import db.offline.InMemoryUserRepository
 import org.junit.jupiter.api.Test
-import services.DefaultAuthService
-import services.DefaultUserService
+import services.auth.AuthManager
+import services.user.UserManager
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -17,9 +17,9 @@ class AuthenticatedRequestTest {
     @Test
     fun `creates authenticated request from authorization header`() {
         val userRepository = InMemoryUserRepository()
-        val user = DefaultUserService(userRepository, clock = clock)
+        val user = UserManager(userRepository, clock = clock)
             .registerUser("buyer@example.com", "password-123")
-        val authService = DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+        val authService = AuthManager(userRepository, InMemoryAuthTokenRepository(), clock = clock)
         val authToken = authService.login("buyer@example.com", "password-123")
         val request = HttpRequest(
             method = "GET",
@@ -36,7 +36,7 @@ class AuthenticatedRequestTest {
 
     @Test
     fun `returns null when authorization header is missing`() {
-        val authService = DefaultAuthService(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock)
+        val authService = AuthManager(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock)
         val request = HttpRequest(method = "GET", path = "/cart", body = "")
 
         assertNull(AuthenticatedRequest.from(request, authService))
@@ -44,7 +44,7 @@ class AuthenticatedRequestTest {
 
     @Test
     fun `returns null when bearer token is invalid`() {
-        val authService = DefaultAuthService(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock)
+        val authService = AuthManager(InMemoryUserRepository(), InMemoryAuthTokenRepository(), clock = clock)
         val request = HttpRequest(
             method = "GET",
             path = "/cart",
@@ -58,9 +58,9 @@ class AuthenticatedRequestTest {
     @Test
     fun `finds authorization header case insensitively`() {
         val userRepository = InMemoryUserRepository()
-        val user = DefaultUserService(userRepository, clock = clock)
+        val user = UserManager(userRepository, clock = clock)
             .registerUser("buyer@example.com", "password-123")
-        val authService = DefaultAuthService(userRepository, InMemoryAuthTokenRepository(), clock = clock)
+        val authService = AuthManager(userRepository, InMemoryAuthTokenRepository(), clock = clock)
         val authToken = authService.login("buyer@example.com", "password-123")
         val request = HttpRequest(
             method = "GET",
@@ -74,3 +74,4 @@ class AuthenticatedRequestTest {
         assertEquals(user, authenticatedRequest?.user)
     }
 }
+

@@ -132,6 +132,59 @@
             grid-template-columns: repeat(2, minmax(0, 1fr));
         }
 
+        .auth-tabs {
+            background: #eef3f0;
+            border: 1px solid #d5ddd8;
+            border-radius: 8px;
+            display: grid;
+            gap: 4px;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            margin-bottom: 16px;
+            padding: 4px;
+        }
+
+        .auth-tab {
+            background: transparent;
+            border-radius: 6px;
+            color: #3d4845;
+            font-weight: 800;
+            min-height: 38px;
+        }
+
+        .auth-tab.is-active {
+            background: #ffffff;
+            box-shadow: 0 5px 16px rgba(21, 42, 37, 0.08);
+            color: #18211f;
+        }
+
+        .auth-view {
+            display: grid;
+            gap: 16px;
+        }
+
+        .account-summary {
+            background: #f4f7f4;
+            border: 1px solid #dce3dd;
+            border-radius: 8px;
+            display: grid;
+            gap: 8px;
+            margin-bottom: 16px;
+            padding: 14px;
+        }
+
+        .detail-row {
+            display: grid;
+            gap: 8px;
+            grid-template-columns: 120px minmax(0, 1fr);
+        }
+
+        .detail-row span:first-child {
+            color: #68736f;
+            font-size: 12px;
+            font-weight: 800;
+            text-transform: uppercase;
+        }
+
         label {
             color: #3d4845;
             display: grid;
@@ -168,6 +221,10 @@
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 16px;
+        }
+
+        .is-hidden {
+            display: none !important;
         }
 
         .btn {
@@ -323,6 +380,8 @@
             }
 
             .auth-grid,
+            .auth-tabs,
+            .detail-row,
             .cart-row {
                 grid-template-columns: 1fr;
             }
@@ -353,64 +412,141 @@
         <article class="panel">
             <div class="panel-header">
                 <h2>Account Session</h2>
-                <button id="logoutButton" class="btn danger" type="button">Logout</button>
+                <button id="logoutButton" class="btn danger is-hidden" type="button">Logout</button>
             </div>
             <div class="panel-body">
-                <div class="auth-grid">
+                <div class="auth-grid" style="margin-bottom:16px">
                     <label class="wide">
                         API URL
                         <input id="apiUrl" value="http://localhost:8080">
                     </label>
-                    <label>
+                </div>
+
+                <div id="authGuestView" class="auth-view">
+                    <div class="auth-tabs">
+                        <button id="showLoginButton" class="auth-tab is-active" type="button">Login</button>
+                        <button id="showRegisterButton" class="auth-tab" type="button">Register</button>
+                    </div>
+
+                    <form id="loginView" class="auth-grid">
+                        <label class="wide">
+                            Email
+                            <input id="loginEmail" type="email" value="buyer@example.com" autocomplete="email">
+                        </label>
+                        <label class="wide">
+                            Password
+                            <input id="loginPassword" type="password" value="password-123" autocomplete="current-password">
+                        </label>
+                        <div class="actions wide">
+                            <button id="loginButton" class="btn" type="submit">Login</button>
+                        </div>
+                    </form>
+
+                    <form id="registerView" class="auth-grid is-hidden">
+                        <label>
+                            First name
+                            <input id="registerFirstName" value="Jane" autocomplete="given-name">
+                        </label>
+                        <label>
+                            Last name
+                            <input id="registerLastName" value="Smith" autocomplete="family-name">
+                        </label>
+                        <label class="wide">
+                            Email
+                            <input id="registerEmail" type="email" value="buyer@example.com" autocomplete="email">
+                        </label>
+                        <label class="wide">
+                            Password
+                            <input id="registerPassword" type="password" value="password-123" autocomplete="new-password">
+                        </label>
+                        <label>
+                            Phone
+                            <input id="registerPhone" value="+351 912 345 678" autocomplete="tel">
+                        </label>
+                        <label>
+                            Customer type
+                            <select id="registerCustomerType">
+                                <option value="private_customer">Private customer</option>
+                                <option value="business">Business</option>
+                            </select>
+                        </label>
+                        <label class="wide">
+                            Address line 1
+                            <input id="registerAddressLine1" value="Rua Augusta 100" autocomplete="address-line1">
+                        </label>
+                        <label>
+                            Town or city
+                            <input id="registerTownOrCity" value="Lisbon" autocomplete="address-level2">
+                        </label>
+                        <label>
+                            Postcode
+                            <input id="registerPostcode" value="1100-048" autocomplete="postal-code">
+                        </label>
+                        <label class="wide">
+                            Country
+                            <input id="registerCountry" value="Portugal" autocomplete="country-name">
+                        </label>
+                        <div class="actions wide">
+                            <button id="registerButton" class="btn" type="submit">Create account</button>
+                        </div>
+                    </form>
+                </div>
+
+                <div id="accountView" class="auth-view is-hidden">
+                    <div id="accountSummary" class="account-summary"></div>
+
+                    <div class="auth-grid">
+                        <label>
                         First name
-                        <input id="firstName" value="Jane">
+                        <input id="accountFirstName" value="Jane">
                     </label>
                     <label>
                         Last name
-                        <input id="lastName" value="Smith">
+                        <input id="accountLastName" value="Smith">
                     </label>
                     <label class="wide">
                         Email
-                        <input id="email" type="email" value="buyer@example.com">
+                        <input id="accountEmail" type="email" value="buyer@example.com">
                     </label>
                     <label class="wide">
                         Password
-                        <input id="password" type="password" value="password-123">
+                        <input id="accountPassword" type="password" value="" placeholder="Password is not shown after login">
                     </label>
                     <label>
                         Phone
-                        <input id="phone" value="+351 912 345 678">
+                        <input id="accountPhone" value="+351 912 345 678">
                     </label>
                     <label>
                         Customer type
-                        <select id="customerType">
+                        <select id="accountCustomerType">
                             <option value="private_customer">Private customer</option>
                             <option value="business">Business</option>
                         </select>
                     </label>
                     <label class="wide">
                         Address line 1
-                        <input id="addressLine1" value="Street and house number">
+                        <input id="accountAddressLine1" value="Rua Augusta 100">
                     </label>
                     <label>
                         Town or city
-                        <input id="townOrCity" value="Lisbon">
+                        <input id="accountTownOrCity" value="Lisbon">
                     </label>
                     <label>
                         Postcode
-                        <input id="postcode" value="1000-001">
+                        <input id="accountPostcode" value="1100-048">
                     </label>
                     <label class="wide">
                         Country
-                        <input id="country" value="Portugal">
+                        <input id="accountCountry" value="Portugal">
                     </label>
-                </div>
 
-                <div class="actions">
-                    <button id="registerButton" class="btn secondary" type="button">Register</button>
-                    <button id="loginButton" class="btn" type="button">Login</button>
-                    <button id="statusButton" class="btn secondary" type="button">Check auth</button>
-                    <button id="clientButton" class="btn secondary" type="button">Client info</button>
+                        <div class="actions wide">
+                            <button id="clientButton" class="btn secondary" type="button">Refresh details</button>
+                            <button id="statusButton" class="btn secondary" type="button">Check auth</button>
+                            <button id="editAccountButton" class="btn" type="button">Save details</button>
+                            <button id="deleteAccountButton" class="btn danger" type="button">Delete account</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="mini-stat">
@@ -479,7 +615,7 @@
     const userStorageKey = "shopping_cart_user";
     const sessionStorageKey = "shopping_cart_session_id";
 
-    let products = [
+    const fallbackProducts = [
         {
             id: 9278,
             name: "Stone floor sample",
@@ -488,22 +624,45 @@
         }
     ];
 
+    let products = fallbackProducts;
+
     const state = {
-        cart: []
+        cart: [],
+        shippingQuotes: []
     };
 
     const elements = {
         apiUrl: document.querySelector("#apiUrl"),
-        firstName: document.querySelector("#firstName"),
-        lastName: document.querySelector("#lastName"),
-        email: document.querySelector("#email"),
-        password: document.querySelector("#password"),
-        phone: document.querySelector("#phone"),
-        customerType: document.querySelector("#customerType"),
-        addressLine1: document.querySelector("#addressLine1"),
-        townOrCity: document.querySelector("#townOrCity"),
-        postcode: document.querySelector("#postcode"),
-        country: document.querySelector("#country"),
+        loginEmail: document.querySelector("#loginEmail"),
+        loginPassword: document.querySelector("#loginPassword"),
+        registerFirstName: document.querySelector("#registerFirstName"),
+        registerLastName: document.querySelector("#registerLastName"),
+        registerEmail: document.querySelector("#registerEmail"),
+        registerPassword: document.querySelector("#registerPassword"),
+        registerPhone: document.querySelector("#registerPhone"),
+        registerCustomerType: document.querySelector("#registerCustomerType"),
+        registerAddressLine1: document.querySelector("#registerAddressLine1"),
+        registerTownOrCity: document.querySelector("#registerTownOrCity"),
+        registerPostcode: document.querySelector("#registerPostcode"),
+        registerCountry: document.querySelector("#registerCountry"),
+        accountFirstName: document.querySelector("#accountFirstName"),
+        accountLastName: document.querySelector("#accountLastName"),
+        accountEmail: document.querySelector("#accountEmail"),
+        accountPassword: document.querySelector("#accountPassword"),
+        accountPhone: document.querySelector("#accountPhone"),
+        accountCustomerType: document.querySelector("#accountCustomerType"),
+        accountAddressLine1: document.querySelector("#accountAddressLine1"),
+        accountTownOrCity: document.querySelector("#accountTownOrCity"),
+        accountPostcode: document.querySelector("#accountPostcode"),
+        accountCountry: document.querySelector("#accountCountry"),
+        authGuestView: document.querySelector("#authGuestView"),
+        loginView: document.querySelector("#loginView"),
+        registerView: document.querySelector("#registerView"),
+        accountView: document.querySelector("#accountView"),
+        accountSummary: document.querySelector("#accountSummary"),
+        showLoginButton: document.querySelector("#showLoginButton"),
+        showRegisterButton: document.querySelector("#showRegisterButton"),
+        logoutButton: document.querySelector("#logoutButton"),
         sessionDot: document.querySelector("#sessionDot"),
         sessionTitle: document.querySelector("#sessionTitle"),
         sessionDetail: document.querySelector("#sessionDetail"),
@@ -519,11 +678,21 @@
         lastAction: document.querySelector("#lastAction")
     };
 
-    document.querySelector("#registerButton").addEventListener("click", register);
-    document.querySelector("#loginButton").addEventListener("click", login);
+    elements.showLoginButton.addEventListener("click", () => showAuthForm("login"));
+    elements.showRegisterButton.addEventListener("click", () => showAuthForm("register"));
+    elements.loginView.addEventListener("submit", (event) => {
+        event.preventDefault();
+        login();
+    });
+    elements.registerView.addEventListener("submit", (event) => {
+        event.preventDefault();
+        register();
+    });
     document.querySelector("#logoutButton").addEventListener("click", logout);
     document.querySelector("#statusButton").addEventListener("click", checkAuth);
     document.querySelector("#clientButton").addEventListener("click", getClientInfo);
+    document.querySelector("#editAccountButton").addEventListener("click", editAccount);
+    document.querySelector("#deleteAccountButton").addEventListener("click", deleteAccount);
     document.querySelector("#saveCartButton").addEventListener("click", saveCart);
     document.querySelector("#checkoutButton").addEventListener("click", createCheckout);
     document.querySelector("#getCartButton").addEventListener("click", getCart);
@@ -539,24 +708,27 @@
         const result = await apiFetch("/register", {
             method: "POST",
             body: {
-                firstName: elements.firstName.value,
-                lastName: elements.lastName.value,
-                email: elements.email.value,
-                password: elements.password.value,
-                phone: elements.phone.value,
-                customerType: elements.customerType.value,
+                firstName: elements.registerFirstName.value,
+                lastName: elements.registerLastName.value,
+                email: elements.registerEmail.value,
+                password: elements.registerPassword.value,
+                phone: elements.registerPhone.value,
+                customerType: elements.registerCustomerType.value,
                 sessionId: getSessionId(),
                 deliveryAddress: {
-                    addressLine1: elements.addressLine1.value,
-                    townOrCity: elements.townOrCity.value,
-                    postcode: elements.postcode.value,
-                    country: elements.country.value
+                    addressLine1: elements.registerAddressLine1.value,
+                    townOrCity: elements.registerTownOrCity.value,
+                    postcode: elements.registerPostcode.value,
+                    country: elements.registerCountry.value
                 },
                 sameAsDeliveryAddress: true
             }
         });
 
-        persistLogin(result);
+        persistLogin(result, registeredUserFromForm());
+        if (result.response.ok) {
+            await loadAccountDetails();
+        }
         writeOutput(result, "Register");
     }
 
@@ -564,13 +736,18 @@
         const result = await apiFetch("/login", {
             method: "POST",
             body: {
-                email: elements.email.value,
-                password: elements.password.value,
+                email: elements.loginEmail.value,
+                password: elements.loginPassword.value,
                 sessionId: getSessionId()
             }
         });
 
-        persistLogin(result);
+        persistLogin(result, {
+            email: elements.loginEmail.value
+        });
+        if (result.response.ok) {
+            await loadAccountDetails();
+        }
         writeOutput(result, "Login");
     }
 
@@ -587,12 +764,59 @@
     }
 
     async function getClientInfo() {
+        const result = await loadAccountDetails();
+
+        writeOutput(result, "Client info");
+    }
+
+    async function loadAccountDetails() {
         const result = await apiFetch("/client/info", {
             method: "GET",
             auth: true
         });
 
-        writeOutput(result, "Client info");
+        if (result.response.ok && result.body) {
+            fillAccountForm(result.body);
+            rememberUser(result.body);
+        }
+
+        return result;
+    }
+
+    async function editAccount() {
+        const result = await apiFetch("/account", {
+            method: "PUT",
+            auth: true,
+            body: accountPayload({ includePassword: false })
+        });
+
+        if (result.response.ok && result.body) {
+            fillAccountForm(result.body);
+            rememberUser(result.body);
+        }
+
+        writeOutput(result, "Edit account");
+    }
+
+    async function deleteAccount() {
+        const confirmed = window.confirm("Delete this account? This removes the logged-in user from the backend.");
+        if (!confirmed) {
+            writeOutput("Delete account cancelled.", "Delete account");
+            return;
+        }
+
+        const result = await apiFetch("/account", {
+            method: "DELETE",
+            auth: true
+        });
+
+        if (result.response.ok) {
+            localStorage.removeItem(tokenStorageKey);
+            localStorage.removeItem(userStorageKey);
+            renderSession();
+        }
+
+        writeOutput(result, "Delete account");
     }
 
     async function loadProducts() {
@@ -600,22 +824,34 @@
             method: "GET"
         });
 
-        if (result.response.ok && Array.isArray(result.body)) {
-            const purchasableProducts = result.body.filter(isPurchasableProduct);
-            products = result.body
-                .filter(isPurchasableProduct)
+        const productResults = Array.isArray(result.body)
+            ? result.body
+            : Array.isArray(result.body && result.body.products)
+                ? result.body.products
+                : [];
+
+        if (result.response.ok && productResults.length > 0) {
+            const purchasableProducts = productResults.filter(isPurchasableProduct);
+            products = purchasableProducts
                 .map(normalizeProduct)
                 .slice(0, 12);
-            elements.productsStatus.textContent = `${products.length} of ${purchasableProducts.length} purchasable products loaded`;
+            const loadedRealProducts = products.length > 0;
+            if (!loadedRealProducts) {
+                products = fallbackProducts;
+            }
+            elements.productsStatus.textContent = loadedRealProducts
+                ? `${products.length} of ${purchasableProducts.length} purchasable products loaded`
+                : "Using fallback product because no purchasable catalog products were found";
             writeOutput({
                 loadedProducts: products.map((product) => ({
                     id: product.id,
                     name: product.name
                 })),
-                skippedProducts: result.body.length - purchasableProducts.length
+                skippedProducts: productResults.length - purchasableProducts.length
             }, "Load products");
         } else {
-            elements.productsStatus.textContent = "Using fallback product";
+            products = fallbackProducts;
+            elements.productsStatus.textContent = "Using fallback product because real catalog could not be loaded";
             writeOutput(result, "Load products failed");
         }
 
@@ -628,20 +864,18 @@
             return;
         }
 
-        const result = await apiFetch("/cart", {
-            method: "POST",
-            auth: true,
-            body: {
-                sessionId: getSessionId(),
-                products: state.cart.map((item) => ({
-                    productId: item.productId,
-                    quantityM2: Number(item.quantityM2)
-                }))
-            }
-        });
+        const result = await saveDraftCart();
 
         writeOutput(result, "Save cart");
         writeCartOutput(result);
+    }
+
+    async function saveDraftCart() {
+        return apiFetch("/cart", {
+            method: "POST",
+            auth: true,
+            body: cartPayload()
+        });
     }
 
     async function getCart() {
@@ -660,24 +894,133 @@
     }
 
     async function createCheckout() {
+        if (state.cart.length > 0) {
+            const saveResult = await saveDraftCart();
+            writeCartOutput(saveResult);
+
+            if (!saveResult.response.ok) {
+                writeOutput(saveResult, "Save before checkout");
+                return;
+            }
+        }
+
+        const quoteResult = await quoteFedExBeforeCheckout();
+        writeCartOutput(quoteResult);
+
+        if (!quoteResult.response.ok) {
+            writeOutput(quoteResult, "FedEx quote before checkout");
+            return;
+        }
+
         const result = await apiFetch("/checkout", {
             method: "POST",
             body: {
                 sessionId: getSessionId(),
                 successUrl: checkoutReturnUrl("success"),
                 cancelUrl: checkoutReturnUrl("cancel"),
-                customerEmail: elements.email.value
+                customerEmail: checkoutCustomerEmail(),
+                destination: quoteResult.body.destination || checkoutDestination(),
+                shippingCharge: checkoutShippingCharge(quoteResult.body)
             }
         });
 
         writeOutput(result, "Checkout");
         if (result.response.ok) {
-            writeCartOutput(result);
+            writeCartOutput({
+                fedExQuote: quoteResult.body,
+                checkout: result
+            });
         }
 
         if (result.response.ok && result.body && result.body.url) {
             window.location.href = result.body.url;
         }
+    }
+
+    async function quoteFedExBeforeCheckout() {
+        if (state.cart.length === 0) {
+            return {
+                response: { ok: false },
+                error: "Add at least one product before checkout."
+            };
+        }
+
+        const destination = checkoutDestination();
+        const requests = [];
+        const productQuotes = [];
+
+        writeOutput({
+            destination,
+            products: state.cart.map((item) => ({
+                productId: item.productId,
+                quantityM2: item.quantityM2
+            }))
+        }, "FedEx quote before checkout");
+
+        for (const item of state.cart) {
+            const quoteRequest = {
+                productId: item.productId,
+                quantityM2: Number(item.quantityM2),
+                destinationStreetLines: destination.streetLines,
+                destinationCountryCode: destination.countryCode,
+                destinationPostalCode: destination.postalCode,
+                destinationCity: destination.city,
+                currency: destination.currency,
+                incoterm: "DDP"
+            };
+
+            requests.push(quoteRequest);
+            const result = await apiFetch("/shipping/fedex/quote", {
+                method: "POST",
+                body: quoteRequest
+            });
+
+            if (!result.response.ok) {
+                console.log("FedEx quote before checkout failed", result);
+                return {
+                    request: { quotes: requests },
+                    response: result.response,
+                    body: result.body,
+                    error: result.error || "FedEx quote failed before checkout"
+                };
+            }
+
+            const cheapestQuote = cheapestFedExQuote(result.body.quotes || []);
+            if (!cheapestQuote) {
+                console.log("FedEx quote before checkout returned no rates", result);
+                return {
+                    request: { quotes: requests },
+                    response: { ok: false, status: result.response.status },
+                    body: result.body,
+                    error: `FedEx returned no shipping rates for product ${item.productId}`
+                };
+            }
+
+            productQuotes.push({
+                productId: item.productId,
+                name: item.name,
+                quantityM2: item.quantityM2,
+                selectedPackage: result.body.selectedPackage,
+                cheapestQuote,
+                allQuotes: result.body.quotes
+            });
+        }
+
+        state.shippingQuotes = productQuotes;
+
+        const summary = {
+            destination,
+            productQuotes,
+            shippingTotalByCurrency: shippingTotalByCurrency(productQuotes)
+        };
+
+        console.log("FedEx quote before checkout", summary);
+
+        return {
+            request: { quotes: requests },
+            response: { ok: true, status: 200 },
+            body: summary
+        };
     }
 
     function logout() {
@@ -704,13 +1047,159 @@
         writeCartOutput(result);
     }
 
-    function persistLogin(result) {
+    function cartPayload() {
+        return {
+            sessionId: getSessionId(),
+            products: state.cart.map((item) => ({
+                productId: item.productId,
+                quantityM2: Number(item.quantityM2)
+            }))
+        };
+    }
+
+    function checkoutDestination() {
+        const countryCode = countryToCode(elements.accountCountry.value || elements.registerCountry.value);
+
+        return {
+            streetLines: [elements.accountAddressLine1.value || elements.registerAddressLine1.value].filter(Boolean),
+            city: elements.accountTownOrCity.value || elements.registerTownOrCity.value,
+            postalCode: elements.accountPostcode.value || elements.registerPostcode.value,
+            countryCode,
+            currency: countryCode === "GB" ? "GBP" : "EUR"
+        };
+    }
+
+    function checkoutCustomerEmail() {
+        const user = getUser();
+
+        return elements.accountEmail.value || user.email || elements.loginEmail.value || elements.registerEmail.value;
+    }
+
+    function countryToCode(country) {
+        const normalized = String(country || "").trim().toLowerCase();
+        const knownCountries = {
+            "portugal": "PT",
+            "pt": "PT",
+            "united kingdom": "GB",
+            "uk": "GB",
+            "gb": "GB",
+            "great britain": "GB",
+            "italy": "IT",
+            "it": "IT",
+            "greece": "GR",
+            "gr": "GR",
+            "france": "FR",
+            "fr": "FR",
+            "spain": "ES",
+            "es": "ES",
+            "germany": "DE",
+            "de": "DE"
+        };
+
+        return knownCountries[normalized] || normalized.slice(0, 2).toUpperCase();
+    }
+
+    function cheapestFedExQuote(quotes) {
+        return quotes
+            .filter((quote) => Number.isFinite(Number(quote.totalNetCharge)))
+            .sort((left, right) => Number(left.totalNetCharge) - Number(right.totalNetCharge))[0] || null;
+    }
+
+    function shippingTotalByCurrency(productQuotes) {
+        return productQuotes.reduce((totals, quote) => {
+            const currency = quote.cheapestQuote.currency || "EUR";
+            totals[currency] = Number(((totals[currency] || 0) + Number(quote.cheapestQuote.totalNetCharge)).toFixed(2));
+            return totals;
+        }, {});
+    }
+
+    function checkoutShippingCharge(quoteSummary) {
+        const productQuotes = quoteSummary && Array.isArray(quoteSummary.productQuotes)
+            ? quoteSummary.productQuotes
+            : [];
+        const firstQuote = productQuotes[0] && productQuotes[0].cheapestQuote;
+        const total = productQuotes.reduce((amount, productQuote) => {
+            return amount + Number(productQuote.cheapestQuote.totalNetCharge || 0);
+        }, 0);
+
+        if (!firstQuote || total <= 0) {
+            return null;
+        }
+
+        return {
+            serviceType: firstQuote.serviceType,
+            serviceName: firstQuote.serviceName || firstQuote.serviceType || "FedEx delivery",
+            amountTotal: total.toFixed(2),
+            currency: "eur",
+            estimatedDeliveryDate: firstQuote.estimatedDeliveryDate || null,
+            originalAmount: total.toFixed(2),
+            originalCurrency: firstQuote.currency || "EUR"
+        };
+    }
+
+    function accountPayload({ includePassword }) {
+        const payload = {
+            firstName: elements.accountFirstName.value,
+            lastName: elements.accountLastName.value,
+            email: elements.accountEmail.value,
+            phone: elements.accountPhone.value,
+            customerType: elements.accountCustomerType.value,
+            deliveryAddress: {
+                addressLine1: elements.accountAddressLine1.value,
+                townOrCity: elements.accountTownOrCity.value,
+                postcode: elements.accountPostcode.value,
+                country: elements.accountCountry.value
+            },
+            sameAsDeliveryAddress: true
+        };
+
+        if (includePassword && elements.accountPassword.value) {
+            payload.password = elements.accountPassword.value;
+        }
+
+        return payload;
+    }
+
+    function fillAccountForm(user) {
+        elements.accountFirstName.value = user.firstName || elements.accountFirstName.value;
+        elements.accountLastName.value = user.lastName || elements.accountLastName.value;
+        elements.accountEmail.value = user.email || elements.accountEmail.value;
+        elements.accountPhone.value = user.phone || elements.accountPhone.value;
+        elements.accountCustomerType.value = user.customerType === "Business" ? "business" : "private_customer";
+
+        const deliveryAddress = user.deliveryAddress || {};
+        elements.accountAddressLine1.value = deliveryAddress.addressLine1 || elements.accountAddressLine1.value;
+        elements.accountTownOrCity.value = deliveryAddress.townOrCity || elements.accountTownOrCity.value;
+        elements.accountPostcode.value = deliveryAddress.postcode || elements.accountPostcode.value;
+        elements.accountCountry.value = deliveryAddress.country || elements.accountCountry.value;
+    }
+
+    function registeredUserFromForm() {
+        return {
+            firstName: elements.registerFirstName.value,
+            lastName: elements.registerLastName.value,
+            email: elements.registerEmail.value,
+            phone: elements.registerPhone.value,
+            customerType: elements.registerCustomerType.value === "business" ? "Business" : "Private Customer",
+            deliveryAddress: {
+                addressLine1: elements.registerAddressLine1.value,
+                townOrCity: elements.registerTownOrCity.value,
+                postcode: elements.registerPostcode.value,
+                country: elements.registerCountry.value
+            }
+        };
+    }
+
+    function persistLogin(result, userDetails) {
         if (result.response.ok && result.body.token) {
             localStorage.setItem(tokenStorageKey, result.body.token);
-            rememberUser({
+            const user = {
+                ...userDetails,
                 userId: result.body.userId,
-                email: elements.email.value
-            });
+                expiresAt: result.body.expiresAt
+            };
+            rememberUser(user);
+            fillAccountForm(user);
         }
         renderSession();
     }
@@ -776,6 +1265,11 @@
 
     function renderProducts() {
         elements.productGrid.innerHTML = "";
+        if (products.length === 0) {
+            elements.productGrid.innerHTML = `<div class="empty">No real products loaded. Check that the backend is running and the catalog API is reachable.</div>`;
+            return;
+        }
+
         products.forEach((product, index) => {
             const card = document.createElement("article");
             card.className = "product-card";
@@ -932,6 +1426,42 @@
             : "Register or login to attach saved carts to your user.";
         elements.tokenPreview.textContent = token ? `Token: ${token.slice(0, 8)}...${token.slice(-6)}` : "No token saved";
         elements.sessionIdPreview.textContent = `Session: ${getSessionId()}`;
+        elements.authGuestView.classList.toggle("is-hidden", Boolean(token));
+        elements.accountView.classList.toggle("is-hidden", !token);
+        elements.logoutButton.classList.toggle("is-hidden", !token);
+        renderAccountSummary(user);
+    }
+
+    function showAuthForm(view) {
+        const showRegister = view === "register";
+
+        elements.loginView.classList.toggle("is-hidden", showRegister);
+        elements.registerView.classList.toggle("is-hidden", !showRegister);
+        elements.showLoginButton.classList.toggle("is-active", !showRegister);
+        elements.showRegisterButton.classList.toggle("is-active", showRegister);
+    }
+
+    function renderAccountSummary(user) {
+        if (!elements.accountSummary) {
+            return;
+        }
+
+        const deliveryAddress = user.deliveryAddress || {};
+        const rows = [
+            ["User", [user.firstName, user.lastName].filter(Boolean).join(" ") || "Saved user"],
+            ["Email", user.email || "Not loaded"],
+            ["Phone", user.phone || "Not loaded"],
+            ["Type", user.customerType || "Not loaded"],
+            ["Address", [deliveryAddress.addressLine1, deliveryAddress.townOrCity, deliveryAddress.postcode, deliveryAddress.country].filter(Boolean).join(", ") || "Not loaded"],
+            ["User ID", user.userId || "Not loaded"]
+        ];
+
+        elements.accountSummary.innerHTML = rows.map(([label, value]) => `
+            <div class="detail-row">
+                <span>${label}</span>
+                <strong>${value}</strong>
+            </div>
+        `).join("");
     }
 
     function apiUrl() {
