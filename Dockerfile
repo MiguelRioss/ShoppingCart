@@ -4,11 +4,16 @@ WORKDIR /app
 
 COPY gradlew gradlew.bat settings.gradle.kts build.gradle.kts ./
 COPY gradle ./gradle
+
 RUN chmod +x ./gradlew
-RUN ./gradlew dependencies --no-daemon
 
 COPY src ./src
-RUN ./gradlew installDist --no-daemon
+
+# Make Kotlin compilation errors visible in Render
+RUN ./gradlew compileKotlin --no-daemon --console=plain --stacktrace
+
+# Build the distribution
+RUN ./gradlew installDist --no-daemon --console=plain --stacktrace
 
 FROM eclipse-temurin:22-jre
 
