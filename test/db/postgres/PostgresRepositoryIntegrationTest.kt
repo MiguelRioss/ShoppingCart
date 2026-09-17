@@ -1,9 +1,9 @@
 package db.postgres
 
+import ShoppingCartProduct
 import config.AppMode
 import domain.auth.AuthToken
 import domain.cart.ShoppingCart
-import domain.cart.ShoppingCartProduct
 import domain.user.User
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Assumptions.assumeTrue
@@ -52,7 +52,8 @@ class PostgresRepositoryIntegrationTest {
                 productId = 1864L,
                 squareMeters = 12.5,
                 amountBoxes = 3,
-                totalPricePerProduct = BigDecimal("249.99")
+                totalPricePerProduct = BigDecimal("249.99"),
+                isSample = false
             )
         )
     )

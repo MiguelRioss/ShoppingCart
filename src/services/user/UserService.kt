@@ -18,6 +18,12 @@ interface UserService {
      */
     fun registerUser(email: String, password: String): User
 
+    /**
+     * Creates a new user account from the full registration request.
+     *
+     * @param request parsed registration request containing profile and address data
+     * @return created user
+     */
     fun registerUser(request: RegisterUserRequest): User
 
     /**

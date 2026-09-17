@@ -1,10 +1,10 @@
 package http.auth
 
 import dto.auth.AuthStatusResponse
+import dto.auth.toJson
 import http.AuthenticatedRequest
 import http.HttpResponse
 import http.RequestWithAuthHandler
-import http.toJson
 import services.auth.AuthServiceInterface
 
 /**

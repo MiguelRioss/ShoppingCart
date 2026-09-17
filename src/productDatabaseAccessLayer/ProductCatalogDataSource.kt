@@ -38,13 +38,13 @@ class ProductCatalogDataSource(
      * @return raw JSON response body
      */
     @Synchronized
-    fun getAllProducts(): String =
+    override fun getAllProducts(): String =
         allProductsCache ?: getAllProductsFromNetworkOrDisk().also { allProductsCache = it }
 
     /**
      * Fetches products that include the purchase data required by cart saving.
      */
-    fun getPurchasableProducts(): String =
+    override fun getPurchasableProducts(): String =
         buildJsonArray {
             productElements()
                 .filter { it.isPurchasable }
@@ -57,7 +57,7 @@ class ProductCatalogDataSource(
      * @param productSlug URL slug for the product
      * @return raw JSON response body for the product
      */
-    fun getProductBySlug(productSlug: String): String {
+    override fun getProductBySlug(productSlug: String): String {
         val encodedSlug = URLEncoder.encode(productSlug, StandardCharsets.UTF_8)
             .replace("+", "%20")
 
@@ -67,9 +67,13 @@ class ProductCatalogDataSource(
     /**
      * Fetches a single product by id from the cached external catalog list.
      */
-    override fun getProductById(productId: Long): String? = productsById()[productId]
-        ?.toCompactJson()
-
+    override fun getProductById(productId: Long): String? =
+        runCatching {
+            get("product/$productId")
+        }.getOrElse {
+            productsById()[productId]
+                ?.toCompactJson()
+        }
     /**
      * Fetches a single product by id from the detailed product endpoint.
      */

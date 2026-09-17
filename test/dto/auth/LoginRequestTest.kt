@@ -1,5 +1,6 @@
 package http
 
+import dto.auth.parseLoginRequest
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

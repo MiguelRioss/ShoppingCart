@@ -1,8 +1,8 @@
 package services.cart
 
+import ShoppingCartProduct
 import db.offline.InMemoryShoppingCartRepository
 import domain.cart.ShoppingCart
-import domain.cart.ShoppingCartProduct
 import org.junit.jupiter.api.Test
 import productdatabaseaccesslayer.ProductDataAccess
 import services.common.ServiceErrorCode
@@ -20,6 +20,14 @@ import kotlin.test.assertNull
 class ShoppingCartManagerTest {
     private val clock = Clock.fixed(Instant.parse("2026-08-07T13:30:00Z"), ZoneOffset.UTC)
     private val productDataAccess = object : ProductDataAccess {
+        override fun getAllProducts(): String {
+            TODO("Not yet implemented")
+        }
+
+        override fun getPurchasableProducts(): String {
+            TODO("Not yet implemented")
+        }
+
         override fun getProductById(productId: Long): String? =
             if (productId == 9278L) {
                 """
@@ -36,6 +44,10 @@ class ShoppingCartManagerTest {
             } else {
                 null
             }
+
+        override fun getProductBySlug(productSlug: String): String {
+            TODO("Not yet implemented")
+        }
     }
 
     @Test
@@ -45,7 +57,8 @@ class ShoppingCartManagerTest {
 
         val cart = service.createCart(
             sessionId = "session-123",
-            products = listOf(9278L to 0.5)
+            products =
+                listOf(CartProductInput(productId = 9278L, quantityM2 = 0.5, isSample = false))
         )
 
         assertEquals(null, cart.userId)
@@ -64,12 +77,12 @@ class ShoppingCartManagerTest {
         val service = ShoppingCartManager(repository, productDataAccess, clock)
         val firstCart = service.createCart(
             sessionId = "session-123",
-            products = listOf(9278L to 0.5)
+            listOf(CartProductInput(productId = 9278L, quantityM2 = 0.5, isSample = false))
         )
 
         val updatedCart = service.createCart(
             sessionId = "session-123",
-            products = listOf(9278L to 1.5)
+            listOf(CartProductInput(productId = 9278L, quantityM2 = 1.5, isSample = false))
         )
 
         assertEquals(firstCart.id, updatedCart.id)
@@ -87,7 +100,7 @@ class ShoppingCartManagerTest {
         val userId = UUID.fromString("00000000-0000-0000-0000-000000000003")
         val sessionCart = service.createCart(
             sessionId = "session-123",
-            products = listOf(9278L to 0.5)
+            listOf(CartProductInput(productId = 9278L, quantityM2 = 0.5, isSample = false))
         )
 
         val associatedCart = service.associateCartWithUser("session-123", userId)
@@ -100,6 +113,14 @@ class ShoppingCartManagerTest {
     @Test
     fun `returns clear error when product purchase information is null`() {
         val productDataAccess = object : ProductDataAccess {
+            override fun getAllProducts(): String {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPurchasableProducts(): String {
+                TODO("Not yet implemented")
+            }
+
             override fun getProductById(productId: Long): String =
                 """
                 {
@@ -107,13 +128,17 @@ class ShoppingCartManagerTest {
                   "purchase_information": null
                 }
                 """.trimIndent()
+
+            override fun getProductBySlug(productSlug: String): String {
+                TODO("Not yet implemented")
+            }
         }
         val service = ShoppingCartManager(InMemoryShoppingCartRepository(), productDataAccess, clock)
 
         val error = assertFailsWith<ServiceException> {
             service.createCart(
                 sessionId = "session-123",
-                products = listOf(1864L to 1.0)
+                products = listOf(CartProductInput(productId = 1864L, quantityM2 = 0.5, isSample = false))
             )
         }
 
@@ -125,6 +150,14 @@ class ShoppingCartManagerTest {
     @Test
     fun `returns clear error when product order information is null`() {
         val productDataAccess = object : ProductDataAccess {
+            override fun getAllProducts(): String {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPurchasableProducts(): String {
+                TODO("Not yet implemented")
+            }
+
             override fun getProductById(productId: Long): String =
                 """
                 {
@@ -134,13 +167,17 @@ class ShoppingCartManagerTest {
                   }
                 }
                 """.trimIndent()
+
+            override fun getProductBySlug(productSlug: String): String {
+                TODO("Not yet implemented")
+            }
         }
         val service = ShoppingCartManager(InMemoryShoppingCartRepository(), productDataAccess, clock)
 
         val error = assertFailsWith<ServiceException> {
             service.createCart(
                 sessionId = "session-123",
-                products = listOf(1864L to 1.0)
+                products = listOf(CartProductInput(productId = 1864L, quantityM2 = 0.5, isSample = false))
             )
         }
 
@@ -162,7 +199,9 @@ class ShoppingCartManagerTest {
                     productId = 1864L,
                     squareMeters = 12.5,
                     amountBoxes = 3,
-                    totalPricePerProduct = BigDecimal("249.99")
+                    totalPricePerProduct = BigDecimal("249.99"),
+                    isSample = false
+
                 )
             )
         )

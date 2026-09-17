@@ -79,7 +79,18 @@ class PurchasableProductReaderTest {
 
     private fun productDataAccess(productJson: String): ProductDataAccess =
         object : ProductDataAccess {
+            override fun getAllProducts(): String {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPurchasableProducts(): String {
+                TODO("Not yet implemented")
+            }
+
             override fun getProductById(productId: Long): String = productJson
+            override fun getProductBySlug(productSlug: String): String {
+                TODO("Not yet implemented")
+            }
         }
 }
 

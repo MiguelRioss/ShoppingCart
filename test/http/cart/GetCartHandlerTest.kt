@@ -1,10 +1,10 @@
 package http.cart
 
+import ShoppingCartProduct
 import db.offline.InMemoryAuthTokenRepository
 import db.offline.InMemoryShoppingCartRepository
 import db.offline.InMemoryUserRepository
 import domain.cart.ShoppingCart
-import domain.cart.ShoppingCartProduct
 import http.HttpRequest
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonArray
@@ -43,7 +43,8 @@ class GetCartHandlerTest {
                     productId = 1864L,
                     squareMeters = 12.5,
                     amountBoxes = 3,
-                    totalPricePerProduct = BigDecimal("249.99")
+                    totalPricePerProduct = BigDecimal("249.99"),
+                    isSample = false
                 )
             )
         )
@@ -78,7 +79,8 @@ class GetCartHandlerTest {
                     productId = 1864L,
                     squareMeters = 12.5,
                     amountBoxes = 3,
-                    totalPricePerProduct = BigDecimal("249.99")
+                    totalPricePerProduct = BigDecimal("249.99"),
+                    isSample = false
                 )
             )
         )

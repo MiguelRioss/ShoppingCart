@@ -4,12 +4,12 @@
 package http.auth
 
 import dto.auth.LoginResponse
+import dto.auth.parseRegisterUserRequest
+import dto.auth.toJson
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
-import http.parseRegisterUserRequest
-import http.toJson
 import kotlinx.serialization.json.Json
 import services.auth.AuthServiceInterface
 import services.cart.ShoppingCartService
@@ -23,7 +23,7 @@ class RegisterHandler(
 ) : RequestHandler {
     override fun handle(request: HttpRequest): HttpResponse {
         val registerRequest = runCatching {
-            parseRegisterUserRequest(request.body, json)
+            parseRegisterUserRequest(request.body)
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse()
         }

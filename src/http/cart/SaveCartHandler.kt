@@ -1,15 +1,15 @@
 package http.cart
 
 import dto.cart.SaveShoppingCartRequest
+import dto.cart.parseSaveShoppingCartRequest
 import dto.cart.toEntity
+import dto.cart.toJson
 import dto.cart.toResponse
 import http.AuthenticatedRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
-import http.parseSaveShoppingCartRequest
-import http.toJson
 import kotlinx.serialization.json.Json
 import services.auth.AuthServiceInterface
 import services.common.ServiceException
@@ -21,14 +21,13 @@ import services.cart.ShoppingCartService
 class SaveCartHandler(
     private val shoppingCartService: ShoppingCartService,
     private val authService: AuthServiceInterface? = null,
-    private val json: Json = Json
 ) : RequestHandler {
     /**
      * Creates a cart associated with a session id and product m2 quantities.
      */
     override fun handle(request: HttpRequest): HttpResponse {
         val saveCartRequest = runCatching {
-            parseSaveShoppingCartRequest(request.body, json)
+            parseSaveShoppingCartRequest(request.body)
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse()
         }
@@ -58,7 +57,9 @@ class SaveCartHandler(
 
     private fun SaveShoppingCartRequest.isValid(): Boolean =
         !sessionId.isNullOrBlank() &&
-            products.isNotEmpty() &&
-            products.all { it.productId != null && it.quantityM2 != null && it.quantityM2 > 0.0 }
+                products.isNotEmpty() &&
+                products.all {
+                    it.productId != null
+                }
 }
 

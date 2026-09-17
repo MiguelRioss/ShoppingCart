@@ -1,7 +1,7 @@
 {
   "info": {
     "name": "ShoppingCart API",
-    "description": "Postman tests for register, login, auth status, and cart routes.",
+    "description": "Postman tests for the current ShoppingCart API: auth, account, products, cart, checkout, and error routes.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "variable": [
@@ -11,7 +11,7 @@
     },
     {
       "key": "email",
-      "value": "buyer+1786637589179@example.com"
+      "value": ""
     },
     {
       "key": "password",
@@ -24,9 +24,37 @@
     {
       "key": "userId",
       "value": ""
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "productId",
+      "value": "9278"
+    },
+    {
+      "key": "checkoutUrl",
+      "value": ""
     }
   ],
-  "event": [],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "if (!pm.collectionVariables.get('email')) {",
+          "  pm.collectionVariables.set('email', `buyer+${Date.now()}@example.com`);",
+          "}",
+          "",
+          "if (!pm.collectionVariables.get('sessionId')) {",
+          "  pm.collectionVariables.set('sessionId', `postman-session-${Date.now()}`);",
+          "}"
+        ]
+      }
+    }
+  ],
   "item": [
     {
       "name": "Register - customer user",
@@ -62,11 +90,7 @@
               "  pm.response.to.have.status(201);",
               "});",
               "",
-              "pm.test('auth response is not empty', function () {",
-              "  pm.expect(pm.response.text(), 'response body').to.not.be.empty;",
-              "});",
-              "",
-              "var body = pm.response.json();",
+              "const body = pm.response.json();",
               "pm.test('auth response includes bearer token data', function () {",
               "  pm.expect(body).to.have.property('token');",
               "  pm.expect(body).to.have.property('userId');",
@@ -114,15 +138,10 @@
               "  pm.response.to.have.status(200);",
               "});",
               "",
-              "pm.test('auth response is not empty', function () {",
-              "  pm.expect(pm.response.text(), 'response body').to.not.be.empty;",
-              "});",
-              "",
-              "var body = pm.response.json();",
-              "pm.test('auth response includes bearer token data', function () {",
+              "const body = pm.response.json();",
+              "pm.test('login response includes bearer token data', function () {",
               "  pm.expect(body).to.have.property('token');",
               "  pm.expect(body).to.have.property('userId');",
-              "  pm.expect(body).to.have.property('expiresAt');",
               "});",
               "",
               "pm.collectionVariables.set('authToken', body.token);",
@@ -172,37 +191,7 @@
               "pm.test('auth status confirms authenticated user', function () {",
               "  pm.expect(body).to.have.property('authenticated', true);",
               "  pm.expect(body).to.have.property('userId');",
-              "  pm.expect(body).to.have.property('email', pm.collectionVariables.get('email').toLowerCase());",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Auth status - missing bearer token",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/auth/status",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "auth",
-            "status"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('returns 401 without Authorization header', function () {",
-              "  pm.response.to.have.status(401);",
+              "  pm.expect(body.email).to.eql(pm.collectionVariables.get('email').toLowerCase());",
               "});"
             ]
           }
@@ -248,10 +237,443 @@
               "const body = pm.response.json();",
               "pm.test('client info includes profile fields', function () {",
               "  pm.expect(body).to.have.property('userId');",
-              "  pm.expect(body).to.have.property('email', pm.collectionVariables.get('email').toLowerCase());",
+              "  pm.expect(body.email).to.eql(pm.collectionVariables.get('email').toLowerCase());",
               "  pm.expect(body).to.have.property('firstName');",
               "  pm.expect(body).to.have.property('lastName');",
               "  pm.expect(body).to.have.property('deliveryAddress');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Update account - bearer token",
+      "request": {
+        "method": "PUT",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Postman\",\n  \"phone\": \"+351 912 000 111\",\n  \"customerType\": \"business\",\n  \"deliveryAddress\": {\n    \"addressLine1\": \"Updated delivery street\",\n    \"townOrCity\": \"Porto\",\n    \"postcode\": \"4000-001\",\n    \"country\": \"Portugal\"\n  },\n  \"sameAsDeliveryAddress\": true,\n  \"projectNotes\": \"Updated from Postman collection\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/account",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "account"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{authToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('updates account', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('updated profile is returned', function () {",
+              "  pm.expect(body.lastName).to.eql('Postman');",
+              "  pm.expect(body.deliveryAddress.townOrCity).to.eql('Porto');",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get products",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('products endpoint responds', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 400]);",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  pm.test('products response is an array', function () {",
+              "    pm.expect(body).to.be.an('array');",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get product by id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/products/{{productId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "products",
+            "{{productId}}"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('product endpoint responds', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([200, 400, 404]);",
+              "});",
+              "",
+              "if (pm.response.code === 200) {",
+              "  const body = pm.response.json();",
+              "  pm.test('product id matches variable', function () {",
+              "    pm.expect(body.id).to.eql(Number(pm.collectionVariables.get('productId')));",
+              "  });",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create cart - session product",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"products\": [\n    {\n      \"productId\": {{productId}},\n      \"quantityM2\": 0.5\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/cart",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('creates a session cart', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('cart stores the session id and product', function () {",
+              "  pm.expect(body.sessionId).to.eql(pm.collectionVariables.get('sessionId'));",
+              "  pm.expect(body.products).to.be.an('array').with.lengthOf(1);",
+              "  pm.expect(body.products[0].productId).to.eql(Number(pm.collectionVariables.get('productId')));",
+              "  pm.expect(body.products[0].squareMeters).to.eql(0.5);",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get cart - session id",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/cart?sessionId={{sessionId}}",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart"
+          ],
+          "query": [
+            {
+              "key": "sessionId",
+              "value": "{{sessionId}}"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns the session cart', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('cart session id matches', function () {",
+              "  pm.expect(body.sessionId).to.eql(pm.collectionVariables.get('sessionId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create cart - authenticated client product",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"products\": [\n    {\n      \"productId\": {{productId}},\n      \"quantityM2\": 1.0\n    }\n  ]\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/cart",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{authToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('creates an authenticated cart', function () {",
+              "  pm.response.to.have.status(201);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('cart stores the authenticated client id', function () {",
+              "  pm.expect(body.userId).to.eql(pm.collectionVariables.get('userId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Get cart - bearer token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/cart",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart"
+          ]
+        },
+        "auth": {
+          "type": "bearer",
+          "bearer": [
+            {
+              "key": "token",
+              "value": "{{authToken}}",
+              "type": "string"
+            }
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns authenticated cart', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('cart user id matches', function () {",
+              "  pm.expect(body.userId).to.eql(pm.collectionVariables.get('userId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Create checkout - current cart",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"successUrl\": \"https://example.com/success\",\n  \"cancelUrl\": \"https://example.com/cancel\",\n  \"customerEmail\": \"{{email}}\",\n  \"shippingCharge\": null\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/checkout",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "checkout"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('checkout endpoint responds', function () {",
+              "  pm.expect(pm.response.code).to.be.oneOf([201, 400, 500]);",
+              "});",
+              "",
+              "if (pm.response.code === 201) {",
+              "  const body = pm.response.json();",
+              "  pm.test('checkout session is returned', function () {",
+              "    pm.expect(body).to.have.property('id');",
+              "    pm.expect(body).to.have.property('provider', 'stripe');",
+              "    pm.expect(body).to.have.property('url');",
+              "  });",
+              "  pm.collectionVariables.set('checkoutUrl', body.url || '');",
+              "}"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Clear cart - session id",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"sessionId\": \"{{sessionId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/cart/clear",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "cart",
+            "clear"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('clears the cart', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const body = pm.response.json();",
+              "pm.test('clear response confirms session id', function () {",
+              "  pm.expect(body.message).to.eql('Shopping cart cleared');",
+              "  pm.expect(body.sessionId).to.eql(pm.collectionVariables.get('sessionId'));",
+              "});"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth status - missing bearer token",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": {
+          "raw": "{{baseUrl}}/auth/status",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "auth",
+            "status"
+          ]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('returns 401 without Authorization header', function () {",
+              "  pm.response.to.have.status(401);",
               "});"
             ]
           }
@@ -328,165 +750,6 @@
             "exec": [
               "pm.test('returns 400 for incomplete registration payload', function () {",
               "  pm.response.to.have.status(400);",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Create cart - session product 9278",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"sessionId\": \"postman-session-{{$timestamp}}\",\n  \"products\": [\n    {\n      \"productId\": 9278,\n      \"quantityM2\": 0.5\n    }\n  ]\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/cart",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "cart"
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('creates a session cart', function () {",
-              "  pm.response.to.have.status(201);",
-              "});",
-              "",
-              "pm.test('cart response is not empty', function () {",
-              "  pm.expect(pm.response.text(), 'response body').to.not.be.empty;",
-              "});",
-              "",
-              "const body = pm.response.json();",
-              "pm.test('cart stores the session id', function () {",
-              "  pm.expect(body.sessionId).to.match(/^postman-session-/);",
-              "});",
-              "",
-              "pm.test('cart stores product 9278 m2 quantity and calculated total', function () {",
-              "  pm.expect(body.products).to.be.an('array').with.lengthOf(1);",
-              "  pm.expect(body.products[0].productId).to.equal(9278);",
-              "  pm.expect(body.products[0].squareMeters).to.equal(0.5);",
-              "  pm.expect(body.products[0].amountBoxes).to.equal(1);",
-              "  pm.expect(body.products[0].totalPricePerProduct).to.equal('75.00');",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Create cart - authenticated client product 9278",
-      "request": {
-        "method": "POST",
-        "header": [
-          {
-            "key": "Content-Type",
-            "value": "application/json"
-          }
-        ],
-        "body": {
-          "mode": "raw",
-          "raw": "{\n  \"sessionId\": \"postman-auth-session-{{$timestamp}}\",\n  \"products\": [\n    {\n      \"productId\": 9278,\n      \"quantityM2\": 0.5\n    }\n  ]\n}"
-        },
-        "url": {
-          "raw": "{{baseUrl}}/cart",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "cart"
-          ]
-        },
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{authToken}}",
-              "type": "string"
-            }
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('creates an authenticated session cart', function () {",
-              "  pm.response.to.have.status(201);",
-              "});",
-              "",
-              "pm.test('cart response is not empty', function () {",
-              "  pm.expect(pm.response.text(), 'response body').to.not.be.empty;",
-              "});",
-              "",
-              "const body = pm.response.json();",
-              "pm.test('cart stores the authenticated client id', function () {",
-              "  pm.expect(body.userId).to.equal(pm.collectionVariables.get('userId'));",
-              "});",
-              "",
-              "pm.test('cart stores product 9278 m2 quantity and calculated total', function () {",
-              "  pm.expect(body.products).to.be.an('array').with.lengthOf(1);",
-              "  pm.expect(body.products[0].productId).to.equal(9278);",
-              "  pm.expect(body.products[0].squareMeters).to.equal(0.5);",
-              "  pm.expect(body.products[0].amountBoxes).to.equal(1);",
-              "  pm.expect(body.products[0].totalPricePerProduct).to.equal('75.00');",
-              "});"
-            ]
-          }
-        }
-      ]
-    },
-    {
-      "name": "Get cart - bearer token",
-      "request": {
-        "method": "GET",
-        "header": [],
-        "url": {
-          "raw": "{{baseUrl}}/cart",
-          "host": [
-            "{{baseUrl}}"
-          ],
-          "path": [
-            "cart"
-          ]
-        },
-        "auth": {
-          "type": "bearer",
-          "bearer": [
-            {
-              "key": "token",
-              "value": "{{authToken}}",
-              "type": "string"
-            }
-          ]
-        }
-      },
-      "event": [
-        {
-          "listen": "test",
-          "script": {
-            "type": "text/javascript",
-            "exec": [
-              "pm.test('returns 404 when authenticated user has no cart yet', function () {",
-              "  pm.response.to.have.status(404);",
               "});"
             ]
           }

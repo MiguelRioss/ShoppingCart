@@ -1,13 +1,18 @@
+
+```
 <!doctype html>
 <html lang="en">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+
     <title>ShoppingCart Frontend Tester</title>
+
     <style>
         :root {
             color-scheme: light;
-            font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            font-family: Inter, ui-sans-serif, system-ui, -apple-system,
+            BlinkMacSystemFont, "Segoe UI", sans-serif;
             background: #f7f5ef;
             color: #18211f;
         }
@@ -20,8 +25,17 @@
             margin: 0;
             min-height: 100vh;
             background:
-                radial-gradient(circle at top left, rgba(49, 97, 91, 0.18), transparent 30rem),
-                linear-gradient(135deg, #f7f5ef 0%, #eef3f1 55%, #f6f0e4 100%);
+                    radial-gradient(
+                            circle at top left,
+                            rgba(49, 97, 91, 0.18),
+                            transparent 30rem
+                    ),
+                    linear-gradient(
+                            135deg,
+                            #f7f5ef 0%,
+                            #eef3f1 55%,
+                            #f6f0e4 100%
+                    );
         }
 
         button,
@@ -56,7 +70,6 @@
 
         .brand h1 {
             font-size: clamp(24px, 4vw, 42px);
-            letter-spacing: 0;
             line-height: 1;
             margin: 0;
         }
@@ -97,7 +110,9 @@
         .layout {
             display: grid;
             gap: 18px;
-            grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.4fr);
+            grid-template-columns:
+                minmax(320px, 0.9fr)
+                minmax(0, 1.4fr);
         }
 
         .panel {
@@ -129,7 +144,8 @@
         .auth-grid {
             display: grid;
             gap: 12px;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
         }
 
         .auth-tabs {
@@ -138,7 +154,8 @@
             border-radius: 8px;
             display: grid;
             gap: 4px;
-            grid-template-columns: repeat(2, minmax(0, 1fr));
+            grid-template-columns:
+                repeat(2, minmax(0, 1fr));
             margin-bottom: 16px;
             padding: 4px;
         }
@@ -175,7 +192,8 @@
         .detail-row {
             display: grid;
             gap: 8px;
-            grid-template-columns: 120px minmax(0, 1fr);
+            grid-template-columns:
+                120px minmax(0, 1fr);
         }
 
         .detail-row span:first-child {
@@ -191,7 +209,6 @@
             font-size: 12px;
             font-weight: 800;
             gap: 6px;
-            letter-spacing: 0;
             text-transform: uppercase;
         }
 
@@ -257,7 +274,8 @@
         .product-grid {
             display: grid;
             gap: 12px;
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
         }
 
         .product-card {
@@ -293,7 +311,8 @@
             border-radius: 8px;
             display: grid;
             gap: 12px;
-            grid-template-columns: 1fr 112px auto;
+            grid-template-columns:
+                1fr 112px auto;
             padding: 11px;
         }
 
@@ -316,12 +335,14 @@
         .response-grid {
             display: grid;
             gap: 18px;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns:
+                1fr 1fr;
             margin-top: 18px;
         }
 
         .response-grid.three-up {
-            grid-template-columns: repeat(3, minmax(0, 1fr));
+            grid-template-columns:
+                repeat(3, minmax(0, 1fr));
         }
 
         pre {
@@ -341,7 +362,6 @@
 
         pre.is-loading {
             color: #bde0d2;
-            position: relative;
         }
 
         .mini-stat {
@@ -392,239 +412,573 @@
         }
     </style>
 </head>
+
 <body>
+
 <main class="app-shell">
+
     <header class="topbar">
+
         <div class="brand">
             <span>Frontend API tester</span>
             <h1>ShoppingCart Studio</h1>
         </div>
+
         <div class="session-pill">
-            <span id="sessionDot" class="session-dot offline"></span>
+
+            <span
+                    id="sessionDot"
+                    class="session-dot offline">
+            </span>
+
             <div>
-                <strong id="sessionTitle">Logged out</strong>
-                <div id="sessionDetail" class="muted">Register or login to attach saved carts to your user.</div>
+                <strong id="sessionTitle">
+                    Logged out
+                </strong>
+
+                <div
+                        id="sessionDetail"
+                        class="muted">
+                    Register or login to attach saved carts to your user.
+                </div>
             </div>
+
         </div>
+
     </header>
 
     <section class="layout">
+
         <article class="panel">
+
             <div class="panel-header">
-                <h2>Account Session</h2>
-                <button id="logoutButton" class="btn danger is-hidden" type="button">Logout</button>
+
+                <h2>
+                    Account Session
+                </h2>
+
+                <button
+                        id="logoutButton"
+                        class="btn danger is-hidden"
+                        type="button">
+                    Logout
+                </button>
+
             </div>
+
             <div class="panel-body">
-                <div class="auth-grid" style="margin-bottom:16px">
+
+                <div
+                        class="auth-grid"
+                        style="margin-bottom:16px">
+
                     <label class="wide">
                         API URL
-                        <input id="apiUrl" value="http://localhost:8080">
+
+                        <input
+                                id="apiUrl"
+                                value="http://localhost:8080">
                     </label>
+
                 </div>
 
-                <div id="authGuestView" class="auth-view">
+                <div
+                        id="authGuestView"
+                        class="auth-view">
+
                     <div class="auth-tabs">
-                        <button id="showLoginButton" class="auth-tab is-active" type="button">Login</button>
-                        <button id="showRegisterButton" class="auth-tab" type="button">Register</button>
+
+                        <button
+                                id="showLoginButton"
+                                class="auth-tab is-active"
+                                type="button">
+                            Login
+                        </button>
+
+                        <button
+                                id="showRegisterButton"
+                                class="auth-tab"
+                                type="button">
+                            Register
+                        </button>
+
                     </div>
 
-                    <form id="loginView" class="auth-grid">
+                    <form
+                            id="loginView"
+                            class="auth-grid">
+
                         <label class="wide">
                             Email
-                            <input id="loginEmail" type="email" value="buyer@example.com" autocomplete="email">
+
+                            <input
+                                    id="loginEmail"
+                                    type="email"
+                                    autocomplete="email">
                         </label>
+
                         <label class="wide">
                             Password
-                            <input id="loginPassword" type="password" value="password-123" autocomplete="current-password">
+
+                            <input
+                                    id="loginPassword"
+                                    type="password"
+                                    autocomplete="current-password">
                         </label>
+
                         <div class="actions wide">
-                            <button id="loginButton" class="btn" type="submit">Login</button>
+
+                            <button
+                                    id="loginButton"
+                                    class="btn"
+                                    type="submit">
+                                Login
+                            </button>
+
                         </div>
+
                     </form>
 
-                    <form id="registerView" class="auth-grid is-hidden">
+                    <form
+                            id="registerView"
+                            class="auth-grid is-hidden">
+
                         <label>
                             First name
-                            <input id="registerFirstName" value="Jane" autocomplete="given-name">
+
+                            <input
+                                    id="registerFirstName"
+                                    autocomplete="given-name">
                         </label>
+
                         <label>
                             Last name
-                            <input id="registerLastName" value="Smith" autocomplete="family-name">
+
+                            <input
+                                    id="registerLastName"
+                                    autocomplete="family-name">
                         </label>
+
                         <label class="wide">
                             Email
-                            <input id="registerEmail" type="email" value="buyer@example.com" autocomplete="email">
+
+                            <input
+                                    id="registerEmail"
+                                    type="email"
+                                    autocomplete="email">
                         </label>
+
                         <label class="wide">
                             Password
-                            <input id="registerPassword" type="password" value="password-123" autocomplete="new-password">
+
+                            <input
+                                    id="registerPassword"
+                                    type="password"
+                                    autocomplete="new-password">
                         </label>
+
                         <label>
                             Phone
-                            <input id="registerPhone" value="+351 912 345 678" autocomplete="tel">
+
+                            <input
+                                    id="registerPhone"
+                                    autocomplete="tel">
                         </label>
+
                         <label>
                             Customer type
+
                             <select id="registerCustomerType">
-                                <option value="private_customer">Private customer</option>
-                                <option value="business">Business</option>
+                                <option value="private_customer">
+                                    Private customer
+                                </option>
+
+                                <option value="business">
+                                    Business
+                                </option>
                             </select>
                         </label>
+
                         <label class="wide">
                             Address line 1
-                            <input id="registerAddressLine1" value="Rua Augusta 100" autocomplete="address-line1">
+
+                            <input
+                                    id="registerAddressLine1"
+                                    autocomplete="address-line1">
                         </label>
+
                         <label>
                             Town or city
-                            <input id="registerTownOrCity" value="Lisbon" autocomplete="address-level2">
+
+                            <input
+                                    id="registerTownOrCity"
+                                    autocomplete="address-level2">
                         </label>
+
                         <label>
                             Postcode
-                            <input id="registerPostcode" value="1100-048" autocomplete="postal-code">
+
+                            <input
+                                    id="registerPostcode"
+                                    autocomplete="postal-code">
                         </label>
+
                         <label class="wide">
                             Country
-                            <input id="registerCountry" value="Portugal" autocomplete="country-name">
+
+                            <input
+                                    id="registerCountry"
+                                    autocomplete="country-name">
                         </label>
+
                         <div class="actions wide">
-                            <button id="registerButton" class="btn" type="submit">Create account</button>
+
+                            <button
+                                    id="registerButton"
+                                    class="btn"
+                                    type="submit">
+                                Create account
+                            </button>
+
                         </div>
+
                     </form>
+
                 </div>
 
-                <div id="accountView" class="auth-view is-hidden">
-                    <div id="accountSummary" class="account-summary"></div>
+                <div
+                        id="accountView"
+                        class="auth-view is-hidden">
+
+                    <div
+                            id="accountSummary"
+                            class="account-summary">
+                    </div>
 
                     <div class="auth-grid">
+
                         <label>
-                        First name
-                        <input id="accountFirstName" value="Jane">
-                    </label>
-                    <label>
-                        Last name
-                        <input id="accountLastName" value="Smith">
-                    </label>
-                    <label class="wide">
-                        Email
-                        <input id="accountEmail" type="email" value="buyer@example.com">
-                    </label>
-                    <label class="wide">
-                        Password
-                        <input id="accountPassword" type="password" value="" placeholder="Password is not shown after login">
-                    </label>
-                    <label>
-                        Phone
-                        <input id="accountPhone" value="+351 912 345 678">
-                    </label>
-                    <label>
-                        Customer type
-                        <select id="accountCustomerType">
-                            <option value="private_customer">Private customer</option>
-                            <option value="business">Business</option>
-                        </select>
-                    </label>
-                    <label class="wide">
-                        Address line 1
-                        <input id="accountAddressLine1" value="Rua Augusta 100">
-                    </label>
-                    <label>
-                        Town or city
-                        <input id="accountTownOrCity" value="Lisbon">
-                    </label>
-                    <label>
-                        Postcode
-                        <input id="accountPostcode" value="1100-048">
-                    </label>
-                    <label class="wide">
-                        Country
-                        <input id="accountCountry" value="Portugal">
-                    </label>
+                            First name
+                            <input id="accountFirstName">
+                        </label>
+
+                        <label>
+                            Last name
+                            <input id="accountLastName">
+                        </label>
+
+                        <label class="wide">
+                            Email
+
+                            <input
+                                    id="accountEmail"
+                                    type="email">
+                        </label>
+
+                        <label class="wide">
+                            Password
+
+                            <input
+                                    id="accountPassword"
+                                    type="password"
+                                    value=""
+                                    placeholder="Password is not shown after login">
+                        </label>
+
+                        <label>
+                            Phone
+                            <input id="accountPhone">
+                        </label>
+
+                        <label>
+                            Customer type
+
+                            <select id="accountCustomerType">
+
+                                <option value="private_customer">
+                                    Private customer
+                                </option>
+
+                                <option value="business">
+                                    Business
+                                </option>
+
+                            </select>
+                        </label>
+
+                        <label class="wide">
+                            Address line 1
+                            <input id="accountAddressLine1">
+                        </label>
+
+                        <label>
+                            Town or city
+                            <input id="accountTownOrCity">
+                        </label>
+
+                        <label>
+                            Postcode
+                            <input id="accountPostcode">
+                        </label>
+
+                        <label class="wide">
+                            Country
+                            <input id="accountCountry">
+                        </label>
 
                         <div class="actions wide">
-                            <button id="clientButton" class="btn secondary" type="button">Refresh details</button>
-                            <button id="statusButton" class="btn secondary" type="button">Check auth</button>
-                            <button id="editAccountButton" class="btn" type="button">Save details</button>
-                            <button id="deleteAccountButton" class="btn danger" type="button">Delete account</button>
+
+                            <button
+                                    id="clientButton"
+                                    class="btn secondary"
+                                    type="button">
+                                Refresh details
+                            </button>
+
+                            <button
+                                    id="statusButton"
+                                    class="btn secondary"
+                                    type="button">
+                                Check auth
+                            </button>
+
+                            <button
+                                    id="editAccountButton"
+                                    class="btn"
+                                    type="button">
+                                Save details
+                            </button>
+
+                            <button
+                                    id="deleteAccountButton"
+                                    class="btn danger"
+                                    type="button">
+                                Delete account
+                            </button>
+
                         </div>
+
                     </div>
+
                 </div>
 
                 <div class="mini-stat">
-                    <span id="tokenPreview">No token saved</span>
-                    <span id="sessionIdPreview"></span>
+
+                    <span id="tokenPreview">
+                        No token saved
+                    </span>
+
+                    <span id="sessionIdPreview">
+                    </span>
+
                 </div>
+
             </div>
+
         </article>
 
         <section>
+
             <article class="panel">
+
                 <div class="panel-header">
-                    <h2>Available Products</h2>
-                    <span id="productsStatus" class="muted">Loading real catalog</span>
+
+                    <h2>
+                        Available Products
+                    </h2>
+
+                    <span
+                            id="productsStatus"
+                            class="muted">
+                        Loading real catalog
+                    </span>
+
                 </div>
+
                 <div class="panel-body">
-                    <div id="productGrid" class="product-grid"></div>
+
+                    <div
+                            id="productGrid"
+                            class="product-grid">
+                    </div>
+
                 </div>
+
             </article>
 
-            <article class="panel" style="margin-top:18px">
+            <article
+                    class="panel"
+                    style="margin-top:18px">
+
                 <div class="panel-header">
-                    <h2>Draft Cart</h2>
-                    <span id="cartSummary" class="muted">0 items</span>
+
+                    <h2>
+                        Draft Cart
+                    </h2>
+
+                    <span
+                            id="cartSummary"
+                            class="muted">
+                        0 items
+                    </span>
+
                 </div>
+
                 <div class="panel-body">
-                    <div id="cartList" class="cart-list"></div>
-                    <div class="actions">
-                        <button id="saveCartButton" class="btn" type="button">Save cart</button>
-                        <button id="checkoutButton" class="btn" type="button">Checkout</button>
-                        <button id="getCartButton" class="btn secondary" type="button">Get cart</button>
-                        <button id="clearCartButton" class="btn secondary" type="button">Clear cart</button>
+
+                    <div
+                            id="cartList"
+                            class="cart-list">
                     </div>
+
+                    <div class="actions">
+
+                        <button
+                                id="saveCartButton"
+                                class="btn"
+                                type="button">
+                            Save cart
+                        </button>
+
+                        <button
+                                id="checkoutButton"
+                                class="btn"
+                                type="button">
+                            Checkout
+                        </button>
+
+                        <button
+                                id="getCartButton"
+                                class="btn secondary"
+                                type="button">
+                            Get cart
+                        </button>
+
+                        <button
+                                id="clearCartButton"
+                                class="btn secondary"
+                                type="button">
+                            Clear cart
+                        </button>
+
+                    </div>
+
                 </div>
+
             </article>
+
         </section>
+
     </section>
 
     <section class="response-grid three-up">
+
         <article class="panel">
+
             <div class="panel-header">
-                <h2>Last Request</h2>
-                <span id="lastAction" class="muted">Ready</span>
+
+                <h2>
+                    Last Request
+                </h2>
+
+                <span
+                        id="lastAction"
+                        class="muted">
+                    Ready
+                </span>
+
             </div>
+
             <pre id="requestOutput"></pre>
+
         </article>
+
         <article class="panel">
+
             <div class="panel-header">
-                <h2>Last Response</h2>
-                <span class="muted">Backend result</span>
+
+                <h2>
+                    Last Response
+                </h2>
+
+                <span class="muted">
+                    Backend result
+                </span>
+
             </div>
+
             <pre id="responseOutput"></pre>
+
         </article>
+
         <article class="panel">
+
             <div class="panel-header">
-                <h2>Saved Cart Verification</h2>
-                <span class="muted">POST /cart or GET /cart response</span>
+
+                <h2>
+                    Saved Cart Verification
+                </h2>
+
+                <span class="muted">
+                    POST /cart or GET /cart response
+                </span>
+
             </div>
+
             <pre id="cartOutput"></pre>
+
         </article>
+
     </section>
+
 </main>
 
 <script>
-    const tokenStorageKey = "shopping_cart_token";
-    const userStorageKey = "shopping_cart_user";
-    const sessionStorageKey = "shopping_cart_session_id";
+
+    /*
+     * DEFAULT LOGIN TEST USER
+     *
+     * This is used for LOGIN and initial ACCOUNT defaults.
+     * REGISTER remains empty.
+     */
+    const DEFAULT_USER = {
+        firstName: "James",
+        lastName: "Taylor",
+        email: "buyer.uk@example.com",
+        password: "password-123",
+        phone: "+44 7700 900123",
+        customerType: "private_customer",
+        addressLine1: "10 King Street",
+        townOrCity: "London",
+        postcode: "SW1Y 6QY",
+        country: "United Kingdom"
+    };
+
+    const tokenStorageKey =
+        "shopping_cart_token";
+
+    const userStorageKey =
+        "shopping_cart_user";
+
+    const sessionStorageKey =
+        "shopping_cart_session_id";
+
 
     const fallbackProducts = [
         {
             id: 9278,
             name: "Stone floor sample",
             finish: "Fallback product for local testing",
-            defaultQuantity: 0.5
+            defaultQuantity: 0.5,
+            sampleAvailable: true,
+            samplePrice: 20
         }
     ];
 
-    let products = fallbackProducts;
+
+    let products =
+        fallbackProducts;
+
 
     const state = {
         cart: [],
@@ -632,917 +986,2494 @@
     };
 
     const elements = {
-        apiUrl: document.querySelector("#apiUrl"),
-        loginEmail: document.querySelector("#loginEmail"),
-        loginPassword: document.querySelector("#loginPassword"),
-        registerFirstName: document.querySelector("#registerFirstName"),
-        registerLastName: document.querySelector("#registerLastName"),
-        registerEmail: document.querySelector("#registerEmail"),
-        registerPassword: document.querySelector("#registerPassword"),
-        registerPhone: document.querySelector("#registerPhone"),
-        registerCustomerType: document.querySelector("#registerCustomerType"),
-        registerAddressLine1: document.querySelector("#registerAddressLine1"),
-        registerTownOrCity: document.querySelector("#registerTownOrCity"),
-        registerPostcode: document.querySelector("#registerPostcode"),
-        registerCountry: document.querySelector("#registerCountry"),
-        accountFirstName: document.querySelector("#accountFirstName"),
-        accountLastName: document.querySelector("#accountLastName"),
-        accountEmail: document.querySelector("#accountEmail"),
-        accountPassword: document.querySelector("#accountPassword"),
-        accountPhone: document.querySelector("#accountPhone"),
-        accountCustomerType: document.querySelector("#accountCustomerType"),
-        accountAddressLine1: document.querySelector("#accountAddressLine1"),
-        accountTownOrCity: document.querySelector("#accountTownOrCity"),
-        accountPostcode: document.querySelector("#accountPostcode"),
-        accountCountry: document.querySelector("#accountCountry"),
-        authGuestView: document.querySelector("#authGuestView"),
-        loginView: document.querySelector("#loginView"),
-        registerView: document.querySelector("#registerView"),
-        accountView: document.querySelector("#accountView"),
-        accountSummary: document.querySelector("#accountSummary"),
-        showLoginButton: document.querySelector("#showLoginButton"),
-        showRegisterButton: document.querySelector("#showRegisterButton"),
-        logoutButton: document.querySelector("#logoutButton"),
-        sessionDot: document.querySelector("#sessionDot"),
-        sessionTitle: document.querySelector("#sessionTitle"),
-        sessionDetail: document.querySelector("#sessionDetail"),
-        tokenPreview: document.querySelector("#tokenPreview"),
-        sessionIdPreview: document.querySelector("#sessionIdPreview"),
-        productsStatus: document.querySelector("#productsStatus"),
-        productGrid: document.querySelector("#productGrid"),
-        cartList: document.querySelector("#cartList"),
-        cartSummary: document.querySelector("#cartSummary"),
-        requestOutput: document.querySelector("#requestOutput"),
-        responseOutput: document.querySelector("#responseOutput"),
-        cartOutput: document.querySelector("#cartOutput"),
-        lastAction: document.querySelector("#lastAction")
+
+        apiUrl:
+            document.querySelector("#apiUrl"),
+
+        loginEmail:
+            document.querySelector("#loginEmail"),
+
+        loginPassword:
+            document.querySelector("#loginPassword"),
+
+        registerFirstName:
+            document.querySelector("#registerFirstName"),
+
+        registerLastName:
+            document.querySelector("#registerLastName"),
+
+        registerEmail:
+            document.querySelector("#registerEmail"),
+
+        registerPassword:
+            document.querySelector("#registerPassword"),
+
+        registerPhone:
+            document.querySelector("#registerPhone"),
+
+        registerCustomerType:
+            document.querySelector("#registerCustomerType"),
+
+        registerAddressLine1:
+            document.querySelector("#registerAddressLine1"),
+
+        registerTownOrCity:
+            document.querySelector("#registerTownOrCity"),
+
+        registerPostcode:
+            document.querySelector("#registerPostcode"),
+
+        registerCountry:
+            document.querySelector("#registerCountry"),
+
+        accountFirstName:
+            document.querySelector("#accountFirstName"),
+
+        accountLastName:
+            document.querySelector("#accountLastName"),
+
+        accountEmail:
+            document.querySelector("#accountEmail"),
+
+        accountPassword:
+            document.querySelector("#accountPassword"),
+
+        accountPhone:
+            document.querySelector("#accountPhone"),
+
+        accountCustomerType:
+            document.querySelector("#accountCustomerType"),
+
+        accountAddressLine1:
+            document.querySelector("#accountAddressLine1"),
+
+        accountTownOrCity:
+            document.querySelector("#accountTownOrCity"),
+
+        accountPostcode:
+            document.querySelector("#accountPostcode"),
+
+        accountCountry:
+            document.querySelector("#accountCountry"),
+
+        authGuestView:
+            document.querySelector("#authGuestView"),
+
+        loginView:
+            document.querySelector("#loginView"),
+
+        registerView:
+            document.querySelector("#registerView"),
+
+        accountView:
+            document.querySelector("#accountView"),
+
+        accountSummary:
+            document.querySelector("#accountSummary"),
+
+        showLoginButton:
+            document.querySelector("#showLoginButton"),
+
+        showRegisterButton:
+            document.querySelector("#showRegisterButton"),
+
+        logoutButton:
+            document.querySelector("#logoutButton"),
+
+        sessionDot:
+            document.querySelector("#sessionDot"),
+
+        sessionTitle:
+            document.querySelector("#sessionTitle"),
+
+        sessionDetail:
+            document.querySelector("#sessionDetail"),
+
+        tokenPreview:
+            document.querySelector("#tokenPreview"),
+
+        sessionIdPreview:
+            document.querySelector("#sessionIdPreview"),
+
+        productsStatus:
+            document.querySelector("#productsStatus"),
+
+        productGrid:
+            document.querySelector("#productGrid"),
+
+        cartList:
+            document.querySelector("#cartList"),
+
+        cartSummary:
+            document.querySelector("#cartSummary"),
+
+        requestOutput:
+            document.querySelector("#requestOutput"),
+
+        responseOutput:
+            document.querySelector("#responseOutput"),
+
+        cartOutput:
+            document.querySelector("#cartOutput"),
+
+        lastAction:
+            document.querySelector("#lastAction")
     };
 
-    elements.showLoginButton.addEventListener("click", () => showAuthForm("login"));
-    elements.showRegisterButton.addEventListener("click", () => showAuthForm("register"));
-    elements.loginView.addEventListener("submit", (event) => {
-        event.preventDefault();
-        login();
-    });
-    elements.registerView.addEventListener("submit", (event) => {
-        event.preventDefault();
-        register();
-    });
-    document.querySelector("#logoutButton").addEventListener("click", logout);
-    document.querySelector("#statusButton").addEventListener("click", checkAuth);
-    document.querySelector("#clientButton").addEventListener("click", getClientInfo);
-    document.querySelector("#editAccountButton").addEventListener("click", editAccount);
-    document.querySelector("#deleteAccountButton").addEventListener("click", deleteAccount);
-    document.querySelector("#saveCartButton").addEventListener("click", saveCart);
-    document.querySelector("#checkoutButton").addEventListener("click", createCheckout);
-    document.querySelector("#getCartButton").addEventListener("click", getCart);
-    document.querySelector("#clearCartButton").addEventListener("click", clearDraftCart);
+
+    /*
+     * LOGIN gets defaults.
+     * REGISTER starts empty.
+     * ACCOUNT gets defaults until backend values replace them.
+     */
+    applyDefaultUser();
+
+
+    elements.showLoginButton.addEventListener(
+        "click",
+        () => showAuthForm("login")
+    );
+
+
+    elements.showRegisterButton.addEventListener(
+        "click",
+        () => showAuthForm("register")
+    );
+
+
+    elements.loginView.addEventListener(
+        "submit",
+        (event) => {
+            event.preventDefault();
+            login();
+        }
+    );
+
+
+    elements.registerView.addEventListener(
+        "submit",
+        (event) => {
+            event.preventDefault();
+            register();
+        }
+    );
+
+
+    document
+        .querySelector("#logoutButton")
+        .addEventListener(
+            "click",
+            logout
+        );
+
+
+    document
+        .querySelector("#statusButton")
+        .addEventListener(
+            "click",
+            checkAuth
+        );
+
+
+    document
+        .querySelector("#clientButton")
+        .addEventListener(
+            "click",
+            getClientInfo
+        );
+
+
+    document
+        .querySelector("#editAccountButton")
+        .addEventListener(
+            "click",
+            editAccount
+        );
+
+
+    document
+        .querySelector("#deleteAccountButton")
+        .addEventListener(
+            "click",
+            deleteAccount
+        );
+
+
+    document
+        .querySelector("#saveCartButton")
+        .addEventListener(
+            "click",
+            saveCart
+        );
+
+
+    document
+        .querySelector("#checkoutButton")
+        .addEventListener(
+            "click",
+            createCheckout
+        );
+
+
+    document
+        .querySelector("#getCartButton")
+        .addEventListener(
+            "click",
+            getCart
+        );
+
+
+    document
+        .querySelector("#clearCartButton")
+        .addEventListener(
+            "click",
+            clearDraftCart
+        );
+
 
     loadProducts();
+
     renderSession();
+
     renderCart();
-    writeOutput("Ready. Register or login, add a product, then Save cart and Get cart.");
-    writeCartOutput("Saved cart responses will appear here.");
+
+    writeOutput(
+        "Ready. Register or login, add a product, then Save cart and Get cart."
+    );
+
+    writeCartOutput(
+        "Saved cart responses will appear here."
+    );
+
+
+    function applyDefaultUser() {
+
+        /*
+         * LOGIN DEFAULTS
+         */
+        elements.loginEmail.value =
+            DEFAULT_USER.email;
+
+        elements.loginPassword.value =
+            DEFAULT_USER.password;
+
+
+        /*
+         * REGISTER DEFAULTS
+         */
+        elements.registerFirstName.value =
+            DEFAULT_USER.firstName;
+
+        elements.registerLastName.value =
+            DEFAULT_USER.lastName;
+
+        elements.registerEmail.value =
+            DEFAULT_USER.email;
+
+        elements.registerPassword.value =
+            DEFAULT_USER.password;
+
+        elements.registerPhone.value =
+            DEFAULT_USER.phone;
+
+        elements.registerCustomerType.value =
+            DEFAULT_USER.customerType;
+
+        elements.registerAddressLine1.value =
+            DEFAULT_USER.addressLine1;
+
+        elements.registerTownOrCity.value =
+            DEFAULT_USER.townOrCity;
+
+        elements.registerPostcode.value =
+            DEFAULT_USER.postcode;
+
+        elements.registerCountry.value =
+            DEFAULT_USER.country;
+
+
+        /*
+         * ACCOUNT DEFAULTS
+         */
+        elements.accountFirstName.value =
+            DEFAULT_USER.firstName;
+
+        elements.accountLastName.value =
+            DEFAULT_USER.lastName;
+
+        elements.accountEmail.value =
+            DEFAULT_USER.email;
+
+        elements.accountPhone.value =
+            DEFAULT_USER.phone;
+
+        elements.accountCustomerType.value =
+            DEFAULT_USER.customerType;
+
+        elements.accountAddressLine1.value =
+            DEFAULT_USER.addressLine1;
+
+        elements.accountTownOrCity.value =
+            DEFAULT_USER.townOrCity;
+
+        elements.accountPostcode.value =
+            DEFAULT_USER.postcode;
+
+        elements.accountCountry.value =
+            DEFAULT_USER.country;
+    }
+
 
     async function register() {
-        const result = await apiFetch("/register", {
-            method: "POST",
-            body: {
-                firstName: elements.registerFirstName.value,
-                lastName: elements.registerLastName.value,
-                email: elements.registerEmail.value,
-                password: elements.registerPassword.value,
-                phone: elements.registerPhone.value,
-                customerType: elements.registerCustomerType.value,
-                sessionId: getSessionId(),
-                deliveryAddress: {
-                    addressLine1: elements.registerAddressLine1.value,
-                    townOrCity: elements.registerTownOrCity.value,
-                    postcode: elements.registerPostcode.value,
-                    country: elements.registerCountry.value
-                },
-                sameAsDeliveryAddress: true
-            }
-        });
 
-        persistLogin(result, registeredUserFromForm());
+        const result =
+            await apiFetch(
+                "/register",
+                {
+                    method: "POST",
+
+                    body: {
+
+                        firstName:
+                        elements.registerFirstName.value,
+
+                        lastName:
+                        elements.registerLastName.value,
+
+                        email:
+                        elements.registerEmail.value,
+
+                        password:
+                        elements.registerPassword.value,
+
+                        phone:
+                        elements.registerPhone.value,
+
+                        customerType:
+                        elements.registerCustomerType.value,
+
+                        sessionId:
+                            getSessionId(),
+
+                        deliveryAddress: {
+
+                            addressLine1:
+                            elements
+                                .registerAddressLine1
+                                .value,
+
+                            townOrCity:
+                            elements
+                                .registerTownOrCity
+                                .value,
+
+                            postcode:
+                            elements
+                                .registerPostcode
+                                .value,
+
+                            country:
+                            elements
+                                .registerCountry
+                                .value
+                        },
+
+                        sameAsDeliveryAddress:
+                            true
+                    }
+                }
+            );
+
+
+        persistLogin(
+            result,
+            registeredUserFromForm()
+        );
+
+
         if (result.response.ok) {
             await loadAccountDetails();
         }
-        writeOutput(result, "Register");
+
+
+        writeOutput(
+            result,
+            "Register"
+        );
     }
+
 
     async function login() {
-        const result = await apiFetch("/login", {
-            method: "POST",
-            body: {
-                email: elements.loginEmail.value,
-                password: elements.loginPassword.value,
-                sessionId: getSessionId()
-            }
-        });
 
-        persistLogin(result, {
-            email: elements.loginEmail.value
-        });
+        const result =
+            await apiFetch(
+                "/login",
+                {
+                    method: "POST",
+
+                    body: {
+
+                        email:
+                        elements.loginEmail.value,
+
+                        password:
+                        elements.loginPassword.value,
+
+                        sessionId:
+                            getSessionId()
+                    }
+                }
+            );
+
+
+        persistLogin(
+            result,
+            {
+                email:
+                elements.loginEmail.value
+            }
+        );
+
+
         if (result.response.ok) {
             await loadAccountDetails();
         }
-        writeOutput(result, "Login");
+
+
+        writeOutput(
+            result,
+            "Login"
+        );
     }
+
 
     async function checkAuth() {
-        const result = await apiFetch("/auth/status", {
-            method: "GET",
-            auth: true
-        });
 
-        writeOutput(result, "Check auth");
-        if (result.response.ok && result.body.email) {
-            rememberUser(result.body);
+        const result =
+            await apiFetch(
+                "/auth/status",
+                {
+                    method: "GET",
+                    auth: true
+                }
+            );
+
+
+        writeOutput(
+            result,
+            "Check auth"
+        );
+
+
+        if (
+            result.response.ok &&
+            result.body.email
+        ) {
+            rememberUser(
+                result.body
+            );
         }
     }
+
 
     async function getClientInfo() {
-        const result = await loadAccountDetails();
 
-        writeOutput(result, "Client info");
+        const result =
+            await loadAccountDetails();
+
+
+        writeOutput(
+            result,
+            "Client info"
+        );
     }
 
-    async function loadAccountDetails() {
-        const result = await apiFetch("/client/info", {
-            method: "GET",
-            auth: true
-        });
 
-        if (result.response.ok && result.body) {
-            fillAccountForm(result.body);
-            rememberUser(result.body);
+    async function loadAccountDetails() {
+
+        const result =
+            await apiFetch(
+                "/client/info",
+                {
+                    method: "GET",
+                    auth: true
+                }
+            );
+
+
+        if (
+            result.response.ok &&
+            result.body
+        ) {
+
+            fillAccountForm(
+                result.body
+            );
+
+            rememberUser(
+                result.body
+            );
         }
+
 
         return result;
     }
 
-    async function editAccount() {
-        const result = await apiFetch("/account", {
-            method: "PUT",
-            auth: true,
-            body: accountPayload({ includePassword: false })
-        });
 
-        if (result.response.ok && result.body) {
-            fillAccountForm(result.body);
-            rememberUser(result.body);
+    async function editAccount() {
+
+        const result =
+            await apiFetch(
+                "/account",
+                {
+                    method: "PUT",
+                    auth: true,
+
+                    body:
+                        accountPayload({
+                            includePassword:
+                                false
+                        })
+                }
+            );
+
+
+        if (
+            result.response.ok &&
+            result.body
+        ) {
+
+            fillAccountForm(
+                result.body
+            );
+
+            rememberUser(
+                result.body
+            );
         }
 
-        writeOutput(result, "Edit account");
+
+        writeOutput(
+            result,
+            "Edit account"
+        );
     }
 
+
     async function deleteAccount() {
-        const confirmed = window.confirm("Delete this account? This removes the logged-in user from the backend.");
+
+        const confirmed =
+            window.confirm(
+                "Delete this account? This removes the logged-in user from the backend."
+            );
+
+
         if (!confirmed) {
-            writeOutput("Delete account cancelled.", "Delete account");
+
+            writeOutput(
+                "Delete account cancelled.",
+                "Delete account"
+            );
+
             return;
         }
 
-        const result = await apiFetch("/account", {
-            method: "DELETE",
-            auth: true
-        });
+
+        const result =
+            await apiFetch(
+                "/account",
+                {
+                    method: "DELETE",
+                    auth: true
+                }
+            );
+
 
         if (result.response.ok) {
-            localStorage.removeItem(tokenStorageKey);
-            localStorage.removeItem(userStorageKey);
+
+            localStorage.removeItem(
+                tokenStorageKey
+            );
+
+            localStorage.removeItem(
+                userStorageKey
+            );
+
             renderSession();
         }
 
-        writeOutput(result, "Delete account");
+
+        writeOutput(
+            result,
+            "Delete account"
+        );
     }
 
+
     async function loadProducts() {
-        const result = await apiFetch("/products", {
-            method: "GET"
-        });
 
-        const productResults = Array.isArray(result.body)
-            ? result.body
-            : Array.isArray(result.body && result.body.products)
-                ? result.body.products
-                : [];
+        const result =
+            await apiFetch(
+                "/products",
+                {
+                    method: "GET"
+                }
+            );
 
-        if (result.response.ok && productResults.length > 0) {
-            const purchasableProducts = productResults.filter(isPurchasableProduct);
-            products = purchasableProducts
-                .map(normalizeProduct)
-                .slice(0, 12);
-            const loadedRealProducts = products.length > 0;
+
+        const productResults =
+            Array.isArray(result.body)
+                ? result.body
+                : Array.isArray(
+                    result.body &&
+                    result.body.products
+                )
+                    ? result.body.products
+                    : [];
+
+
+        if (
+            result.response.ok &&
+            productResults.length > 0
+        ) {
+
+            const purchasableProducts =
+                productResults.filter(
+                    isPurchasableProduct
+                );
+
+
+            const productSummaries =
+                purchasableProducts
+                    .slice(0, 12);
+
+
+            const detailedProducts =
+                await Promise.all(
+                    productSummaries.map(
+                        async (product) => {
+
+                            try {
+                                const response =
+                                    await fetch(
+                                        `${apiUrl()}/products/${encodeURIComponent(product.id)}`,
+                                        {
+                                            method: "GET",
+                                            headers: {
+                                                "Content-Type": "application/json"
+                                            }
+                                        }
+                                    );
+
+
+                                if (!response.ok) {
+                                    return product;
+                                }
+
+
+                                const detailedProduct =
+                                    await response.json();
+
+
+                                return detailedProduct || product;
+
+                            } catch {
+                                return product;
+                            }
+                        }
+                    )
+                );
+
+
+            products =
+                detailedProducts
+                    .map(normalizeProduct);
+
+
+            const loadedRealProducts =
+                products.length > 0;
+
+
             if (!loadedRealProducts) {
-                products = fallbackProducts;
+                products =
+                    fallbackProducts;
             }
-            elements.productsStatus.textContent = loadedRealProducts
-                ? `${products.length} of ${purchasableProducts.length} purchasable products loaded`
-                : "Using fallback product because no purchasable catalog products were found";
-            writeOutput({
-                loadedProducts: products.map((product) => ({
-                    id: product.id,
-                    name: product.name
-                })),
-                skippedProducts: productResults.length - purchasableProducts.length
-            }, "Load products");
+
+
+            elements.productsStatus.textContent =
+                loadedRealProducts
+                    ? `${products.length} of ${purchasableProducts.length} purchasable products loaded`
+                    : "Using fallback product because no purchasable catalog products were found";
+
+
+            writeOutput(
+                {
+                    loadedProducts:
+                        products.map(
+                            (product) => ({
+                                id:
+                                product.id,
+                                name:
+                                product.name
+                            })
+                        ),
+
+                    skippedProducts:
+                        productResults.length -
+                        purchasableProducts.length
+                },
+                "Load products"
+            );
+
         } else {
-            products = fallbackProducts;
-            elements.productsStatus.textContent = "Using fallback product because real catalog could not be loaded";
-            writeOutput(result, "Load products failed");
+
+            products =
+                fallbackProducts;
+
+
+            elements.productsStatus.textContent =
+                "Using fallback product because real catalog could not be loaded";
+
+
+            writeOutput(
+                result,
+                "Load products failed"
+            );
         }
+
 
         renderProducts();
     }
 
+
     async function saveCart() {
+
         if (state.cart.length === 0) {
-            writeOutput("Add at least one product before saving.", "Save cart");
+
+            writeOutput(
+                "Add at least one product before saving.",
+                "Save cart"
+            );
+
             return;
         }
 
-        const result = await saveDraftCart();
 
-        writeOutput(result, "Save cart");
-        writeCartOutput(result);
+        const result =
+            await saveDraftCart();
+
+
+        writeOutput(
+            result,
+            "Save cart"
+        );
+
+
+        writeCartOutput(
+            result
+        );
     }
+
 
     async function saveDraftCart() {
-        return apiFetch("/cart", {
-            method: "POST",
-            auth: true,
-            body: cartPayload()
-        });
+
+        return apiFetch(
+            "/cart",
+            {
+                method: "POST",
+                auth: true,
+
+                body:
+                    cartPayload()
+            }
+        );
     }
 
-    async function getCart() {
-        const result = await apiFetch(`/cart?sessionId=${encodeURIComponent(getSessionId())}`, {
-            method: "GET",
-            auth: true
-        });
 
-        if (result.response.ok && result.body && Array.isArray(result.body.products)) {
-            state.cart = result.body.products.map(cartProductFromResponse);
+    async function getCart() {
+
+        const result =
+            await apiFetch(
+                `/cart?sessionId=${encodeURIComponent(getSessionId())}`,
+                {
+                    method: "GET",
+                    auth: true
+                }
+            );
+
+
+        if (
+            result.response.ok &&
+            result.body &&
+            Array.isArray(
+                result.body.products
+            )
+        ) {
+
+            state.cart =
+                result.body.products.map(
+                    cartProductFromResponse
+                );
+
+
             renderCart();
         }
 
-        writeOutput(result, "Get cart");
-        writeCartOutput(result);
+
+        writeOutput(
+            result,
+            "Get cart"
+        );
+
+
+        writeCartOutput(
+            result
+        );
     }
 
+
     async function createCheckout() {
+
         if (state.cart.length > 0) {
-            const saveResult = await saveDraftCart();
-            writeCartOutput(saveResult);
+
+            const saveResult =
+                await saveDraftCart();
+
+
+            writeCartOutput(
+                saveResult
+            );
+
 
             if (!saveResult.response.ok) {
-                writeOutput(saveResult, "Save before checkout");
+
+                writeOutput(
+                    saveResult,
+                    "Save before checkout"
+                );
+
                 return;
             }
         }
 
-        const quoteResult = await quoteFedExBeforeCheckout();
-        writeCartOutput(quoteResult);
 
-        if (!quoteResult.response.ok) {
-            writeOutput(quoteResult, "FedEx quote before checkout");
-            return;
-        }
+        const result =
+            await apiFetch(
+                "/checkout",
+                {
+                    method: "POST",
 
-        const result = await apiFetch("/checkout", {
-            method: "POST",
-            body: {
-                sessionId: getSessionId(),
-                successUrl: checkoutReturnUrl("success"),
-                cancelUrl: checkoutReturnUrl("cancel"),
-                customerEmail: checkoutCustomerEmail(),
-                destination: quoteResult.body.destination || checkoutDestination(),
-                shippingCharge: checkoutShippingCharge(quoteResult.body)
-            }
-        });
+                    body: {
 
-        writeOutput(result, "Checkout");
-        if (result.response.ok) {
-            writeCartOutput({
-                fedExQuote: quoteResult.body,
-                checkout: result
-            });
-        }
+                        sessionId:
+                            getSessionId(),
 
-        if (result.response.ok && result.body && result.body.url) {
-            window.location.href = result.body.url;
+                        successUrl:
+                            checkoutReturnUrl(
+                                "success"
+                            ),
+
+                        cancelUrl:
+                            checkoutReturnUrl(
+                                "cancel"
+                            ),
+
+                        customerEmail:
+                            checkoutCustomerEmail(),
+
+                        deliveryAddress:
+                            checkoutDeliveryAddress(),
+
+                        shippingCharge:
+                            null
+                    }
+                }
+            );
+
+
+        writeOutput(
+            result,
+            "Checkout"
+        );
+
+
+        if (
+            result.response.ok &&
+            result.body &&
+            result.body.url
+        ) {
+            window.location.href =
+                result.body.url;
         }
     }
 
-    async function quoteFedExBeforeCheckout() {
-        if (state.cart.length === 0) {
-            return {
-                response: { ok: false },
-                error: "Add at least one product before checkout."
-            };
-        }
-
-        const destination = checkoutDestination();
-        const requests = [];
-        const productQuotes = [];
-
-        writeOutput({
-            destination,
-            products: state.cart.map((item) => ({
-                productId: item.productId,
-                quantityM2: item.quantityM2
-            }))
-        }, "FedEx quote before checkout");
-
-        for (const item of state.cart) {
-            const quoteRequest = {
-                productId: item.productId,
-                quantityM2: Number(item.quantityM2),
-                destinationStreetLines: destination.streetLines,
-                destinationCountryCode: destination.countryCode,
-                destinationPostalCode: destination.postalCode,
-                destinationCity: destination.city,
-                currency: destination.currency,
-                incoterm: "DDP"
-            };
-
-            requests.push(quoteRequest);
-            const result = await apiFetch("/shipping/fedex/quote", {
-                method: "POST",
-                body: quoteRequest
-            });
-
-            if (!result.response.ok) {
-                console.log("FedEx quote before checkout failed", result);
-                return {
-                    request: { quotes: requests },
-                    response: result.response,
-                    body: result.body,
-                    error: result.error || "FedEx quote failed before checkout"
-                };
-            }
-
-            const cheapestQuote = cheapestFedExQuote(result.body.quotes || []);
-            if (!cheapestQuote) {
-                console.log("FedEx quote before checkout returned no rates", result);
-                return {
-                    request: { quotes: requests },
-                    response: { ok: false, status: result.response.status },
-                    body: result.body,
-                    error: `FedEx returned no shipping rates for product ${item.productId}`
-                };
-            }
-
-            productQuotes.push({
-                productId: item.productId,
-                name: item.name,
-                quantityM2: item.quantityM2,
-                selectedPackage: result.body.selectedPackage,
-                cheapestQuote,
-                allQuotes: result.body.quotes
-            });
-        }
-
-        state.shippingQuotes = productQuotes;
-
-        const summary = {
-            destination,
-            productQuotes,
-            shippingTotalByCurrency: shippingTotalByCurrency(productQuotes)
-        };
-
-        console.log("FedEx quote before checkout", summary);
-
-        return {
-            request: { quotes: requests },
-            response: { ok: true, status: 200 },
-            body: summary
-        };
-    }
 
     function logout() {
-        localStorage.removeItem(tokenStorageKey);
-        localStorage.removeItem(userStorageKey);
+
+        localStorage.removeItem(
+            tokenStorageKey
+        );
+
+        localStorage.removeItem(
+            userStorageKey
+        );
+
+
         renderSession();
-        writeOutput("Logged out locally. The backend has no logout route, so this clears the saved browser token.", "Logout");
+
+
+        writeOutput(
+            "Logged out locally. The backend has no logout route, so this clears the saved browser token.",
+            "Logout"
+        );
     }
 
+
     async function clearDraftCart() {
-        const result = await apiFetch("/cart/clear", {
-            method: "POST",
-            body: {
-                sessionId: getSessionId()
-            }
-        });
+
+        const result =
+            await apiFetch(
+                "/cart/clear",
+                {
+                    method: "POST",
+
+                    body: {
+                        sessionId:
+                            getSessionId()
+                    }
+                }
+            );
+
 
         if (result.response.ok) {
+
             state.cart = [];
+
             renderCart();
         }
 
-        writeOutput(result, "Clear cart");
-        writeCartOutput(result);
+
+        writeOutput(
+            result,
+            "Clear cart"
+        );
+
+
+        writeCartOutput(
+            result
+        );
     }
+
 
     function cartPayload() {
+
         return {
-            sessionId: getSessionId(),
-            products: state.cart.map((item) => ({
-                productId: item.productId,
-                quantityM2: Number(item.quantityM2)
-            }))
+
+            sessionId:
+                getSessionId(),
+
+            products:
+                state.cart.map(
+                    (item) => {
+
+                        const product = {
+                            productId:
+                            item.productId,
+
+                            isSample:
+                                Boolean(
+                                    item.isSample
+                                )
+                        };
+
+
+                        if (!item.isSample) {
+
+                            product.quantityM2 =
+                                Number(
+                                    item.quantityM2
+                                );
+                        }
+
+
+                        return product;
+                    }
+                )
         };
     }
 
-    function checkoutDestination() {
-        const countryCode = countryToCode(elements.accountCountry.value || elements.registerCountry.value);
+
+    function checkoutDeliveryAddress() {
 
         return {
-            streetLines: [elements.accountAddressLine1.value || elements.registerAddressLine1.value].filter(Boolean),
-            city: elements.accountTownOrCity.value || elements.registerTownOrCity.value,
-            postalCode: elements.accountPostcode.value || elements.registerPostcode.value,
-            countryCode,
-            currency: countryCode === "GB" ? "GBP" : "EUR"
+
+            addressLine1:
+                elements.accountAddressLine1.value ||
+                elements.registerAddressLine1.value,
+
+            townOrCity:
+                elements.accountTownOrCity.value ||
+                elements.registerTownOrCity.value,
+
+            postcode:
+                elements.accountPostcode.value ||
+                elements.registerPostcode.value,
+
+            country:
+                elements.accountCountry.value ||
+                elements.registerCountry.value
         };
     }
+
 
     function checkoutCustomerEmail() {
-        const user = getUser();
 
-        return elements.accountEmail.value || user.email || elements.loginEmail.value || elements.registerEmail.value;
+        const user =
+            getUser();
+
+
+        return (
+            elements.accountEmail.value ||
+            user.email ||
+            elements.loginEmail.value ||
+            elements.registerEmail.value
+        );
     }
 
+
     function countryToCode(country) {
-        const normalized = String(country || "").trim().toLowerCase();
+
+        const normalized =
+            String(country || "")
+                .trim()
+                .toLowerCase();
+
+
         const knownCountries = {
+
             "portugal": "PT",
             "pt": "PT",
+
             "united kingdom": "GB",
             "uk": "GB",
             "gb": "GB",
             "great britain": "GB",
+
             "italy": "IT",
             "it": "IT",
+
             "greece": "GR",
             "gr": "GR",
+
             "france": "FR",
             "fr": "FR",
+
             "spain": "ES",
             "es": "ES",
+
             "germany": "DE",
             "de": "DE"
         };
 
-        return knownCountries[normalized] || normalized.slice(0, 2).toUpperCase();
+
+        return (
+            knownCountries[normalized] ||
+            normalized
+                .slice(0, 2)
+                .toUpperCase()
+        );
     }
 
-    function cheapestFedExQuote(quotes) {
-        return quotes
-            .filter((quote) => Number.isFinite(Number(quote.totalNetCharge)))
-            .sort((left, right) => Number(left.totalNetCharge) - Number(right.totalNetCharge))[0] || null;
-    }
 
-    function shippingTotalByCurrency(productQuotes) {
-        return productQuotes.reduce((totals, quote) => {
-            const currency = quote.cheapestQuote.currency || "EUR";
-            totals[currency] = Number(((totals[currency] || 0) + Number(quote.cheapestQuote.totalNetCharge)).toFixed(2));
-            return totals;
-        }, {});
-    }
+    function accountPayload({
+                                includePassword
+                            }) {
 
-    function checkoutShippingCharge(quoteSummary) {
-        const productQuotes = quoteSummary && Array.isArray(quoteSummary.productQuotes)
-            ? quoteSummary.productQuotes
-            : [];
-        const firstQuote = productQuotes[0] && productQuotes[0].cheapestQuote;
-        const total = productQuotes.reduce((amount, productQuote) => {
-            return amount + Number(productQuote.cheapestQuote.totalNetCharge || 0);
-        }, 0);
-
-        if (!firstQuote || total <= 0) {
-            return null;
-        }
-
-        return {
-            serviceType: firstQuote.serviceType,
-            serviceName: firstQuote.serviceName || firstQuote.serviceType || "FedEx delivery",
-            amountTotal: total.toFixed(2),
-            currency: "eur",
-            estimatedDeliveryDate: firstQuote.estimatedDeliveryDate || null,
-            originalAmount: total.toFixed(2),
-            originalCurrency: firstQuote.currency || "EUR"
-        };
-    }
-
-    function accountPayload({ includePassword }) {
         const payload = {
-            firstName: elements.accountFirstName.value,
-            lastName: elements.accountLastName.value,
-            email: elements.accountEmail.value,
-            phone: elements.accountPhone.value,
-            customerType: elements.accountCustomerType.value,
+
+            firstName:
+            elements.accountFirstName.value,
+
+            lastName:
+            elements.accountLastName.value,
+
+            email:
+            elements.accountEmail.value,
+
+            phone:
+            elements.accountPhone.value,
+
+            customerType:
+            elements.accountCustomerType.value,
+
             deliveryAddress: {
-                addressLine1: elements.accountAddressLine1.value,
-                townOrCity: elements.accountTownOrCity.value,
-                postcode: elements.accountPostcode.value,
-                country: elements.accountCountry.value
+
+                addressLine1:
+                elements.accountAddressLine1.value,
+
+                townOrCity:
+                elements.accountTownOrCity.value,
+
+                postcode:
+                elements.accountPostcode.value,
+
+                country:
+                elements.accountCountry.value
             },
-            sameAsDeliveryAddress: true
+
+            sameAsDeliveryAddress:
+                true
         };
 
-        if (includePassword && elements.accountPassword.value) {
-            payload.password = elements.accountPassword.value;
+
+        if (
+            includePassword &&
+            elements.accountPassword.value
+        ) {
+            payload.password =
+                elements.accountPassword.value;
         }
+
 
         return payload;
     }
 
-    function fillAccountForm(user) {
-        elements.accountFirstName.value = user.firstName || elements.accountFirstName.value;
-        elements.accountLastName.value = user.lastName || elements.accountLastName.value;
-        elements.accountEmail.value = user.email || elements.accountEmail.value;
-        elements.accountPhone.value = user.phone || elements.accountPhone.value;
-        elements.accountCustomerType.value = user.customerType === "Business" ? "business" : "private_customer";
 
-        const deliveryAddress = user.deliveryAddress || {};
-        elements.accountAddressLine1.value = deliveryAddress.addressLine1 || elements.accountAddressLine1.value;
-        elements.accountTownOrCity.value = deliveryAddress.townOrCity || elements.accountTownOrCity.value;
-        elements.accountPostcode.value = deliveryAddress.postcode || elements.accountPostcode.value;
-        elements.accountCountry.value = deliveryAddress.country || elements.accountCountry.value;
+    function fillAccountForm(user) {
+
+        elements.accountFirstName.value =
+            user.firstName ||
+            elements.accountFirstName.value;
+
+
+        elements.accountLastName.value =
+            user.lastName ||
+            elements.accountLastName.value;
+
+
+        elements.accountEmail.value =
+            user.email ||
+            elements.accountEmail.value;
+
+
+        elements.accountPhone.value =
+            user.phone ||
+            elements.accountPhone.value;
+
+
+        elements.accountCustomerType.value =
+            user.customerType === "Business"
+                ? "business"
+                : "private_customer";
+
+
+        const deliveryAddress =
+            user.deliveryAddress || {};
+
+
+        elements.accountAddressLine1.value =
+            deliveryAddress.addressLine1 ||
+            elements.accountAddressLine1.value;
+
+
+        elements.accountTownOrCity.value =
+            deliveryAddress.townOrCity ||
+            elements.accountTownOrCity.value;
+
+
+        elements.accountPostcode.value =
+            deliveryAddress.postcode ||
+            elements.accountPostcode.value;
+
+
+        elements.accountCountry.value =
+            deliveryAddress.country ||
+            elements.accountCountry.value;
     }
 
+
     function registeredUserFromForm() {
+
         return {
-            firstName: elements.registerFirstName.value,
-            lastName: elements.registerLastName.value,
-            email: elements.registerEmail.value,
-            phone: elements.registerPhone.value,
-            customerType: elements.registerCustomerType.value === "business" ? "Business" : "Private Customer",
+
+            firstName:
+            elements.registerFirstName.value,
+
+            lastName:
+            elements.registerLastName.value,
+
+            email:
+            elements.registerEmail.value,
+
+            phone:
+            elements.registerPhone.value,
+
+            customerType:
+                elements.registerCustomerType.value ===
+                "business"
+                    ? "Business"
+                    : "Private Customer",
+
             deliveryAddress: {
-                addressLine1: elements.registerAddressLine1.value,
-                townOrCity: elements.registerTownOrCity.value,
-                postcode: elements.registerPostcode.value,
-                country: elements.registerCountry.value
+
+                addressLine1:
+                elements.registerAddressLine1.value,
+
+                townOrCity:
+                elements.registerTownOrCity.value,
+
+                postcode:
+                elements.registerPostcode.value,
+
+                country:
+                elements.registerCountry.value
             }
         };
     }
 
-    function persistLogin(result, userDetails) {
-        if (result.response.ok && result.body.token) {
-            localStorage.setItem(tokenStorageKey, result.body.token);
+
+    function persistLogin(
+        result,
+        userDetails
+    ) {
+
+        if (
+            result.response.ok &&
+            result.body.token
+        ) {
+
+            localStorage.setItem(
+                tokenStorageKey,
+                result.body.token
+            );
+
+
             const user = {
+
                 ...userDetails,
-                userId: result.body.userId,
-                expiresAt: result.body.expiresAt
+
+                userId:
+                result.body.userId,
+
+                expiresAt:
+                result.body.expiresAt
             };
-            rememberUser(user);
-            fillAccountForm(user);
+
+
+            rememberUser(
+                user
+            );
+
+
+            fillAccountForm(
+                user
+            );
         }
+
+
         renderSession();
     }
+
 
     function rememberUser(user) {
-        localStorage.setItem(userStorageKey, JSON.stringify(user));
+
+        localStorage.setItem(
+            userStorageKey,
+            JSON.stringify(user)
+        );
+
+
         renderSession();
     }
 
-    async function apiFetch(path, options) {
-        const headers = {
-            "Content-Type": "application/json"
-        };
-        const token = getToken();
 
-        if (options.auth && token) {
-            headers.Authorization = `Bearer ${token}`;
+    async function apiFetch(
+        path,
+        options
+    ) {
+
+        const headers = {
+            "Content-Type":
+                "application/json"
+        };
+
+
+        const token =
+            getToken();
+
+
+        if (
+            options.auth &&
+            token
+        ) {
+
+            headers.Authorization =
+                `Bearer ${token}`;
         }
 
-        const requestDetails = {
-            method: options.method,
-            path,
-            url: `${apiUrl()}${path}`,
-            authenticated: Boolean(headers.Authorization),
-            body: options.body || null
-        };
-        const activeButton = document.activeElement instanceof HTMLButtonElement
-            ? document.activeElement
-            : null;
 
-        writePendingRequest(requestDetails);
-        setBusy(activeButton, true);
+        const requestDetails = {
+
+            method:
+            options.method,
+
+            path,
+
+            url:
+                `${apiUrl()}${path}`,
+
+            authenticated:
+                Boolean(
+                    headers.Authorization
+                ),
+
+            body:
+                options.body || null
+        };
+
+
+        const activeButton =
+            document.activeElement instanceof
+            HTMLButtonElement
+                ? document.activeElement
+                : null;
+
+
+        writePendingRequest(
+            requestDetails
+        );
+
+
+        setBusy(
+            activeButton,
+            true
+        );
+
 
         try {
-            const response = await fetch(`${apiUrl()}${path}`, {
-                method: options.method,
-                headers,
-                body: options.body ? JSON.stringify(options.body) : undefined
-            });
-            const text = await response.text();
-            const body = text ? JSON.parse(text) : null;
+
+            const response =
+                await fetch(
+                    `${apiUrl()}${path}`,
+                    {
+                        method:
+                        options.method,
+
+                        headers,
+
+                        body:
+                            options.body
+                                ? JSON.stringify(
+                                    options.body
+                                )
+                                : undefined
+                    }
+                );
+
+
+            const text =
+                await response.text();
+
+
+            let body = null;
+
+
+            if (text) {
+
+                try {
+
+                    body =
+                        JSON.parse(text);
+
+                } catch {
+
+                    body =
+                        text;
+                }
+            }
+
 
             return {
-                request: requestDetails,
+
+                request:
+                requestDetails,
+
                 response: {
-                    status: response.status,
-                    ok: response.ok
+                    status:
+                    response.status,
+
+                    ok:
+                    response.ok
                 },
+
                 body
             };
+
         } catch (error) {
+
             return {
-                request: requestDetails,
+
+                request:
+                requestDetails,
+
                 response: {
                     ok: false
                 },
-                error: error.message
+
+                error:
+                error.message
             };
+
         } finally {
-            setBusy(activeButton, false);
+
+            setBusy(
+                activeButton,
+                false
+            );
         }
     }
 
+
     function renderProducts() {
-        elements.productGrid.innerHTML = "";
+
+        elements.productGrid.innerHTML =
+            "";
+
+
         if (products.length === 0) {
-            elements.productGrid.innerHTML = `<div class="empty">No real products loaded. Check that the backend is running and the catalog API is reachable.</div>`;
+
+            elements.productGrid.innerHTML =
+                `<div class="empty">
+                    No real products loaded.
+                    Check that the backend is running
+                    and the catalog API is reachable.
+                </div>`;
+
             return;
         }
 
-        products.forEach((product, index) => {
-            const card = document.createElement("article");
-            card.className = "product-card";
-            card.innerHTML = `
-                <div>
-                    <h3>${product.name}</h3>
-                    <div class="product-meta">${product.finish}<br>Product ID ${product.id}</div>
-                </div>
-                <label>
-                    m2 quantity
-                    <input type="number" min="0.1" step="0.1" value="${product.defaultQuantity}" data-product-qty="${index}">
-                </label>
-                <button class="btn secondary" type="button" data-product-index="${index}">Add to cart</button>
-            `;
-            elements.productGrid.appendChild(card);
+
+        products.forEach(
+            (product, index) => {
+
+                const card =
+                    document.createElement(
+                        "article"
+                    );
+
+
+                card.className =
+                    "product-card";
+
+
+                const sampleButton =
+                    product.sampleAvailable
+                        ? `
+                            <button
+                                class="btn secondary"
+                                type="button"
+                                data-sample-index="${index}">
+                                ${
+                            Number.isFinite(product.samplePrice)
+                                ? `Add sample to cart (€${product.samplePrice.toFixed(2)})`
+                                : "Add sample to cart"
+                        }
+                            </button>
+                        `
+                        : "";
+
+
+                card.innerHTML = `
+                    <div>
+                        <h3>
+                            ${product.name}
+                        </h3>
+
+                        <div class="product-meta">
+                            ${product.finish}
+                            <br>
+                            Product ID ${product.id}
+                        </div>
+                    </div>
+
+                    <label>
+                        m2 quantity
+
+                        <input
+                            type="number"
+                            min="0.1"
+                            step="0.1"
+                            value="${product.defaultQuantity}"
+                            data-product-qty="${index}">
+                    </label>
+
+                    <div class="actions" style="margin-top:0">
+                        <button
+                            class="btn secondary"
+                            type="button"
+                            data-product-index="${index}">
+                            Add to cart
+                        </button>
+
+                        ${sampleButton}
+                    </div>
+                `;
+
+
+                elements.productGrid.appendChild(
+                    card
+                );
+            }
+        );
+
+
+        elements.productGrid.onclick =
+            (event) => {
+
+                const sampleButton =
+                    event.target.closest(
+                        "[data-sample-index]"
+                    );
+
+
+                if (sampleButton) {
+
+                    const index =
+                        Number(
+                            sampleButton.dataset.sampleIndex
+                        );
+
+
+                    addSampleToCart(
+                        products[index]
+                    );
+
+                    return;
+                }
+
+
+                const productButton =
+                    event.target.closest(
+                        "[data-product-index]"
+                    );
+
+
+                if (!productButton) {
+                    return;
+                }
+
+
+                const index =
+                    Number(
+                        productButton.dataset.productIndex
+                    );
+
+
+                const product =
+                    products[index];
+
+
+                const quantityInput =
+                    elements.productGrid.querySelector(
+                        `[data-product-qty="${index}"]`
+                    );
+
+
+                addToCart(
+                    product,
+                    Number(
+                        quantityInput.value
+                    )
+                );
+            };
+    }
+
+
+    function normalizeProduct(product) {
+
+        const order =
+            product
+                .purchase_information
+                .order;
+
+
+        const sample =
+            product.purchase_information.sample ||
+            {};
+
+
+        const sampleAvailable =
+            sample.sample_available === true;
+
+
+        const parsedSamplePrice =
+            Number(
+                sample.sample_price
+            );
+
+
+        const samplePrice =
+            Number.isFinite(parsedSamplePrice)
+                ? parsedSamplePrice
+                : null;
+
+
+        const name =
+            product.name ||
+            product.title ||
+            product.post_title ||
+            product.slug ||
+            `Product ${product.id}`;
+
+
+        const finish = [
+
+            product.slug
+                ? `Slug: ${product.slug}`
+                : "",
+
+            order.m2_per_box
+                ? `${order.m2_per_box} m2 per box`
+                : "",
+
+            order.client_price_per_m2
+                ? `${order.client_price_per_m2} per m2`
+                : "",
+
+            sampleAvailable
+                ? samplePrice !== null
+                    ? `Sample €${samplePrice.toFixed(2)}`
+                    : "Sample available"
+                : ""
+
+        ]
+            .filter(Boolean)
+            .join(" | ");
+
+
+        return {
+
+            id:
+                Number(product.id),
+
+            name:
+                String(name),
+
+            finish:
+                finish ||
+                "Real catalog product",
+
+            defaultQuantity:
+                Number(
+                    order.m2_per_box
+                ) || 1,
+
+            sampleAvailable,
+
+            samplePrice
+        };
+    }
+
+
+    function isPurchasableProduct(
+        product
+    ) {
+
+        const order =
+            product &&
+            product.purchase_information &&
+            product.purchase_information.order;
+
+
+        return Boolean(
+
+            product &&
+
+            Number(
+                product.id
+            ) &&
+
+            product.for_sale === true &&
+
+            order &&
+
+            Number(
+                order.m2_per_box
+            ) > 0 &&
+
+            Number(
+                order.client_price_per_m2
+            ) > 0
+        );
+    }
+
+
+    function addToCart(
+        product,
+        quantityM2
+    ) {
+
+        if (
+            !Number.isFinite(
+                quantityM2
+            ) ||
+            quantityM2 <= 0
+        ) {
+
+            writeOutput(
+                "Quantity must be greater than zero.",
+                "Add to cart"
+            );
+
+            return;
+        }
+
+
+        const existing =
+            state.cart.find(
+                (item) =>
+                    item.productId === product.id &&
+                    item.isSample === false
+            );
+
+
+        if (existing) {
+
+            existing.quantityM2 =
+                Number(
+                    (
+                        existing.quantityM2 +
+                        quantityM2
+                    ).toFixed(2)
+                );
+
+        } else {
+
+            state.cart.push({
+
+                productId:
+                product.id,
+
+                name:
+                product.name,
+
+                quantityM2,
+
+                isSample:
+                    false
+            });
+        }
+
+
+        renderCart();
+
+
+        writeOutput(
+            {
+                draftCart:
+                state.cart,
+
+                nextSavePayload:
+                    cartPayload()
+            },
+            "Add to cart"
+        );
+    }
+
+
+    function addSampleToCart(
+        product
+    ) {
+
+        if (!product.sampleAvailable) {
+
+            writeOutput(
+                "A sample is not available for this product.",
+                "Add sample"
+            );
+
+            return;
+        }
+
+
+        const existing =
+            state.cart.find(
+                (item) =>
+                    item.productId === product.id &&
+                    item.isSample === true
+            );
+
+
+        if (existing) {
+
+            writeOutput(
+                "This sample is already in the cart.",
+                "Add sample"
+            );
+
+            return;
+        }
+
+
+        state.cart.push({
+
+            productId:
+            product.id,
+
+            name:
+            product.name,
+
+            quantityM2:
+                null,
+
+            isSample:
+                true
         });
 
-        elements.productGrid.addEventListener("click", (event) => {
-            const button = event.target.closest("[data-product-index]");
+
+        renderCart();
+
+
+        writeOutput(
+            {
+                draftCart:
+                state.cart,
+
+                nextSavePayload:
+                    cartPayload()
+            },
+            "Add sample"
+        );
+    }
+
+
+    function cartProductFromResponse(
+        product
+    ) {
+
+        const matchingProduct =
+            products.find(
+                (item) =>
+                    item.id ===
+                    Number(
+                        product.productId
+                    )
+            );
+
+
+        const isSample =
+            product.isSample === true;
+
+
+        return {
+
+            productId:
+                Number(
+                    product.productId
+                ),
+
+            name:
+                matchingProduct
+                    ? matchingProduct.name
+                    : `Product ${product.productId}`,
+
+            quantityM2:
+                isSample
+                    ? null
+                    : Number(
+                        product.squareMeters
+                    ),
+
+            isSample
+        };
+    }
+
+
+    function renderCart() {
+
+        elements.cartList.innerHTML =
+            "";
+
+
+        if (
+            state.cart.length === 0
+        ) {
+
+            elements.cartList.innerHTML =
+                `<div class="empty">
+                    No draft items yet.
+                    Add products above to build a cart.
+                </div>`;
+
+        } else {
+
+            state.cart.forEach(
+                (item, index) => {
+
+                    const row =
+                        document.createElement(
+                            "div"
+                        );
+
+
+                    row.className =
+                        "cart-row";
+
+
+                    const quantityControl =
+                        item.isSample
+                            ? `
+                                <div class="muted">
+                                    Sample
+                                </div>
+                            `
+                            : `
+                                <input
+                                    type="number"
+                                    min="0.1"
+                                    step="0.1"
+                                    value="${item.quantityM2}"
+                                    data-cart-qty="${index}"
+                                    aria-label="Quantity in square meters">
+                            `;
+
+
+                    row.innerHTML = `
+                        <div>
+                            <strong>
+                                ${item.name}
+                            </strong>
+
+                            <span class="muted">
+                                Product ID ${item.productId}${
+                        item.isSample
+                            ? " · Sample"
+                            : ""
+                    }
+                            </span>
+                        </div>
+
+                        ${quantityControl}
+
+                        <button
+                            class="btn secondary"
+                            type="button"
+                            data-remove-index="${index}">
+                            Remove
+                        </button>
+                    `;
+
+
+                    elements.cartList.appendChild(
+                        row
+                    );
+                }
+            );
+        }
+
+
+        elements.cartSummary.textContent =
+            `${state.cart.length} item${
+                state.cart.length === 1
+                    ? ""
+                    : "s"
+            }`;
+    }
+
+
+    elements.cartList.addEventListener(
+        "input",
+        (event) => {
+
+            const input =
+                event.target.closest(
+                    "[data-cart-qty]"
+                );
+
+
+            if (!input) {
+                return;
+            }
+
+
+            const quantity =
+                Number(
+                    input.value
+                );
+
+
+            if (
+                Number.isFinite(
+                    quantity
+                ) &&
+                quantity > 0
+            ) {
+
+                state.cart[
+                    Number(
+                        input.dataset.cartQty
+                    )
+                    ].quantityM2 =
+                    quantity;
+            }
+        }
+    );
+
+
+    elements.cartList.addEventListener(
+        "click",
+        (event) => {
+
+            const button =
+                event.target.closest(
+                    "[data-remove-index]"
+                );
+
+
             if (!button) {
                 return;
             }
 
-            const index = Number(button.dataset.productIndex);
-            const product = products[index];
-            const quantityInput = elements.productGrid.querySelector(`[data-product-qty="${index}"]`);
-            addToCart(product, Number(quantityInput.value));
-        });
-    }
 
-    function normalizeProduct(product) {
-        const order = product.purchase_information.order;
-        const name = product.name || product.title || product.post_title || product.slug || `Product ${product.id}`;
-        const finish = [
-            product.slug ? `Slug: ${product.slug}` : "",
-            order.m2_per_box ? `${order.m2_per_box} m2 per box` : "",
-            order.client_price_per_m2 ? `${order.client_price_per_m2} per m2` : ""
-        ].filter(Boolean).join(" | ");
+            state.cart.splice(
+                Number(
+                    button.dataset.removeIndex
+                ),
+                1
+            );
 
-        return {
-            id: Number(product.id),
-            name: String(name),
-            finish: finish || "Real catalog product",
-            defaultQuantity: Number(order.m2_per_box) || 1
-        };
-    }
 
-    function isPurchasableProduct(product) {
-        const order = product && product.purchase_information && product.purchase_information.order;
+            renderCart();
+        }
+    );
 
-        return Boolean(
-            product &&
-            Number(product.id) &&
-            product.for_sale === true &&
-            order &&
-            Number(order.m2_per_box) > 0 &&
-            Number(order.client_price_per_m2) > 0
+
+    function renderSession() {
+
+        const token =
+            getToken();
+
+
+        const user =
+            getUser();
+
+
+        elements.sessionDot.className =
+            `session-dot ${
+                token
+                    ? "online"
+                    : "offline"
+            }`;
+
+
+        elements.sessionTitle.textContent =
+            token
+                ? "Logged in"
+                : "Logged out";
+
+
+        elements.sessionDetail.textContent =
+            token
+                ? `${user.email || "Token saved"}${
+                    user.userId
+                        ? ` - ${user.userId}`
+                        : ""
+                }`
+                : "Register or login to attach saved carts to your user.";
+
+
+        elements.tokenPreview.textContent =
+            token
+                ? `Token: ${token.slice(0, 8)}...${token.slice(-6)}`
+                : "No token saved";
+
+
+        elements.sessionIdPreview.textContent =
+            `Session: ${getSessionId()}`;
+
+
+        elements.authGuestView.classList.toggle(
+            "is-hidden",
+            Boolean(token)
+        );
+
+
+        elements.accountView.classList.toggle(
+            "is-hidden",
+            !token
+        );
+
+
+        elements.logoutButton.classList.toggle(
+            "is-hidden",
+            !token
+        );
+
+
+        renderAccountSummary(
+            user
         );
     }
 
-    function addToCart(product, quantityM2) {
-        if (!Number.isFinite(quantityM2) || quantityM2 <= 0) {
-            writeOutput("Quantity must be greater than zero.", "Add to cart");
-            return;
-        }
-
-        const existing = state.cart.find((item) => item.name === product.name);
-        if (existing) {
-            existing.quantityM2 = Number((existing.quantityM2 + quantityM2).toFixed(2));
-        } else {
-            state.cart.push({
-                productId: product.id,
-                name: product.name,
-                quantityM2
-            });
-        }
-
-        renderCart();
-        writeOutput({
-            draftCart: state.cart,
-            nextSavePayload: {
-                sessionId: getSessionId(),
-                products: state.cart.map((item) => ({
-                    productId: item.productId,
-                    quantityM2: item.quantityM2
-                }))
-            }
-        }, "Add to cart");
-    }
-
-    function cartProductFromResponse(product) {
-        const matchingProduct = products.find((item) => item.id === Number(product.productId));
-
-        return {
-            productId: Number(product.productId),
-            name: matchingProduct ? matchingProduct.name : `Product ${product.productId}`,
-            quantityM2: Number(product.squareMeters)
-        };
-    }
-
-    function renderCart() {
-        elements.cartList.innerHTML = "";
-
-        if (state.cart.length === 0) {
-            elements.cartList.innerHTML = `<div class="empty">No draft items yet. Add products above to build a cart.</div>`;
-        } else {
-            state.cart.forEach((item, index) => {
-                const row = document.createElement("div");
-                row.className = "cart-row";
-                row.innerHTML = `
-                    <div>
-                        <strong>${item.name}</strong>
-                        <span class="muted">Product ID ${item.productId}</span>
-                    </div>
-                    <input type="number" min="0.1" step="0.1" value="${item.quantityM2}" data-cart-qty="${index}" aria-label="Quantity in square meters">
-                    <button class="btn secondary" type="button" data-remove-index="${index}">Remove</button>
-                `;
-                elements.cartList.appendChild(row);
-            });
-        }
-
-        elements.cartSummary.textContent = `${state.cart.length} item${state.cart.length === 1 ? "" : "s"}`;
-    }
-
-    elements.cartList.addEventListener("input", (event) => {
-        const input = event.target.closest("[data-cart-qty]");
-        if (!input) {
-            return;
-        }
-
-        const quantity = Number(input.value);
-        if (Number.isFinite(quantity) && quantity > 0) {
-            state.cart[Number(input.dataset.cartQty)].quantityM2 = quantity;
-        }
-    });
-
-    elements.cartList.addEventListener("click", (event) => {
-        const button = event.target.closest("[data-remove-index]");
-        if (!button) {
-            return;
-        }
-
-        state.cart.splice(Number(button.dataset.removeIndex), 1);
-        renderCart();
-    });
-
-    function renderSession() {
-        const token = getToken();
-        const user = getUser();
-        elements.sessionDot.className = `session-dot ${token ? "online" : "offline"}`;
-        elements.sessionTitle.textContent = token ? "Logged in" : "Logged out";
-        elements.sessionDetail.textContent = token
-            ? `${user.email || "Token saved"}${user.userId ? ` - ${user.userId}` : ""}`
-            : "Register or login to attach saved carts to your user.";
-        elements.tokenPreview.textContent = token ? `Token: ${token.slice(0, 8)}...${token.slice(-6)}` : "No token saved";
-        elements.sessionIdPreview.textContent = `Session: ${getSessionId()}`;
-        elements.authGuestView.classList.toggle("is-hidden", Boolean(token));
-        elements.accountView.classList.toggle("is-hidden", !token);
-        elements.logoutButton.classList.toggle("is-hidden", !token);
-        renderAccountSummary(user);
-    }
 
     function showAuthForm(view) {
-        const showRegister = view === "register";
 
-        elements.loginView.classList.toggle("is-hidden", showRegister);
-        elements.registerView.classList.toggle("is-hidden", !showRegister);
-        elements.showLoginButton.classList.toggle("is-active", !showRegister);
-        elements.showRegisterButton.classList.toggle("is-active", showRegister);
+        const showRegister =
+            view === "register";
+
+
+        elements.loginView.classList.toggle(
+            "is-hidden",
+            showRegister
+        );
+
+
+        elements.registerView.classList.toggle(
+            "is-hidden",
+            !showRegister
+        );
+
+
+        elements.showLoginButton.classList.toggle(
+            "is-active",
+            !showRegister
+        );
+
+
+        elements.showRegisterButton.classList.toggle(
+            "is-active",
+            showRegister
+        );
     }
 
-    function renderAccountSummary(user) {
+
+    function renderAccountSummary(
+        user
+    ) {
+
         if (!elements.accountSummary) {
             return;
         }
 
-        const deliveryAddress = user.deliveryAddress || {};
+
+        const deliveryAddress =
+            user.deliveryAddress || {};
+
+
         const rows = [
-            ["User", [user.firstName, user.lastName].filter(Boolean).join(" ") || "Saved user"],
-            ["Email", user.email || "Not loaded"],
-            ["Phone", user.phone || "Not loaded"],
-            ["Type", user.customerType || "Not loaded"],
-            ["Address", [deliveryAddress.addressLine1, deliveryAddress.townOrCity, deliveryAddress.postcode, deliveryAddress.country].filter(Boolean).join(", ") || "Not loaded"],
-            ["User ID", user.userId || "Not loaded"]
+
+            [
+                "User",
+                [
+                    user.firstName,
+                    user.lastName
+                ]
+                    .filter(Boolean)
+                    .join(" ") ||
+                "Saved user"
+            ],
+
+            [
+                "Email",
+                user.email ||
+                "Not loaded"
+            ],
+
+            [
+                "Phone",
+                user.phone ||
+                "Not loaded"
+            ],
+
+            [
+                "Type",
+                user.customerType ||
+                "Not loaded"
+            ],
+
+            [
+                "Address",
+                [
+                    deliveryAddress.addressLine1,
+                    deliveryAddress.townOrCity,
+                    deliveryAddress.postcode,
+                    deliveryAddress.country
+                ]
+                    .filter(Boolean)
+                    .join(", ") ||
+                "Not loaded"
+            ],
+
+            [
+                "User ID",
+                user.userId ||
+                "Not loaded"
+            ]
         ];
 
-        elements.accountSummary.innerHTML = rows.map(([label, value]) => `
-            <div class="detail-row">
-                <span>${label}</span>
-                <strong>${value}</strong>
-            </div>
-        `).join("");
+
+        elements.accountSummary.innerHTML =
+            rows
+                .map(
+                    ([label, value]) => `
+                        <div class="detail-row">
+                            <span>
+                                ${label}
+                            </span>
+
+                            <strong>
+                                ${value}
+                            </strong>
+                        </div>
+                    `
+                )
+                .join("");
     }
+
 
     function apiUrl() {
-        return elements.apiUrl.value.replace(/\/$/, "");
+
+        return elements.apiUrl.value
+            .replace(
+                /\/$/,
+                ""
+            );
     }
+
 
     function getToken() {
-        return localStorage.getItem(tokenStorageKey);
+
+        return localStorage.getItem(
+            tokenStorageKey
+        );
     }
+
 
     function getUser() {
-        return JSON.parse(localStorage.getItem(userStorageKey) || "{}");
+
+        try {
+
+            return JSON.parse(
+                localStorage.getItem(
+                    userStorageKey
+                ) || "{}"
+            );
+
+        } catch {
+
+            return {};
+        }
     }
 
+
     function getSessionId() {
-        let sessionId = localStorage.getItem(sessionStorageKey);
+
+        let sessionId =
+            localStorage.getItem(
+                sessionStorageKey
+            );
+
+
         if (!sessionId) {
-            sessionId = `browser-${crypto.randomUUID()}`;
-            localStorage.setItem(sessionStorageKey, sessionId);
+
+            sessionId =
+                `browser-${crypto.randomUUID()}`;
+
+
+            localStorage.setItem(
+                sessionStorageKey,
+                sessionId
+            );
         }
+
 
         return sessionId;
     }
 
-    function checkoutReturnUrl(status) {
-        if (window.location.protocol === "http:" || window.location.protocol === "https:") {
-            return `${window.location.origin}${window.location.pathname}?checkout=${status}`;
+
+    function checkoutReturnUrl(
+        status
+    ) {
+
+        if (
+            window.location.protocol ===
+            "http:" ||
+            window.location.protocol ===
+            "https:"
+        ) {
+
+            return (
+                `${window.location.origin}` +
+                `${window.location.pathname}` +
+                `?checkout=${status}`
+            );
         }
 
-        return `https://example.com/checkout/${status}`;
+
+        return (
+            `https://example.com/checkout/` +
+            status
+        );
     }
 
-    function writeOutput(value, action = "Ready") {
-        elements.lastAction.textContent = action;
-        elements.responseOutput.classList.remove("is-loading");
 
-        if (typeof value === "string") {
-            elements.requestOutput.textContent = action;
-            elements.responseOutput.textContent = value;
+    function writeOutput(
+        value,
+        action = "Ready"
+    ) {
+
+        elements.lastAction.textContent =
+            action;
+
+
+        elements.responseOutput.classList.remove(
+            "is-loading"
+        );
+
+
+        if (
+            typeof value ===
+            "string"
+        ) {
+
+            elements.requestOutput.textContent =
+                action;
+
+
+            elements.responseOutput.textContent =
+                value;
+
+
             return;
         }
 
-        elements.requestOutput.textContent = JSON.stringify(value.request || value, null, 2);
-        elements.responseOutput.textContent = JSON.stringify({
-            response: value.response || null,
-            body: value.body || null,
-            error: value.error || null
-        }, null, 2);
+
+        elements.requestOutput.textContent =
+            JSON.stringify(
+                value.request ||
+                value,
+                null,
+                2
+            );
+
+
+        elements.responseOutput.textContent =
+            JSON.stringify(
+                {
+                    response:
+                        value.response ||
+                        null,
+
+                    body:
+                        value.body ||
+                        null,
+
+                    error:
+                        value.error ||
+                        null
+                },
+                null,
+                2
+            );
     }
 
-    function writeCartOutput(value) {
-        elements.cartOutput.textContent = typeof value === "string" ? value : JSON.stringify(value, null, 2);
+
+    function writeCartOutput(
+        value
+    ) {
+
+        elements.cartOutput.textContent =
+            typeof value === "string"
+                ? value
+                : JSON.stringify(
+                    value,
+                    null,
+                    2
+                );
     }
 
-    function writePendingRequest(request) {
-        elements.lastAction.textContent = `${request.method} ${request.path}`;
-        elements.requestOutput.textContent = JSON.stringify(request, null, 2);
-        elements.responseOutput.classList.add("is-loading");
-        elements.responseOutput.textContent = JSON.stringify({
-            response: "Loading...",
-            body: null,
-            error: null
-        }, null, 2);
+
+    function writePendingRequest(
+        request
+    ) {
+
+        elements.lastAction.textContent =
+            `${request.method} ${request.path}`;
+
+
+        elements.requestOutput.textContent =
+            JSON.stringify(
+                request,
+                null,
+                2
+            );
+
+
+        elements.responseOutput.classList.add(
+            "is-loading"
+        );
+
+
+        elements.responseOutput.textContent =
+            JSON.stringify(
+                {
+                    response:
+                        "Loading...",
+
+                    body:
+                        null,
+
+                    error:
+                        null
+                },
+                null,
+                2
+            );
     }
 
-    function setBusy(button, busy) {
+
+    function setBusy(
+        button,
+        busy
+    ) {
+
         if (!button) {
             return;
         }
 
+
         if (busy) {
-            button.dataset.originalText = button.textContent;
-            button.textContent = "Loading...";
-            button.disabled = true;
+
+            button.dataset.originalText =
+                button.textContent;
+
+
+            button.textContent =
+                "Loading...";
+
+
+            button.disabled =
+                true;
+
+
             return;
         }
 
-        button.textContent = button.dataset.originalText || button.textContent;
-        button.disabled = false;
+
+        button.textContent =
+            button.dataset.originalText ||
+            button.textContent;
+
+
+        button.disabled =
+            false;
+
+
         delete button.dataset.originalText;
     }
+
 </script>
+
 </body>
 </html>
+```

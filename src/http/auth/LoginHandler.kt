@@ -1,11 +1,11 @@
 package http.auth
 
+import dto.auth.parseLoginRequest
+import dto.auth.toJson
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
-import http.parseLoginRequest
-import http.toJson
 import kotlinx.serialization.json.Json
 import services.auth.LoginServiceInterface
 

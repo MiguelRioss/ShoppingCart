@@ -5,12 +5,27 @@ package productdatabaseaccesslayer
  */
 interface ProductDataAccess {
     /**
+     * Fetches all catalog products as raw JSON.
+     */
+    fun getAllProducts(): String
+
+    /**
+     * Fetches products that can be added to a cart.
+     */
+    fun getPurchasableProducts(): String
+
+    /**
      * Finds a product by external catalog id.
      *
      * @param productId external catalog product id
      * @return raw product JSON, or null when the product does not exist
      */
     fun getProductById(productId: Long): String?
+
+    /**
+     * Finds a detailed product record by external catalog slug.
+     */
+    fun getProductBySlug(productSlug: String): String
 
     /**
      * Finds a detailed product record by external catalog id.

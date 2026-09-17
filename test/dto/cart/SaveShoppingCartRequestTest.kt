@@ -1,7 +1,9 @@
 package http
 
+import dto.cart.parseSaveShoppingCartRequest
 import dto.cart.toEntity
 import org.junit.jupiter.api.Test
+import services.cart.CartProductInput
 import kotlin.test.assertEquals
 
 class SaveShoppingCartRequestTest {
@@ -27,15 +29,22 @@ class SaveShoppingCartRequestTest {
     fun `maps product request to service entity input`() {
         val request = parseSaveShoppingCartRequest(
             """
-            {
-              "sessionId": "session-123",
-              "products": [
-                { "productId": 9278, "quantityM2": 0.5 }
-              ]
-            }
-            """.trimIndent()
+        {
+          "sessionId": "session-123",
+          "products": [
+            { "productId": 9278, "quantityM2": 0.5 }
+          ]
+        }
+        """.trimIndent()
         )
 
-        assertEquals(9278L to 0.5, request.products[0].toEntity())
+        assertEquals(
+            CartProductInput(
+                productId = 9278L,
+                quantityM2 = 0.5,
+                isSample = false
+            ),
+            request.products[0].toEntity()
+        )
     }
 }

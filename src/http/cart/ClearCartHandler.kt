@@ -1,12 +1,10 @@
 package http.cart
 
-import dto.cart.ClearShoppingCartRequest
+import dto.cart.parseClearShoppingCartRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
-import http.parseClearShoppingCartRequest
-import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.buildJsonObject
 import services.cart.ShoppingCartService
@@ -16,11 +14,10 @@ import services.cart.ShoppingCartService
  */
 class ClearCartHandler(
     private val shoppingCartService: ShoppingCartService,
-    private val json: Json = Json
 ) : RequestHandler {
     override fun handle(request: HttpRequest): HttpResponse {
         val clearCartRequest = runCatching {
-            parseClearShoppingCartRequest(request.body, json)
+            parseClearShoppingCartRequest(request.body)
         }.getOrElse {
             return HttpError.InvalidJsonRequestBody.toResponse()
         }

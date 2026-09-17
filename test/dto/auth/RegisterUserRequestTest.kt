@@ -1,6 +1,7 @@
 package http
 
 import dto.auth.CustomerType
+import dto.auth.parseRegisterUserRequest
 import org.junit.jupiter.api.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith

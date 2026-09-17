@@ -1,6 +1,9 @@
 package dto.user
 
 import domain.user.User
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import putNullable
 import java.time.LocalDateTime
 import java.util.UUID
 
@@ -54,5 +57,29 @@ fun User.toResponse() = UserInfoResponse(
     projectNotes = projectNotes
 )
 
-fun UserInfoRequest.toResponse(): UserInfoResponse =
-    user.toResponse()
+
+fun UserInfoResponse.toJson(): String =
+    buildJsonObject {
+        put("id", JsonPrimitive(id.toString()))
+        put("email", JsonPrimitive(email))
+        put("createdAt", JsonPrimitive(createdAt.toString()))
+        putNullable("firstName", firstName)
+        putNullable("lastName", lastName)
+        putNullable("phone", phone)
+        putNullable("customerType", customerType)
+        putNullable("deliveryCompany", deliveryCompany)
+        putNullable("deliveryAddressLine1", deliveryAddressLine1)
+        putNullable("deliveryAddressLine2", deliveryAddressLine2)
+        putNullable("deliveryTownOrCity", deliveryTownOrCity)
+        putNullable("deliveryPostcode", deliveryPostcode)
+        putNullable("deliveryCountry", deliveryCountry)
+        put("sameAsDeliveryAddress", JsonPrimitive(sameAsDeliveryAddress))
+        putNullable("invoiceCompany", invoiceCompany)
+        putNullable("invoiceAddressLine1", invoiceAddressLine1)
+        putNullable("invoiceAddressLine2", invoiceAddressLine2)
+        putNullable("invoiceTownOrCity", invoiceTownOrCity)
+        putNullable("invoicePostcode", invoicePostcode)
+        putNullable("invoiceCountry", invoiceCountry)
+        putNullable("vatNumber", vatNumber)
+        putNullable("projectNotes", projectNotes)
+    }.toString()

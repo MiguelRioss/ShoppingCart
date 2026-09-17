@@ -1,7 +1,7 @@
 package db.offline
 
+import ShoppingCartProduct
 import domain.cart.ShoppingCart
-import domain.cart.ShoppingCartProduct
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import java.math.BigDecimal
@@ -21,7 +21,8 @@ class InMemoryShoppingCartRepositoryTest {
                 productId = 1864L,
                 squareMeters = 12.5,
                 amountBoxes = 3,
-                totalPricePerProduct = BigDecimal("249.99")
+                totalPricePerProduct = BigDecimal("249.99"),
+                isSample = false
             )
         )
     )

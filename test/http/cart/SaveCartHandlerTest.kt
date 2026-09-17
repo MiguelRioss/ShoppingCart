@@ -22,6 +22,14 @@ import kotlin.test.assertNull
 class SaveCartHandlerTest {
     private val clock = Clock.fixed(Instant.parse("2026-08-07T13:30:00Z"), ZoneOffset.UTC)
     private val productDataAccess = object : ProductDataAccess {
+        override fun getAllProducts(): String {
+            TODO("Not yet implemented")
+        }
+
+        override fun getPurchasableProducts(): String {
+            TODO("Not yet implemented")
+        }
+
         override fun getProductById(productId: Long): String? =
             if (productId == 9278L) {
                 """
@@ -38,6 +46,10 @@ class SaveCartHandlerTest {
             } else {
                 null
             }
+
+        override fun getProductBySlug(productSlug: String): String {
+            TODO("Not yet implemented")
+        }
     }
 
     @Test
@@ -164,6 +176,14 @@ class SaveCartHandlerTest {
     @Test
     fun `returns invalid request when product is not purchasable`() {
         val notPurchasableProductDataAccess = object : ProductDataAccess {
+            override fun getAllProducts(): String {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPurchasableProducts(): String {
+                TODO("Not yet implemented")
+            }
+
             override fun getProductById(productId: Long): String =
                 """
                 {
@@ -171,6 +191,10 @@ class SaveCartHandlerTest {
                   "purchase_information": null
                 }
                 """.trimIndent()
+
+            override fun getProductBySlug(productSlug: String): String {
+                TODO("Not yet implemented")
+            }
         }
         val handler = SaveCartHandler(
             ShoppingCartManager(InMemoryShoppingCartRepository(), notPurchasableProductDataAccess, clock)

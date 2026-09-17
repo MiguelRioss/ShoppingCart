@@ -57,7 +57,12 @@ enum class ServiceErrorCode(
         code = 2004,
         defaultMessage = "Invalid checkout request",
         defaultDescription = "sessionId, successUrl, and cancelUrl are required"
-    )
+    ),
+    CartProductQuantityInvalid(
+        code = 2005,
+        defaultMessage = "Invalid cart product quantity",
+        defaultDescription = "Normal cart products require quantityM2 greater than zero"
+    ),
 }
 
 class ServiceException(

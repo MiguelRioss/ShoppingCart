@@ -1,17 +1,22 @@
 package http.checkout
 
-import dto.checkout.toResponse
+import domain.checkout.toCheckoutDeliveryAddress
+import domain.checkout.toResponse
+import dto.checkout.parseCreateCheckoutRequest
+import dto.checkout.toDomain
+import dto.checkout.toJson
+import http.AuthenticatedRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
-import http.parseCreateCheckoutRequest
 import http.serviceExceptionOrNull
-import http.toJson
-import services.checkout.CheckoutService
+import services.auth.AuthServiceInterface
+import services.checkout.core.CheckoutService
 
 class CreateCheckoutHandler(
-    private val checkoutService: CheckoutService
+    private val checkoutService: CheckoutService,
+    private val authService: AuthServiceInterface? = null
 ) : RequestHandler {
 
     override fun handle(request: HttpRequest): HttpResponse {
@@ -20,9 +25,26 @@ class CreateCheckoutHandler(
                 parseCreateCheckoutRequest(
                     request.body
                 ).toDomain()
+                    .let { checkoutRequest ->
+                        val authenticatedUser =
+                            authService
+                                ?.let {
+                                    AuthenticatedRequest.from(request, it)
+                                }
+                                ?.user
+
+                        authenticatedUser
+                            ?.let {
+                                checkoutRequest.copy(
+                                    deliveryAddress =
+                                        it.toCheckoutDeliveryAddress()
+                                )
+                            }
+                            ?: checkoutRequest
+                    }
 
             val checkoutSession =
-                checkoutService.createCheckout(
+                checkoutService.createCheckoutSession(
                     checkout
                 )
 

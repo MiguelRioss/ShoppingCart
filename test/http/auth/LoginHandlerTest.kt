@@ -15,6 +15,7 @@ import services.auth.AuthManager
 import services.cart.ShoppingCartManager
 import services.user.UserManager
 import services.auth.LoginService
+import services.cart.CartProductInput
 import java.time.Clock
 import java.time.Instant
 import java.time.ZoneOffset
@@ -24,6 +25,14 @@ import kotlin.test.assertNotNull
 class LoginHandlerTest {
     private val clock = Clock.fixed(Instant.parse("2026-08-07T13:30:00Z"), ZoneOffset.UTC)
     private val productDataAccess = object : ProductDataAccess {
+        override fun getAllProducts(): String {
+            TODO("Not yet implemented")
+        }
+
+        override fun getPurchasableProducts(): String {
+            TODO("Not yet implemented")
+        }
+
         override fun getProductById(productId: Long): String? =
             if (productId == 9278L) {
                 """
@@ -40,6 +49,10 @@ class LoginHandlerTest {
             } else {
                 null
             }
+
+        override fun getProductBySlug(productSlug: String): String {
+            TODO("Not yet implemented")
+        }
     }
 
     @Test
@@ -81,8 +94,11 @@ class LoginHandlerTest {
         userService.registerUser("buyer@example.com", "password-123")
         shoppingCartService.createCart(
             sessionId = "browser-session-123",
-            products = listOf(9278L to 0.5)
-        )
+            products = listOf(CartProductInput(
+                productId = 9278L,
+                quantityM2 = 0.5,
+                isSample = false
+        )))
         val loginHandler = LoginHandler(LoginService(authService, shoppingCartService))
 
         val loginResponse = loginHandler.handle(

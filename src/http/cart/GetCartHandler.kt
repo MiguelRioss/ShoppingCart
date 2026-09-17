@@ -1,12 +1,12 @@
 package http.cart
 
+import dto.cart.toJson
 import dto.cart.toResponse
 import http.AuthenticatedRequest
 import http.HttpError
 import http.HttpRequest
 import http.HttpResponse
 import http.RequestHandler
-import http.toJson
 import services.auth.AuthServiceInterface
 import services.cart.ShoppingCartService
 

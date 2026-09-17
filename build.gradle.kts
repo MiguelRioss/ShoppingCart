@@ -12,12 +12,14 @@ repositories {
 dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.mindrot:jbcrypt:0.4")
-    implementation("org.postgresql:postgresql:42.7.4")
+    implementation("org.postgresql:postgresql:42.7.12")
     testImplementation(kotlin("test"))
     testImplementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
     testImplementation("org.apache.poi:poi:5.4.1")
     testImplementation("org.apache.poi:poi-ooxml:5.4.1")
+    implementation("com.github.librepdf:openpdf:3.0.5")
+    implementation(files("libs/FedExApiMiddlwere-1.1.0-beta.1.jar"))
 }
 
 kotlin {
@@ -37,11 +39,9 @@ application {
 sourceSets {
     main {
         kotlin.srcDir("src")
-        kotlin.srcDir("fedex/src")
     }
     test {
         kotlin.srcDir("test")
-        kotlin.srcDir("fedex/test")
     }
 }
 

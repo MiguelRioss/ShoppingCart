@@ -5,9 +5,9 @@
  */
 package db.postgres
 
+import ShoppingCartProduct
 import db.ShoppingCartRepository
 import domain.cart.ShoppingCart
-import domain.cart.ShoppingCartProduct
 import java.sql.ResultSet
 import java.sql.Timestamp
 import java.util.UUID
@@ -49,7 +49,7 @@ class PostgresShoppingCartRepository(
         database.getConnection().use { connection ->
             return connection.prepareStatement(
                 """
-                SELECT product_id, square_meters, amount_boxes, total_price_per_product
+                SELECT product_id, square_meters, amount_boxes, total_price_per_product, is_sample
                 FROM shopping_cart_products
                 WHERE cart_id = ?
                 ORDER BY product_id
@@ -109,17 +109,19 @@ class PostgresShoppingCartRepository(
                         product_id,
                         square_meters,
                         amount_boxes,
-                        total_price_per_product
+                        total_price_per_product,
+                        is_sample
                     )
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?)
                     """.trimIndent()
                 ).use { statement ->
                     cart.products.forEach { product ->
                         statement.setObject(1, cart.id)
                         statement.setLong(2, product.productId)
-                        statement.setDouble(3, product.squareMeters)
-                        statement.setInt(4, product.amountBoxes)
+                        statement.setObject(3, product.squareMeters)
+                        statement.setObject(4, product.amountBoxes)
                         statement.setBigDecimal(5, product.totalPricePerProduct)
+                        statement.setBoolean(6, product.isSample)
                         statement.addBatch()
                     }
                     statement.executeBatch()
@@ -148,8 +150,23 @@ class PostgresShoppingCartRepository(
     private fun ResultSet.toCartProduct(): ShoppingCartProduct =
         ShoppingCartProduct(
             productId = getLong("product_id"),
-            squareMeters = getDouble("square_meters"),
-            amountBoxes = getInt("amount_boxes"),
-            totalPricePerProduct = getBigDecimal("total_price_per_product")
+
+            squareMeters =
+                getObject(
+                    "square_meters",
+                    Double::class.javaObjectType
+                ),
+
+            amountBoxes =
+                getObject(
+                    "amount_boxes",
+                    Int::class.javaObjectType
+                ),
+
+            totalPricePerProduct =
+                getBigDecimal("total_price_per_product"),
+
+            isSample =
+                getBoolean("is_sample")
         )
 }

@@ -1,7 +1,18 @@
 package dto.auth
 
+import booleanValue
 import domain.user.User
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonObject
+import objectValueIncludingNull
+import stringValueIncludingBlank
 
+/**
+ * HTTP request body for `PUT /account`.
+ *
+ * Every field is optional. During conversion, missing fields keep the current
+ * value from the existing [User].
+ */
 data class UpdateAccountRequest(
     val firstName: String?,
     val lastName: String?,
@@ -26,6 +37,12 @@ data class UpdateAccountRequest(
     val projectNotes: String?
 )
 
+/**
+ * Applies account updates to an existing user entity.
+ *
+ * @param user current persisted user
+ * @param passwordHash optional already-hashed replacement password
+ */
 fun UpdateAccountRequest.toEntity(
     user: User,
     passwordHash: String? = null
@@ -52,3 +69,36 @@ fun UpdateAccountRequest.toEntity(
     vatNumber = vatNumber ?: user.vatNumber,
     projectNotes = projectNotes ?: user.projectNotes
 )
+
+/**
+ * Parses the raw JSON body for `PUT /account`.
+ */
+fun parseUpdateAccountRequest(requestBody: String): UpdateAccountRequest {
+    val body = Json.parseToJsonElement(requestBody).jsonObject
+    val deliveryAddress = body.objectValueIncludingNull("deliveryAddress")?.toAddressFields()
+    val invoiceAddress = body.objectValueIncludingNull("invoiceAddress")?.toAddressFields()
+
+    return UpdateAccountRequest(
+        firstName = body.stringValueIncludingBlank("firstName"),
+        lastName = body.stringValueIncludingBlank("lastName"),
+        email = body.stringValueIncludingBlank("email"),
+        password = body.stringValueIncludingBlank("password"),
+        phone = body.stringValueIncludingBlank("phone"),
+        customerType = CustomerType.from(body.stringValueIncludingBlank("customerType")),
+        deliveryCompany = deliveryAddress?.company,
+        deliveryAddressLine1 = deliveryAddress?.addressLine1,
+        deliveryAddressLine2 = deliveryAddress?.addressLine2,
+        deliveryTownOrCity = deliveryAddress?.townOrCity,
+        deliveryPostcode = deliveryAddress?.postcode,
+        deliveryCountry = deliveryAddress?.country,
+        sameAsDeliveryAddress = body.booleanValue("sameAsDeliveryAddress"),
+        invoiceCompany = invoiceAddress?.company,
+        invoiceAddressLine1 = invoiceAddress?.addressLine1,
+        invoiceAddressLine2 = invoiceAddress?.addressLine2,
+        invoiceTownOrCity = invoiceAddress?.townOrCity,
+        invoicePostcode = invoiceAddress?.postcode,
+        invoiceCountry = invoiceAddress?.country,
+        vatNumber = body.stringValueIncludingBlank("vatNumber"),
+        projectNotes = body.stringValueIncludingBlank("projectNotes")
+    )
+}

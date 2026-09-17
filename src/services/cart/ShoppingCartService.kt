@@ -47,7 +47,7 @@ interface ShoppingCartService {
      * @param products product id and requested m2 quantity pairs
      * @return created cart
      */
-    fun createCart(sessionId: String, products: List<Pair<Long, Double>>, userId: UUID? = null): ShoppingCart
+    fun createCart(sessionId: String, products: List<CartProductInput>, userId: UUID? = null): ShoppingCart
 
     /**
      * Saves a cart.
@@ -58,4 +58,22 @@ interface ShoppingCartService {
     fun saveCart(cart: ShoppingCart): ShoppingCart
 }
 
-
+/**
+ * Input used when creating or updating a shopping cart product line.
+ *
+ * A cart product can represent either a normal product order or a sample.
+ *
+ * For a normal product, [quantityM2] contains the requested area in square metres
+ * and [isSample] is false.
+ *
+ * For a sample, [quantityM2] is null and [isSample] is true.
+ *
+ * @property productId product identifier from the external product catalogue
+ * @property quantityM2 requested quantity in square metres, or null for samples
+ * @property isSample true when the cart line represents a product sample
+ */
+data class CartProductInput(
+    val productId: Long,
+    val quantityM2: Double?,
+    val isSample: Boolean
+)
