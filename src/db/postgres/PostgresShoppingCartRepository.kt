@@ -49,7 +49,7 @@ class PostgresShoppingCartRepository(
         database.getConnection().use { connection ->
             return connection.prepareStatement(
                 """
-                SELECT product_id, square_meters, amount_boxes, total_price_per_product, is_sample
+                SELECT product_id, square_meters, amount_boxes, total_price_per_product, is_sample, sample_units
                 FROM shopping_cart_products
                 WHERE cart_id = ?
                 ORDER BY product_id
@@ -110,9 +110,10 @@ class PostgresShoppingCartRepository(
                         square_meters,
                         amount_boxes,
                         total_price_per_product,
-                        is_sample
+                        is_sample,
+                        sample_units
                     )
-                    VALUES (?, ?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?, ?)
                     """.trimIndent()
                 ).use { statement ->
                     cart.products.forEach { product ->
@@ -122,6 +123,7 @@ class PostgresShoppingCartRepository(
                         statement.setObject(4, product.amountBoxes)
                         statement.setBigDecimal(5, product.totalPricePerProduct)
                         statement.setBoolean(6, product.isSample)
+                        statement.setObject(7, product.sampleUnits)
                         statement.addBatch()
                     }
                     statement.executeBatch()
@@ -167,6 +169,12 @@ class PostgresShoppingCartRepository(
                 getBigDecimal("total_price_per_product"),
 
             isSample =
-                getBoolean("is_sample")
+                getBoolean("is_sample"),
+
+            sampleUnits =
+                getObject(
+                    "sample_units",
+                    Int::class.javaObjectType
+                )
         )
 }

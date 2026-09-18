@@ -87,7 +87,8 @@ class PostgresSchema(
                         amount_boxes INTEGER,
                         total_price_per_product NUMERIC(12, 2) NOT NULL,
                         is_sample BOOLEAN NOT NULL DEFAULT FALSE,
-                        PRIMARY KEY (cart_id, product_id)
+                        sample_units INTEGER,
+                        PRIMARY KEY (cart_id, product_id, is_sample)
                     )
                     """.trimIndent()
                 )
@@ -97,11 +98,43 @@ class PostgresSchema(
                     "is_sample",
                     "BOOLEAN NOT NULL DEFAULT FALSE"
                 )
+                addColumnIfMissing(
+                    statement,
+                    "shopping_cart_products",
+                    "sample_units",
+                    "INTEGER"
+                )
                 statement.executeUpdate(
                     "ALTER TABLE shopping_cart_products ALTER COLUMN square_meters DROP NOT NULL"
                 )
                 statement.executeUpdate(
                     "ALTER TABLE shopping_cart_products ALTER COLUMN amount_boxes DROP NOT NULL"
+                )
+                statement.executeUpdate(
+                    """
+                    DO ${'$'}migration${'$'}
+                    DECLARE
+                        current_primary_key TEXT;
+                    BEGIN
+                        SELECT pg_get_constraintdef(oid)
+                        INTO current_primary_key
+                        FROM pg_constraint
+                        WHERE conrelid = 'shopping_cart_products'::regclass
+                          AND contype = 'p';
+
+                        IF current_primary_key IS DISTINCT FROM
+                           'PRIMARY KEY (cart_id, product_id, is_sample)' THEN
+                            IF current_primary_key IS NOT NULL THEN
+                                ALTER TABLE shopping_cart_products
+                                    DROP CONSTRAINT shopping_cart_products_pkey;
+                            END IF;
+
+                            ALTER TABLE shopping_cart_products
+                                ADD PRIMARY KEY (cart_id, product_id, is_sample);
+                        END IF;
+                    END;
+                    ${'$'}migration${'$'}
+                    """.trimIndent()
                 )
             }
         }

@@ -3,6 +3,7 @@ package services.shipping
 import domain.cart.ShoppingCart
 import java.math.BigDecimal
 import java.util.Locale
+import kotlin.math.ceil
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.jsonArray
@@ -38,12 +39,6 @@ class ProductShipmentRequestMapper(
                     "Product ${cartProduct.productId} not found"
                 }
             ).jsonObject
-        val squareMeters =
-            requireNotNull(cartProduct.squareMeters)
-
-        val amountBoxes =
-            requireNotNull(cartProduct.amountBoxes)
-
         val supplier =
             requireObject(
                 product,
@@ -58,18 +53,34 @@ class ProductShipmentRequestMapper(
                 "Product ${cartProduct.productId} has no purchase information"
             )
 
-        val shipping =
-            requireObject(
-                purchaseInformation,
-                "shipping",
-                "Product ${cartProduct.productId} has no shipping information"
-            )
-
         val taxFreightAndCustoms =
             requireObject(
                 purchaseInformation,
                 "tax_freight_and_customs",
                 "Product ${cartProduct.productId} has no customs information"
+            )
+
+        if (cartProduct.isSample) {
+            return sampleShipmentRequest(
+                cart = cart,
+                product = product,
+                supplier = supplier,
+                purchaseInformation = purchaseInformation,
+                taxFreightAndCustoms = taxFreightAndCustoms
+            )
+        }
+
+        val squareMeters =
+            requireNotNull(cartProduct.squareMeters)
+
+        val amountBoxes =
+            requireNotNull(cartProduct.amountBoxes)
+
+        val shipping =
+            requireObject(
+                purchaseInformation,
+                "shipping",
+                "Product ${cartProduct.productId} has no shipping information"
             )
 
         val packing =
@@ -150,6 +161,75 @@ class ProductShipmentRequestMapper(
                 )
         )
     }
+
+    private fun sampleShipmentRequest(
+        cart: ShoppingCart,
+        product: JsonObject,
+        supplier: JsonObject,
+        purchaseInformation: JsonObject,
+        taxFreightAndCustoms: JsonObject
+    ): ShipmentShippingRequest {
+        val cartProduct =
+            cart.products.single()
+        val sample =
+            requireObject(
+                purchaseInformation,
+                "sample",
+                "Product ${cartProduct.productId} has no sample information"
+            )
+        val sampleUnits =
+            requireNotNull(cartProduct.sampleUnits)
+
+        return ShipmentShippingRequest(
+            from =
+                ShipmentAddress(
+                    postalCode = requireString(supplier, "post_code_collection"),
+                    countryCode =
+                        countryNameToIso2(
+                            requireString(supplier, "country_collection")
+                        )
+                ),
+            product =
+                ShipmentPackage(
+                    description =
+                        product["title"]
+                            ?.jsonPrimitive
+                            ?.content
+                            ?: requireString(taxFreightAndCustoms, "customs_description"),
+                    countryOfManufacture =
+                        countryNameToIso2(
+                            requireString(taxFreightAndCustoms, "country_of_origin")
+                        ),
+                    quantity = sampleUnits,
+                    quantityUnits = "PCS",
+                    weight =
+                        ShipmentWeight(
+                            value =
+                                requireString(sample, "sample_packed_weight")
+                                    .toDouble() / 1000.0,
+                            units = "KG"
+                        ),
+                    dimensions =
+                        ShipmentDimensions(
+                            length = sampleDimension(sample, "sample_length"),
+                            width = sampleDimension(sample, "sample_width"),
+                            height = sampleDimension(sample, "sample_thickness"),
+                            units = "CM"
+                        ),
+                    customsValue = cartProduct.totalPricePerProduct.toDouble(),
+                    customsCurrency = "EUR",
+                    preferredCurrency = "EUR"
+                )
+        )
+    }
+
+    private fun sampleDimension(
+        sample: JsonObject,
+        name: String
+    ): Int =
+        ceil(
+            requireString(sample, name).toDouble()
+        ).toInt()
 
     private fun requirePackingForSquareMeters(
         shipping: JsonObject,

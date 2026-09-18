@@ -12,6 +12,8 @@ import kotlin.test.assertNull
 import kotlin.test.assertTrue
 import org.junit.jupiter.api.Test
 import productdatabaseaccesslayer.ProductDataAccess
+import services.common.ServiceErrorCode
+import services.common.ServiceException
 
 class SampleCartAddingTests {
 
@@ -44,7 +46,8 @@ class SampleCartAddingTests {
                         CartProductInput(
                             productId = 9278L,
                             quantityM2 = null,
-                            isSample = true
+                            isSample = true,
+                            sampleUnits = 1
                         )
                     ),
                 userId = null
@@ -76,6 +79,11 @@ class SampleCartAddingTests {
         )
 
         assertEquals(
+            1,
+            sample.sampleUnits
+        )
+
+        assertEquals(
             BigDecimal("20.00"),
             sample.totalPricePerProduct
         )
@@ -101,7 +109,8 @@ class SampleCartAddingTests {
                         CartProductInput(
                             productId = 9278L,
                             quantityM2 = null,
-                            isSample = true
+                            isSample = true,
+                            sampleUnits = 1
                         )
                     ),
                 userId = null
@@ -157,7 +166,8 @@ class SampleCartAddingTests {
                         CartProductInput(
                             productId = 9278L,
                             quantityM2 = null,
-                            isSample = true
+                            isSample = true,
+                            sampleUnits = 1
                         ),
                         CartProductInput(
                             productId = 9278L,
@@ -239,7 +249,8 @@ class SampleCartAddingTests {
                         CartProductInput(
                             productId = 9278L,
                             quantityM2 = null,
-                            isSample = true
+                            isSample = true,
+                            sampleUnits = 1
                         )
                     ),
                 userId = null
@@ -257,6 +268,96 @@ class SampleCartAddingTests {
             sample.totalPricePerProduct ==
                     BigDecimal("90.00")
         )
+    }
+
+    @Test
+    fun `sample price is multiplied by sample units`() {
+        val service =
+            ShoppingCartManager(
+                InMemoryShoppingCartRepository(),
+                productDataAccess,
+                clock
+            )
+
+        val sample =
+            service.createCart(
+                sessionId = "multiple-samples-session",
+                products =
+                    listOf(
+                        CartProductInput(
+                            productId = 9278L,
+                            quantityM2 = null,
+                            isSample = true,
+                            sampleUnits = 2
+                        )
+                    ),
+                userId = null
+            ).products.single()
+
+        assertEquals(2, sample.sampleUnits)
+        assertEquals(BigDecimal("40.00"), sample.totalPricePerProduct)
+    }
+
+    @Test
+    fun `sample units cannot exceed catalog maximum`() {
+        val service =
+            ShoppingCartManager(
+                InMemoryShoppingCartRepository(),
+                productDataAccess,
+                clock
+            )
+
+        val exception =
+            assertFailsWith<ServiceException> {
+                service.createCart(
+                    sessionId = "too-many-samples-session",
+                    products =
+                        listOf(
+                            CartProductInput(
+                                productId = 9278L,
+                                quantityM2 = null,
+                                isSample = true,
+                                sampleUnits = 4
+                            )
+                        ),
+                    userId = null
+                )
+            }
+
+        assertEquals(
+            ServiceErrorCode.SampleMaximumQuantityExceeded,
+            exception.errorCode
+        )
+    }
+
+    @Test
+    fun `sample requires positive sample units and no square meters`() {
+        val service =
+            ShoppingCartManager(
+                InMemoryShoppingCartRepository(),
+                productDataAccess,
+                clock
+            )
+
+        listOf(
+            CartProductInput(9278L, null, true, null),
+            CartProductInput(9278L, null, true, 0),
+            CartProductInput(9278L, 0.5, true, 1)
+        ).forEach { input ->
+            val exception =
+                assertFailsWith<ServiceException> {
+                    service.createCart(
+                        sessionId = "invalid-sample-session",
+                        products = listOf(input),
+                        userId = null
+                    )
+                }
+
+            assertEquals(
+                ServiceErrorCode.SampleUnitsInvalid,
+                exception.errorCode
+            )
+        }
     }
 
     @Test
@@ -322,7 +423,8 @@ class SampleCartAddingTests {
                         CartProductInput(
                             productId = 9278L,
                             quantityM2 = null,
-                            isSample = true
+                            isSample = true,
+                            sampleUnits = 1
                         )
                     ),
                 userId = null
@@ -360,20 +462,27 @@ class SampleCartAddingTests {
                 clock
             )
 
-        assertFailsWith<IllegalArgumentException> {
-            service.createCart(
-                sessionId = "unavailable-sample-session",
-                products =
-                    listOf(
-                        CartProductInput(
-                            productId = 9278L,
-                            quantityM2 = null,
-                            isSample = true
-                        )
-                    ),
-                userId = null
-            )
-        }
+        val exception =
+            assertFailsWith<ServiceException> {
+                service.createCart(
+                    sessionId = "unavailable-sample-session",
+                    products =
+                        listOf(
+                            CartProductInput(
+                                productId = 9278L,
+                                quantityM2 = null,
+                                isSample = true,
+                                sampleUnits = 1
+                            )
+                        ),
+                    userId = null
+                )
+            }
+
+        assertEquals(
+            ServiceErrorCode.ProductSampleUnavailable,
+            exception.errorCode
+        )
     }
 
     @Test
@@ -399,7 +508,8 @@ class SampleCartAddingTests {
                         CartProductInput(
                             productId = 9278L,
                             quantityM2 = null,
-                            isSample = true
+                            isSample = true,
+                            sampleUnits = 1
                         )
                     ),
                 userId = null
@@ -441,7 +551,8 @@ class SampleCartAddingTests {
                         CartProductInput(
                             productId = 9278L,
                             quantityM2 = null,
-                            isSample = true
+                            isSample = true,
+                            sampleUnits = 1
                         )
                     ),
                 userId = null

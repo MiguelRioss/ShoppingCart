@@ -19,6 +19,29 @@ class CheckoutProductResolver(
             purchasableProductReader.load(
                 product.productId
             )
+
+        if (product.isSample) {
+            val sample =
+                requireNotNull(purchasableProduct.sample)
+            val sampleUnits =
+                requireNotNull(product.sampleUnits)
+
+            return CheckoutLineItem(
+                productId = product.productId,
+                name = "${purchasableProduct.name} sample",
+                quantity = sampleUnits,
+                amountTotal =
+                    requireNotNull(sample.price)
+                        .multiply(
+                            BigDecimal.valueOf(sampleUnits.toLong())
+                        )
+                        .setScale(2, RoundingMode.HALF_UP),
+                currency = "eur",
+                imageUrl = purchasableProduct.imageUrl,
+                description = "Product sample"
+            )
+        }
+
         requireNotNull(product.squareMeters)
 
         val amountBoxes =

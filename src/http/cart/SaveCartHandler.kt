@@ -33,7 +33,9 @@ class SaveCartHandler(
         }
 
         if (!saveCartRequest.isValid()) {
-            return HttpError.InvalidJsonRequestBody.toResponse("sessionId and at least one product with quantityM2 are required")
+            return HttpError.InvalidJsonRequestBody.toResponse(
+                "sessionId and at least one valid product are required"
+            )
         }
 
         val cart = runCatching {
@@ -62,4 +64,3 @@ class SaveCartHandler(
                     it.productId != null
                 }
 }
-

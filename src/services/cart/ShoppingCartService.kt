@@ -66,14 +66,17 @@ interface ShoppingCartService {
  * For a normal product, [quantityM2] contains the requested area in square metres
  * and [isSample] is false.
  *
- * For a sample, [quantityM2] is null and [isSample] is true.
+ * For a sample, [quantityM2] is null, [sampleUnits] is positive, and
+ * [isSample] is true.
  *
  * @property productId product identifier from the external product catalogue
  * @property quantityM2 requested quantity in square metres, or null for samples
  * @property isSample true when the cart line represents a product sample
+ * @property sampleUnits requested number of samples, or null for normal products
  */
 data class CartProductInput(
     val productId: Long,
     val quantityM2: Double?,
-    val isSample: Boolean
+    val isSample: Boolean,
+    val sampleUnits: Int? = null
 )

@@ -63,6 +63,26 @@ enum class ServiceErrorCode(
         defaultMessage = "Invalid cart product quantity",
         defaultDescription = "Normal cart products require quantityM2 greater than zero"
     ),
+    ProductSampleUnavailable(
+        code = 1005,
+        defaultMessage = "Product sample unavailable",
+        defaultDescription = "A sample is not available for this product"
+    ),
+    SampleUnitsInvalid(
+        code = 2006,
+        defaultMessage = "Invalid sample quantity",
+        defaultDescription = "Sample products require sampleUnits greater than zero"
+    ),
+    SampleMaximumQuantityExceeded(
+        code = 2007,
+        defaultMessage = "Sample quantity limit exceeded",
+        defaultDescription = "The requested sample quantity exceeds the product limit"
+    ),
+    SampleQuantityNotAllowed(
+        code = 2008,
+        defaultMessage = "Sample quantity is not allowed",
+        defaultDescription = "Normal cart products must not include sampleUnits"
+    )
 }
 
 class ServiceException(

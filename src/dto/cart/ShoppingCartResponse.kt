@@ -104,4 +104,16 @@ private fun ShoppingCartProduct.toJsonObject(): JsonObject =
                 totalPricePerProduct.toPlainString()
             )
         )
+
+        put(
+            "isSample",
+            JsonPrimitive(isSample)
+        )
+
+        sampleUnits?.let {
+            put(
+                "sampleUnits",
+                JsonPrimitive(it)
+            )
+        }
     }

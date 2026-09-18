@@ -7,6 +7,23 @@ import services.cart.CartProductInput
 import kotlin.test.assertEquals
 
 class SaveShoppingCartRequestTest {
+
+    @Test
+    fun `parses sample units`() {
+        val request = parseSaveShoppingCartRequest(
+            """
+            {
+              "sessionId": "sample-session",
+              "products": [
+                { "productId": 9278, "isSample": true, "sampleUnits": 2 }
+              ]
+            }
+            """.trimIndent()
+        )
+
+        assertEquals(true, request.products.single().isSample)
+        assertEquals(2, request.products.single().sampleUnits)
+    }
     @Test
     fun `parses save cart request`() {
         val request = parseSaveShoppingCartRequest(

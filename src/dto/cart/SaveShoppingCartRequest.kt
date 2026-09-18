@@ -8,6 +8,7 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.longOrNull
+import kotlinx.serialization.json.intOrNull
 import services.cart.CartProductInput
 import stringValueIncludingBlank
 
@@ -26,12 +27,15 @@ data class SaveShoppingCartRequest(
  * Product quantity entry in a cart save request.
  *
  * @property productId catalog product id
- * @property quantityM2 requested quantity in square meters
+ * @property quantityM2 requested quantity in square meters for a normal product
+ * @property isSample whether this line requests samples instead of a normal product
+ * @property sampleUnits requested sample count, required for samples
  */
 data class SaveShoppingCartProductRequest(
     val productId: Long?,
     val quantityM2: Double?,
-    val isSample: Boolean?
+    val isSample: Boolean?,
+    val sampleUnits: Int? = null
 )
 
 /**
@@ -41,7 +45,8 @@ fun SaveShoppingCartProductRequest.toEntity(): CartProductInput =
     CartProductInput(
         productId = requireNotNull(productId),
         quantityM2 = quantityM2,
-        isSample = isSample ?: false
+        isSample = isSample ?: false,
+        sampleUnits = sampleUnits
     )
 
 
@@ -66,6 +71,7 @@ private fun JsonElement.toSaveShoppingCartProductRequest(): SaveShoppingCartProd
     return SaveShoppingCartProductRequest(
         productId = body["productId"]?.jsonPrimitive?.longOrNull,
         quantityM2 = body["quantityM2"]?.jsonPrimitive?.doubleOrNull,
-        isSample = body["isSample"]?.jsonPrimitive?.booleanOrNull
+        isSample = body["isSample"]?.jsonPrimitive?.booleanOrNull,
+        sampleUnits = body["sampleUnits"]?.jsonPrimitive?.intOrNull
     )
 }

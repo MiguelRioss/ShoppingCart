@@ -54,6 +54,14 @@ class PostgresRepositoryIntegrationTest {
                 amountBoxes = 3,
                 totalPricePerProduct = BigDecimal("249.99"),
                 isSample = false
+            ),
+            ShoppingCartProduct(
+                productId = 1864L,
+                squareMeters = null,
+                amountBoxes = null,
+                totalPricePerProduct = BigDecimal("40.00"),
+                isSample = true,
+                sampleUnits = 2
             )
         )
     )
@@ -119,5 +127,4 @@ class PostgresRepositoryIntegrationTest {
         }
     }
 }
-
 

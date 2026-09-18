@@ -86,9 +86,35 @@ class ShoppingCartManager(
                         val sample =
                             requireNotNull(purchasableProduct.sample)
 
-                        require(sample.available)
+                        if (!sample.available) {
+                            throw ServiceException(
+                                errorCode = ServiceErrorCode.ProductSampleUnavailable,
+                                description =
+                                    "A sample is not available for product ${product.productId}"
+                            )
+                        }
+
+                        val sampleUnits =
+                            requireNotNull(product.sampleUnits)
+
+                        val maxQuantity =
+                            requireNotNull(sample.maxQuantity) {
+                                "Sample maximum quantity is missing for product ${product.productId}"
+                            }
+
+                        if (sampleUnits > maxQuantity) {
+                            throw ServiceException(
+                                errorCode = ServiceErrorCode.SampleMaximumQuantityExceeded,
+                                description =
+                                    "Product ${product.productId} allows at most $maxQuantity sample units"
+                            )
+                        }
 
                         requireNotNull(sample.price)
+                            .multiply(
+                                BigDecimal.valueOf(sampleUnits.toLong())
+                            )
+                            .setScale(2, RoundingMode.HALF_UP)
                     } else {
                         purchasableProduct.pricePerM2
                             .multiply(BigDecimal.valueOf(requireNotNull(quantityM2)))
@@ -100,7 +126,8 @@ class ShoppingCartManager(
                     squareMeters = quantityM2,
                     amountBoxes = amountBoxes,
                     totalPricePerProduct = totalPrice,
-                    isSample = product.isSample
+                    isSample = product.isSample,
+                    sampleUnits = product.sampleUnits
                 )
             }
         )
@@ -121,7 +148,26 @@ private fun validateProduct(
     product: CartProductInput
 ) {
     if (product.isSample) {
+        if (
+            product.quantityM2 != null ||
+            product.sampleUnits == null ||
+            product.sampleUnits <= 0
+        ) {
+            throw ServiceException(
+                errorCode = ServiceErrorCode.SampleUnitsInvalid,
+                description =
+                    "Product ${product.productId} requires sampleUnits greater than zero and no quantityM2"
+            )
+        }
         return
+    }
+
+    if (product.sampleUnits != null) {
+        throw ServiceException(
+            errorCode = ServiceErrorCode.SampleQuantityNotAllowed,
+            description =
+                "Product ${product.productId} is not a sample and must not include sampleUnits"
+        )
     }
 
     if (

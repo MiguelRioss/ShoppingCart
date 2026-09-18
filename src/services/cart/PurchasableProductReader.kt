@@ -50,7 +50,13 @@ class PurchasableProductReader(
                             ?: false,
 
                     price =
-                        sampleJson.optionalDecimalValue("sample_price")
+                        sampleJson.optionalDecimalValue("sample_price"),
+
+                    maxQuantity =
+                        sampleJson["sample_max_quantity"]
+                            ?.jsonPrimitive
+                            ?.contentOrNull
+                            ?.toIntOrNull()
                 )
             }
 
@@ -155,5 +161,6 @@ data class PurchasableProduct(
 )
 data class PurchasableSample(
     val available: Boolean,
-    val price: BigDecimal?
+    val price: BigDecimal?,
+    val maxQuantity: Int?
 )
