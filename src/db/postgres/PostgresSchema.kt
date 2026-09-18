@@ -86,9 +86,16 @@ class PostgresSchema(
                         square_meters DOUBLE PRECISION NOT NULL,
                         amount_boxes INTEGER NOT NULL,
                         total_price_per_product NUMERIC(12, 2) NOT NULL,
+                        is_sample BOOLEAN NOT NULL DEFAULT FALSE,
                         PRIMARY KEY (cart_id, product_id)
                     )
                     """.trimIndent()
+                )
+                addColumnIfMissing(
+                    statement,
+                    "shopping_cart_products",
+                    "is_sample",
+                    "BOOLEAN NOT NULL DEFAULT FALSE"
                 )
             }
         }
