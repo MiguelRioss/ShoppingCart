@@ -83,8 +83,8 @@ class PostgresSchema(
                     CREATE TABLE IF NOT EXISTS shopping_cart_products (
                         cart_id UUID NOT NULL REFERENCES shopping_carts(id) ON DELETE CASCADE,
                         product_id BIGINT NOT NULL,
-                        square_meters DOUBLE PRECISION NOT NULL,
-                        amount_boxes INTEGER NOT NULL,
+                        square_meters DOUBLE PRECISION,
+                        amount_boxes INTEGER,
                         total_price_per_product NUMERIC(12, 2) NOT NULL,
                         is_sample BOOLEAN NOT NULL DEFAULT FALSE,
                         PRIMARY KEY (cart_id, product_id)
@@ -96,6 +96,12 @@ class PostgresSchema(
                     "shopping_cart_products",
                     "is_sample",
                     "BOOLEAN NOT NULL DEFAULT FALSE"
+                )
+                statement.executeUpdate(
+                    "ALTER TABLE shopping_cart_products ALTER COLUMN square_meters DROP NOT NULL"
+                )
+                statement.executeUpdate(
+                    "ALTER TABLE shopping_cart_products ALTER COLUMN amount_boxes DROP NOT NULL"
                 )
             }
         }
