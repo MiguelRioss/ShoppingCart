@@ -5,5 +5,5 @@ import shipment.core.ShipmentPackage
 
 data class ShipmentShippingRequest(
     val from: ShipmentAddress,
-    val product: ShipmentPackage
+    val products: List<ShipmentPackage>
 )

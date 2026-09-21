@@ -5,6 +5,8 @@ import domain.checkout.CheckoutShippingCharge
 import productdatabaseaccesslayer.ProductDataAccess
 import shipment.core.ShipmentAddress
 import shipment.core.ShipmentProviderService
+import services.common.ServiceErrorCode
+import services.common.ServiceException
 
 class ShipmentShippingChargeProvider(
     private val shipmentProvider: ShipmentProviderService,
@@ -30,14 +32,20 @@ class ShipmentShippingChargeProvider(
             shipmentProvider.getQuotes(
                 from = shipmentRequest.from,
                 to = destination,
-                product = shipmentRequest.product
+                products = shipmentRequest.products
             )
 
         val cheapest =
-            quotes.minByOrNull {
+            quotes
+                .filter {
+                    it.currency.equals("EUR", ignoreCase = true)
+                }
+                .minByOrNull {
                 it.amount
             }
-                ?: return null
+                ?: throw ServiceException(
+                    errorCode = ServiceErrorCode.ShippingQuoteCurrencyUnavailable
+                )
 
         return cheapest.toCheckoutShippingCharge()
     }

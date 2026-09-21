@@ -1,5 +1,6 @@
 package services.shipping
 
+import ShoppingCartProduct
 import domain.cart.ShoppingCart
 import java.math.BigDecimal
 import java.util.Locale
@@ -22,12 +23,38 @@ class ProductShipmentRequestMapper(
     fun toShipmentShippingRequest(
         cart: ShoppingCart
     ): ShipmentShippingRequest {
-        require(cart.products.size == 1) {
-            "Shipping currently supports exactly one product per cart"
+        require(cart.products.isNotEmpty()) {
+            "Shipping requires at least one cart product"
         }
 
-        val cartProduct =
-            cart.products.single()
+        val productRequests =
+            cart.products.map {
+                toSingleProductShipmentRequest(it)
+            }
+
+        val origins =
+            productRequests
+                .map {
+                    it.from
+                }
+                .distinct()
+
+        require(origins.size == 1) {
+            "All cart products must come from the same supplier"
+        }
+
+        return ShipmentShippingRequest(
+            from = origins.single(),
+            products =
+                productRequests.flatMap {
+                    it.products
+                }
+        )
+    }
+
+    private fun toSingleProductShipmentRequest(
+        cartProduct: ShoppingCartProduct
+    ): ShipmentShippingRequest {
 
         val product =
             Json.parseToJsonElement(
@@ -62,7 +89,7 @@ class ProductShipmentRequestMapper(
 
         if (cartProduct.isSample) {
             return sampleShipmentRequest(
-                cart = cart,
+                cartProduct = cartProduct,
                 product = product,
                 supplier = supplier,
                 purchaseInformation = purchaseInformation,
@@ -109,8 +136,9 @@ class ProductShipmentRequestMapper(
                             )
                         )
                 ),
-            product =
-                ShipmentPackage(
+            products =
+                listOf(
+                    ShipmentPackage(
                     description =
                         requireString(
                             taxFreightAndCustoms,
@@ -158,19 +186,18 @@ class ProductShipmentRequestMapper(
                         cartProduct.totalPricePerProduct.toDouble(),
                     customsCurrency = "EUR",
                     preferredCurrency = "EUR"
+                    )
                 )
         )
     }
 
     private fun sampleShipmentRequest(
-        cart: ShoppingCart,
+        cartProduct: ShoppingCartProduct,
         product: JsonObject,
         supplier: JsonObject,
         purchaseInformation: JsonObject,
         taxFreightAndCustoms: JsonObject
     ): ShipmentShippingRequest {
-        val cartProduct =
-            cart.products.single()
         val sample =
             requireObject(
                 purchaseInformation,
@@ -189,8 +216,9 @@ class ProductShipmentRequestMapper(
                             requireString(supplier, "country_collection")
                         )
                 ),
-            product =
-                ShipmentPackage(
+            products =
+                listOf(
+                    ShipmentPackage(
                     description =
                         product["title"]
                             ?.jsonPrimitive
@@ -219,6 +247,7 @@ class ProductShipmentRequestMapper(
                     customsValue = cartProduct.totalPricePerProduct.toDouble(),
                     customsCurrency = "EUR",
                     preferredCurrency = "EUR"
+                    )
                 )
         )
     }

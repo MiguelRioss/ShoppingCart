@@ -23,9 +23,119 @@
     import services.checkout.payment.core.PaymentProviderInterface
     import services.checkout.payment.core.PaymentProviderType
     import services.shipping.ShippingChargeProvider
+    import services.shipping.ShipmentShippingChargeProvider
+    import shipment.core.ProviderAccount
+    import shipment.core.ProviderAuthToken
+    import shipment.core.ProviderCredentials
     import shipment.core.ShipmentAddress
+    import shipment.core.ShipmentPackage
+    import shipment.core.ShipmentProviderService
+    import shipment.core.ShipmentProviderType
+    import shipment.core.ShipmentQuote
 
     class CheckoutManagerShippingProviderTest {
+
+        @Test
+        fun `checkout sends products sample and shipping to payment provider in euros`() {
+            val productDataAccess =
+                shippingProductDataAccess()
+            val shoppingCartService =
+                ShoppingCartManager(
+                    shoppingCartRepository = InMemoryShoppingCartRepository(),
+                    productDataAccess = productDataAccess
+                )
+
+            shoppingCartService.createCart(
+                sessionId = "mixed-currency-session",
+                products =
+                    listOf(
+                        CartProductInput(
+                            productId = 9278L,
+                            quantityM2 = 0.5,
+                            isSample = false
+                        ),
+                        CartProductInput(
+                            productId = 9278L,
+                            quantityM2 = null,
+                            isSample = true,
+                            sampleUnits = 1
+                        )
+                    ),
+                userId = null
+            )
+
+            val paymentProvider =
+                RecordingPaymentProvider()
+            val checkoutManager =
+                CheckoutManager(
+                    shoppingCartService = shoppingCartService,
+                    paymentProvider = paymentProvider,
+                    shippingChargeProvider =
+                        ShipmentShippingChargeProvider(
+                            shipmentProvider =
+                                FixedShipmentProviderService(
+                                    listOf(
+                                        ShipmentQuote(
+                                            ShipmentProviderType.FEDEX,
+                                            "FEDEX_GBP",
+                                            "FedEx GBP",
+                                            10.0,
+                                            "GBP",
+                                            "2026-09-22"
+                                        ),
+                                        ShipmentQuote(
+                                            ShipmentProviderType.FEDEX,
+                                            "FEDEX_EUR",
+                                            "FedEx EUR",
+                                            25.0,
+                                            "EUR",
+                                            "2026-09-23"
+                                        )
+                                    )
+                                ),
+                            productDataAccess = productDataAccess
+                        ),
+                    purchasableProductReader =
+                        PurchasableProductReader(productDataAccess)
+                )
+
+            checkoutManager.createCheckoutSession(
+                CreateCheckoutSessionRequest(
+                    sessionId = "mixed-currency-session",
+                    successUrl = "https://example.com/success",
+                    cancelUrl = "https://example.com/cancel",
+                    customerEmail = "buyer@example.com",
+                    shippingCharge = null,
+                    deliveryAddress =
+                        domain.checkout.CheckoutDeliveryAddress(
+                            company = null,
+                            addressLine1 = "10 Delivery Street",
+                            addressLine2 = null,
+                            townOrCity = "Lisbon",
+                            postcode = "1000-001",
+                            country = "PT"
+                        )
+                )
+            )
+
+            val lineItems =
+                requireNotNull(paymentProvider.lastRequest).lineItems
+
+            assertEquals(3, lineItems.size)
+            assertTrue(
+                lineItems.all {
+                    it.currency == "eur"
+                }
+            )
+
+            val shippingLine =
+                lineItems.single {
+                    it.productId == 0L
+                }
+
+            assertEquals("FedEx EUR", shippingLine.name)
+            assertEquals(BigDecimal("25.0"), shippingLine.amountTotal)
+        }
 
         @Test
         fun `createCheckoutSession uses shipping provider when request has no shipping charge`() {
@@ -248,6 +358,64 @@
                 }
             }
 
+        private fun shippingProductDataAccess(): ProductDataAccess =
+            object : ProductDataAccess {
+                override fun getAllProducts(): String = "[]"
+
+                override fun getPurchasableProducts(): String = "[]"
+
+                override fun getProductBySlug(productSlug: String): String = "{}"
+
+                override fun getProductById(productId: Long): String =
+                    productJson(productId)
+
+                override fun getProductDetailsById(productId: Long): String =
+                    productJson(productId)
+
+                private fun productJson(productId: Long): String =
+                    """
+                    {
+                      "id": $productId,
+                      "title": "Azure Tide MC52",
+                      "image": "https://example.com/tile.png",
+                      "supplier": {
+                        "post_code_collection": "3100-097",
+                        "country_collection": "Portugal"
+                      },
+                      "purchase_information": {
+                        "sample": {
+                          "sample_available": true,
+                          "sample_price": "20.00",
+                          "sample_max_quantity": "3",
+                          "sample_length": "11",
+                          "sample_width": "11",
+                          "sample_thickness": "0.9",
+                          "sample_packed_weight": "200"
+                        },
+                        "order": {
+                          "m2_per_box": "0.5",
+                          "client_price_per_m2": "150"
+                        },
+                        "shipping": {
+                          "packing_size": [
+                            {
+                              "quantity": "0.5",
+                              "packed_weight": "8.2",
+                              "length": "30",
+                              "width": "30",
+                              "height": "20"
+                            }
+                          ]
+                        },
+                        "tax_freight_and_customs": {
+                          "customs_description": "Handmade ceramic tiles",
+                          "country_of_origin": "Portugal"
+                        }
+                      }
+                    }
+                    """.trimIndent()
+            }
+
         private class FixedShippingChargeProvider(
             private val charge: CheckoutShippingCharge
         ) : ShippingChargeProvider {
@@ -257,6 +425,36 @@
                 destination: ShipmentAddress
             ): CheckoutShippingCharge =
                 charge
+        }
+
+        private class FixedShipmentProviderService(
+            private val quotes: List<ShipmentQuote>
+        ) : ShipmentProviderService {
+            override val type: ShipmentProviderType =
+                ShipmentProviderType.FEDEX
+
+            override val account: ProviderAccount =
+                ProviderAccount("test-account", "PT")
+
+            override val credentials: ProviderCredentials =
+                ProviderCredentials("test-client", "test-secret")
+
+            override fun login(): ProviderAuthToken =
+                ProviderAuthToken("test-token")
+
+            override fun getQuotes(
+                from: ShipmentAddress,
+                to: ShipmentAddress,
+                product: ShipmentPackage
+            ): List<ShipmentQuote> =
+                quotes
+
+            override fun getQuotes(
+                from: ShipmentAddress,
+                to: ShipmentAddress,
+                products: List<ShipmentPackage>
+            ): List<ShipmentQuote> =
+                quotes
         }
 
         private class RecordingPaymentProvider : PaymentProviderInterface {

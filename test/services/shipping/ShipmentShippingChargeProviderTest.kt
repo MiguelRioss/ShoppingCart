@@ -27,6 +27,14 @@ class ShipmentShippingChargeProviderTest {
                     listOf(
                         ShipmentQuote(
                             ShipmentProviderType.FEDEX,
+                            "FEDEX_GBP",
+                            "FedEx GBP",
+                            10.0,
+                            "GBP",
+                            "2026-09-17"
+                        ),
+                        ShipmentQuote(
+                            ShipmentProviderType.FEDEX,
                             "FEDEX_PRIORITY",
                             "FedEx Priority",
                             40.0,
@@ -91,6 +99,14 @@ class ShipmentShippingChargeProviderTest {
                                     amountBoxes = 1,
                                     totalPricePerProduct = BigDecimal("90.00"),
                                     isSample = false
+                                ),
+                                ShoppingCartProduct(
+                                    productId = 9278L,
+                                    squareMeters = null,
+                                    amountBoxes = null,
+                                    totalPricePerProduct = BigDecimal("20.00"),
+                                    isSample = true,
+                                    sampleUnits = 1
                                 )
                             )
                     ),
@@ -107,8 +123,12 @@ class ShipmentShippingChargeProviderTest {
             shipmentProvider.lastTo
         )
 
+        val shipmentPackages =
+            requireNotNull(shipmentProvider.lastProducts)
+        assertEquals(2, shipmentPackages.size)
+
         val shipmentPackage =
-            requireNotNull(shipmentProvider.lastProduct)
+            shipmentPackages[0]
 
         assertEquals("Handmade glazed ceramic tiles", shipmentPackage.description)
         assertEquals("PT", shipmentPackage.countryOfManufacture)
@@ -123,6 +143,16 @@ class ShipmentShippingChargeProviderTest {
         assertEquals(90.0, shipmentPackage.customsValue)
         assertEquals("EUR", shipmentPackage.customsCurrency)
         assertEquals("EUR", shipmentPackage.preferredCurrency)
+
+        val samplePackage =
+            shipmentPackages[1]
+        assertEquals("Azure Tide sample", samplePackage.description)
+        assertEquals(1, samplePackage.quantity)
+        assertEquals(0.2, samplePackage.weight.value)
+        assertEquals(11, samplePackage.dimensions.length)
+        assertEquals(11, samplePackage.dimensions.width)
+        assertEquals(1, samplePackage.dimensions.height)
+        assertEquals(20.0, samplePackage.customsValue)
 
         requireNotNull(charge)
         assertEquals("FEDEX_ECONOMY", charge.serviceType)
@@ -140,11 +170,19 @@ class ShipmentShippingChargeProviderTest {
         """
         {
           "id": $productId,
+          "title": "Azure Tide sample",
           "supplier": {
             "post_code_collection": "3100-097",
             "country_collection": "Portugal"
           },
           "purchase_information": {
+            "sample": {
+              "sample_available": true,
+              "sample_length": "11",
+              "sample_width": "11",
+              "sample_thickness": "0.9",
+              "sample_packed_weight": "200"
+            },
             "order": {
               "product_dispatch_source": "De Ferranti Portugal Warehouse"
             },
@@ -183,6 +221,7 @@ class ShipmentShippingChargeProviderTest {
         var lastFrom: ShipmentAddress? = null
         var lastTo: ShipmentAddress? = null
         var lastProduct: ShipmentPackage? = null
+        var lastProducts: List<ShipmentPackage>? = null
 
         override fun login(): ProviderAuthToken =
             ProviderAuthToken("test-token")
@@ -195,6 +234,19 @@ class ShipmentShippingChargeProviderTest {
             lastFrom = from
             lastTo = to
             lastProduct = product
+            lastProducts = listOf(product)
+
+            return quotes
+        }
+
+        override fun getQuotes(
+            from: ShipmentAddress,
+            to: ShipmentAddress,
+            products: List<ShipmentPackage>
+        ): List<ShipmentQuote> {
+            lastFrom = from
+            lastTo = to
+            lastProducts = products
 
             return quotes
         }

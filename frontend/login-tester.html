@@ -1882,10 +1882,7 @@
                             checkoutCustomerEmail(),
 
                         deliveryAddress:
-                            checkoutDeliveryAddress(),
-
-                        shippingCharge:
-                            null
+                            checkoutDeliveryAddress()
                     }
                 }
             );
@@ -1993,6 +1990,12 @@
                                 Number(
                                     item.quantityM2
                                 );
+                        } else {
+
+                            product.sampleUnits =
+                                Number(
+                                    item.sampleUnits
+                                ) || 1;
                         }
 
 
@@ -2618,6 +2621,20 @@
                 : null;
 
 
+        const parsedSampleMaxQuantity =
+            Number.parseInt(
+                sample.sample_max_quantity,
+                10
+            );
+
+
+        const sampleMaxQuantity =
+            Number.isInteger(parsedSampleMaxQuantity) &&
+            parsedSampleMaxQuantity > 0
+                ? parsedSampleMaxQuantity
+                : 1;
+
+
         const name =
             product.name ||
             product.title ||
@@ -2670,7 +2687,9 @@
 
             sampleAvailable,
 
-            samplePrice
+            samplePrice,
+
+            sampleMaxQuantity
         };
     }
 
@@ -2827,7 +2846,13 @@
                 null,
 
             isSample:
-                true
+                true,
+
+            sampleUnits:
+                1,
+
+            sampleMaxQuantity:
+                product.sampleMaxQuantity
         });
 
 
@@ -2884,7 +2909,17 @@
                         product.squareMeters
                     ),
 
-            isSample
+            isSample,
+
+            sampleUnits:
+                isSample
+                    ? Number(product.sampleUnits) || 1
+                    : null,
+
+            sampleMaxQuantity:
+                matchingProduct
+                    ? matchingProduct.sampleMaxQuantity
+                    : 1
         };
     }
 
@@ -2923,9 +2958,14 @@
                     const quantityControl =
                         item.isSample
                             ? `
-                                <div class="muted">
-                                    Sample
-                                </div>
+                                <input
+                                    type="number"
+                                    min="1"
+                                    max="${item.sampleMaxQuantity || 1}"
+                                    step="1"
+                                    value="${item.sampleUnits || 1}"
+                                    data-cart-sample-units="${index}"
+                                    aria-label="Number of sample units">
                             `
                             : `
                                 <input
@@ -2987,7 +3027,7 @@
 
             const input =
                 event.target.closest(
-                    "[data-cart-qty]"
+                    "[data-cart-qty], [data-cart-sample-units]"
                 );
 
 
@@ -3009,12 +3049,34 @@
                 quantity > 0
             ) {
 
-                state.cart[
-                    Number(
-                        input.dataset.cartQty
-                    )
-                    ].quantityM2 =
-                    quantity;
+                if (input.dataset.cartSampleUnits !== undefined) {
+
+                    const index =
+                        Number(
+                            input.dataset.cartSampleUnits
+                        );
+
+                    const maximum =
+                        state.cart[index].sampleMaxQuantity || 1;
+
+                    state.cart[index].sampleUnits =
+                        Math.min(
+                            Math.trunc(quantity),
+                            maximum
+                        );
+
+                    input.value =
+                        state.cart[index].sampleUnits;
+
+                } else {
+
+                    state.cart[
+                        Number(
+                            input.dataset.cartQty
+                        )
+                        ].quantityM2 =
+                        quantity;
+                }
             }
         }
     );

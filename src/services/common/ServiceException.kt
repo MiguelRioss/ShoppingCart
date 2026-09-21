@@ -82,6 +82,11 @@ enum class ServiceErrorCode(
         code = 2008,
         defaultMessage = "Sample quantity is not allowed",
         defaultDescription = "Normal cart products must not include sampleUnits"
+    ),
+    ShippingQuoteCurrencyUnavailable(
+        code = 3000,
+        defaultMessage = "EUR shipping rate unavailable",
+        defaultDescription = "The shipping provider did not return a rate in EUR"
     )
 }
 
