@@ -27,11 +27,14 @@
     import shipment.core.ProviderAccount
     import shipment.core.ProviderAuthToken
     import shipment.core.ProviderCredentials
-    import shipment.core.ShipmentAddress
-    import shipment.core.ShipmentPackage
+    import domain.shipment.ShipmentAddress
+    import domain.shipment.ShipmentPackage
+    import domain.shipment.Shipment
+    import domain.shipment.ShipmentRequest
+    import domain.shipment.ShipmentRateRequest
     import shipment.core.ShipmentProviderService
     import shipment.core.ShipmentProviderType
-    import shipment.core.ShipmentQuote
+    import domain.shipment.ShipmentQuote
 
     class CheckoutManagerShippingProviderTest {
 
@@ -379,6 +382,8 @@
                       "title": "Azure Tide MC52",
                       "image": "https://example.com/tile.png",
                       "supplier": {
+                        "address_2": "Rua da Vidoeira 1",
+                        "city_collection": "Albergaria dos Doze",
                         "post_code_collection": "3100-097",
                         "country_collection": "Portugal"
                       },
@@ -442,18 +447,10 @@
             override fun login(): ProviderAuthToken =
                 ProviderAuthToken("test-token")
 
-            override fun getQuotes(
-                from: ShipmentAddress,
-                to: ShipmentAddress,
-                product: ShipmentPackage
-            ): List<ShipmentQuote> =
-                quotes
+            override fun createShipment(request: ShipmentRequest): Shipment =
+                error("Shipment creation is not used by this checkout test")
 
-            override fun getQuotes(
-                from: ShipmentAddress,
-                to: ShipmentAddress,
-                products: List<ShipmentPackage>
-            ): List<ShipmentQuote> =
+            override fun getQuotes(request: ShipmentRateRequest): List<ShipmentQuote> =
                 quotes
         }
 

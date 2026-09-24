@@ -1,6 +1,5 @@
 package server
 
-import config.Environment
 import db.offline.InMemoryAuthTokenRepository
 import db.offline.InMemoryShoppingCartRepository
 import db.offline.InMemoryUserRepository
@@ -33,9 +32,9 @@ import services.checkout.core.CheckoutManager
 import services.checkout.payment.stripe.StripePaymentProvider
 import services.shipping.ShipmentShippingChargeProvider
 import services.user.UserManager
-import shipment.core.ProviderAccount
-import shipment.core.ProviderCredentials
-import shipment.core.ShipmentProviderFactory
+import config.ShippingMode
+import config.ShippingProviderConfig
+import shipment.core.ShippingProvider
 import shipment.core.ShipmentProviderType
 
 /**
@@ -74,7 +73,7 @@ class ShoppingCartServer(
         val shoppingCartService = ShoppingCartManager(shoppingCartRepository, productCatalogDataSource)
         val loginService = LoginService(authService, shoppingCartService)
         val shippingChargeProvider =
-            shipmentProviderOrNull(productCatalogDataSource)
+            shippingChargeProvider(productCatalogDataSource)
         val checkoutService = CheckoutManager(
             shoppingCartService = shoppingCartService,
             paymentProvider = StripePaymentProvider(),
@@ -98,36 +97,26 @@ class ShoppingCartServer(
         )
     }
 
-    private fun shipmentProviderOrNull(
+    /** Creates the cart shipping service using the selected carrier implementation. */
+    private fun shippingChargeProvider(
         productCatalogDataSource: ProductCatalogDataSource
-    ): ShipmentShippingChargeProvider? {
-        val accountNumber =
-            Environment.get("FEDEX_ACCOUNT_NUMBER")
-                ?.takeIf(String::isNotBlank)
-                ?: return null
-
-        val accountCountryCode =
-            Environment.get("FEDEX_ACCOUNT_COUNTRY_CODE")
-                ?.takeIf(String::isNotBlank)
-                ?: "PT"
-
-        val clientId =
-            Environment.get("FEDEX_CLIENT_ID")
-                ?.takeIf(String::isNotBlank)
-                ?: return null
-
-        val clientSecret =
-            Environment.get("FEDEX_CLIENT_SECRET")
-                ?.takeIf(String::isNotBlank)
-                ?: return null
+    ): ShipmentShippingChargeProvider {
+        val config = ShippingProviderConfig.load()
+        val shippingProvider =
+            when (config.mode) {
+                ShippingMode.OFFLINE -> ShippingProvider.offline()
+                ShippingMode.SANDBOX,
+                ShippingMode.PRODUCTION ->
+                    ShippingProvider.login(
+                        type = ShipmentProviderType.FEDEX,
+                        account = requireNotNull(config.account),
+                        credentials = requireNotNull(config.credentials),
+                        environment = requireNotNull(config.providerEnvironment)
+                    )
+            }
 
         return ShipmentShippingChargeProvider(
-            shipmentProvider =
-                ShipmentProviderFactory.create(
-                    ShipmentProviderType.FEDEX,
-                    ProviderAccount(accountNumber, accountCountryCode),
-                    ProviderCredentials(clientId, clientSecret)
-                ),
+            shipmentProvider = shippingProvider,
             productDataAccess = productCatalogDataSource
         )
     }

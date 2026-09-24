@@ -1,7 +1,14 @@
 package services.pdf
 
+/**
+ * Produces a visibly marked purchase-order template for layout previews and manual testing.
+ *
+ * Bracketed values are intentional placeholders and the result must never be released as a
+ * live supplier order.
+ */
 object SamplePurchaseOrderPdfRequest {
 
+    /** Creates the sample request, optionally using a different logo file. */
     fun create(
         logoPath: String = "src/main/resources/deferranti-logo.png"
     ): PurchaseOrderPdfRequest =

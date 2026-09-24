@@ -1,7 +1,14 @@
 package services.pdf
 
+/**
+ * Complete deterministic order data for PDF tests and local visual inspection.
+ *
+ * The generated documents are explicitly marked as test documents and are not valid for
+ * supplier, courier, customer, accounting, or customs use.
+ */
 object TestDeFerrantiOrderDocuments {
 
+    /** Creates a populated test order using [logoPath] in all generated documents. */
     fun create(
         logoPath: String = "src/main/resources/deferranti-logo.png"
     ): DeFerrantiOrderDocuments =

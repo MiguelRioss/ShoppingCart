@@ -10,10 +10,22 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import productdatabaseaccesslayer.ProductDataAccess
 
+/**
+ * Builds test document data from an actual product-catalogue record.
+ *
+ * Product details and purchasing measurements come from [productDataAccess], while order,
+ * customer, shipment, and document references remain test fixtures. The result must therefore
+ * be used for integration checks and PDF previews only, never as a live order.
+ */
 class RealProductTestOrderDocuments(
     private val productDataAccess: ProductDataAccess
 ) {
 
+    /**
+     * Loads [productId], calculates display quantities for [quantityM2], and creates test data.
+     *
+     * @throws IllegalArgumentException when the product or required catalogue sections are absent
+     */
     fun create(
         productId: Long,
         quantityM2: Double = 9.5,

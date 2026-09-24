@@ -7,6 +7,7 @@ import putNullable
 import java.time.LocalDateTime
 import java.util.UUID
 
+/** Public account profile returned to an authenticated frontend client. */
 data class UserInfoResponse(
     val id: UUID,
     val email: String,
@@ -32,6 +33,7 @@ data class UserInfoResponse(
     val projectNotes: String? = null
 )
 
+/** Converts the persisted user domain model into its public response shape. */
 fun User.toResponse() = UserInfoResponse(
     id = id,
     email = email,
@@ -58,6 +60,7 @@ fun User.toResponse() = UserInfoResponse(
 )
 
 
+/** Serializes all profile and address fields as compact JSON. */
 fun UserInfoResponse.toJson(): String =
     buildJsonObject {
         put("id", JsonPrimitive(id.toString()))

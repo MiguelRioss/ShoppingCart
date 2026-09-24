@@ -15,12 +15,13 @@ import kotlinx.serialization.json.jsonPrimitive
 import productdatabaseaccesslayer.ProductCatalogDataSource
 import shipment.core.ProviderAccount
 import shipment.core.ProviderCredentials
-import shipment.core.ShipmentAddress
-import shipment.core.ShipmentDimensions
-import shipment.core.ShipmentPackage
+import domain.shipment.ShipmentAddress
+import domain.shipment.ShipmentDimensions
+import domain.shipment.ShipmentPackage
+import domain.shipment.ShipmentRateRequest
 import shipment.core.ShipmentProviderFactory
 import shipment.core.ShipmentProviderType
-import shipment.core.ShipmentWeight
+import domain.shipment.ShipmentWeight
 import org.junit.jupiter.api.Assumptions.assumeTrue
 
 class ShipmentProviderRealApiTest {
@@ -151,6 +152,8 @@ class ShipmentProviderRealApiTest {
 
         val from =
             ShipmentAddress(
+                addressLine1 = "Rua da Vidoeira 1",
+                city = "Albergaria dos Doze",
                 postalCode = collectionPostCode,
                 countryCode = collectionCountryCode
             )
@@ -371,8 +374,7 @@ class ShipmentProviderRealApiTest {
                     ),
                 customsValue =
                     customsValue.toDouble(),
-                customsCurrency = "EUR",
-                preferredCurrency = "EUR"
+                customsCurrency = "EUR"
             )
 
         /*
@@ -382,6 +384,8 @@ class ShipmentProviderRealApiTest {
          */
         val to =
             ShipmentAddress(
+                addressLine1 = "Rua do Destinatario 1",
+                city = "Faro",
                 postalCode = "8000-339",
                 countryCode = "PT"
             )
@@ -438,9 +442,12 @@ class ShipmentProviderRealApiTest {
 
         val quotes =
             provider.getQuotes(
-                from = from,
-                to = to,
-                product = shipmentPackage
+                ShipmentRateRequest(
+                    from = from,
+                    to = to,
+                    packages = listOf(shipmentPackage),
+                    preferredCurrency = "EUR"
+                )
             )
 
         /*

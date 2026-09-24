@@ -5,8 +5,10 @@ import java.math.BigDecimal
 import services.common.ServiceErrorCode
 import services.common.ServiceException
 
+/** Enforces cart invariants that must hold immediately before payment checkout. */
 class CheckoutValidator {
 
+    /** Rejects empty carts and normal quantities that are not 0.5 m² multiples. */
     fun validateCart(
         cart: ShoppingCart
     ) {

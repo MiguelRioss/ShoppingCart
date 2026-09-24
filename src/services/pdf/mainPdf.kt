@@ -5,6 +5,13 @@ import services.pdf.PackingListPdf
 import services.pdf.PurchaseOrderPdf
 import services.pdf.RealProductTestOrderDocuments
 
+/**
+ * Manual PDF smoke-test entry point.
+ *
+ * It reads one real catalogue product, prints calculated values, and writes all supported test
+ * documents to the current directory. This function is for local verification, not application
+ * startup or production document generation.
+ */
 fun main() {
 
     val productDataAccess =

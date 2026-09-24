@@ -7,10 +7,15 @@ import java.math.RoundingMode
 import java.net.URLEncoder
 import java.nio.charset.StandardCharsets
 
+/**
+ * Stripe Checkout form request represented as ordered key/value pairs.
+ * Nested Stripe parameters are encoded using bracket notation in [toFormBody].
+ */
 data class StripeCheckoutRequest(
     private val values: List<Pair<String, String>>
 ) {
 
+    /** Encodes this request as `application/x-www-form-urlencoded`. */
     fun toFormBody(): String =
         values.joinToString("&") { (key, value) ->
             "${key.urlEncode()}=${value.urlEncode()}"
@@ -18,6 +23,7 @@ data class StripeCheckoutRequest(
 
     companion object {
 
+        /** Maps provider-neutral checkout line items and metadata to Stripe fields. */
         fun from(
             request: CheckoutPaymentRequest
         ): StripeCheckoutRequest {

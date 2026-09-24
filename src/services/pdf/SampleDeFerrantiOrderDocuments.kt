@@ -1,7 +1,14 @@
 package services.pdf
 
+/**
+ * Creates a reusable document template whose unresolved business values remain visible.
+ *
+ * This is useful for reviewing layouts and identifying required checkout, fulfilment, tax,
+ * and carrier data. It is not a source of production defaults.
+ */
 object SampleDeFerrantiOrderDocuments {
 
+    /** Creates the placeholder-rich sample document set with the selected logo. */
     fun create(
         logoPath: String = "src/main/resources/deferranti-logo.png"
     ): DeFerrantiOrderDocuments =

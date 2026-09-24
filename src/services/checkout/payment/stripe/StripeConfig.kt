@@ -2,6 +2,7 @@ package services.checkout.payment.stripe
 
 import config.Environment
 
+/** Stripe credentials and endpoint configuration loaded by the payment adapter. */
 data class StripeConfig(
     val secretKey: String,
     val checkoutApiUrl: String
@@ -9,6 +10,7 @@ data class StripeConfig(
 
     companion object {
 
+        /** Loads the secret key and optional Checkout API override from the environment. */
         fun fromEnvironment(): StripeConfig {
 
             val secretKey =

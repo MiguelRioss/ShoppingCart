@@ -14,6 +14,7 @@ import java.time.Duration
 import services.checkout.payment.core.PaymentProvider
 import services.checkout.payment.core.PaymentProviderType
 
+/** Stripe adapter responsible for creating and reading hosted Checkout Sessions. */
 class StripePaymentProvider(
     private val config: StripeConfig =
         StripeConfig.fromEnvironment()

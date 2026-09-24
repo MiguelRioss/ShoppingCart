@@ -11,10 +11,18 @@ import services.pdf.model.PdfTable
 import services.pdf.model.PdfText
 import services.pdf.model.PdfTextType
 
+/**
+ * Creates the commercial invoice used to describe an international shipment to customs.
+ *
+ * This builder exposes the exporter, buyer, consignee, importer, goods, valuation, origin,
+ * and shipment terms carried by [DeFerrantiOrderDocuments]. Upstream validation must replace
+ * all test placeholders before the result is used as a live customs document.
+ */
 class CommercialInvoicePdf(
     private val generator: PdfGenerator = OpenPdfGenerator()
 ) {
 
+    /** Generates the commercial invoice and returns its complete PDF bytes. */
     fun generate(
         documents: DeFerrantiOrderDocuments
     ): ByteArray =
@@ -22,6 +30,7 @@ class CommercialInvoicePdf(
             createDocument(documents)
         )
 
+    /** Generates the commercial invoice and writes it to [outputPath]. */
     fun generateToFile(
         documents: DeFerrantiOrderDocuments,
         outputPath: String
@@ -32,6 +41,7 @@ class CommercialInvoicePdf(
             )
     }
 
+    /** Builds the renderer-independent commercial-invoice document model. */
     fun createDocument(
         documents: DeFerrantiOrderDocuments
     ): PdfDocument =

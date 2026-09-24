@@ -10,12 +10,14 @@ import services.checkout.payment.core.PaymentProviderType
 import services.common.ServiceErrorCode
 import services.common.ServiceException
 
+/** Minimal Stripe Checkout Session response consumed by this application. */
 data class StripeCheckoutResponse(
     val id: String,
     val status: String?,
     val url: String?
 ) {
 
+    /** Converts Stripe status and identifiers into a provider-neutral session. */
     fun toCheckoutSession(): CheckoutSession =
         CheckoutSession(
             id = id,
@@ -31,6 +33,10 @@ data class StripeCheckoutResponse(
 
     companion object {
 
+        /**
+         * Parses a Stripe response and requires a nonblank session id.
+         * @throws ServiceException when JSON is malformed or the id is absent
+         */
         fun fromJson(
             responseBody: String
         ): StripeCheckoutResponse {

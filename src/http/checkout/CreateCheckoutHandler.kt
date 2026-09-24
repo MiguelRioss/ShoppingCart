@@ -14,6 +14,7 @@ import http.serviceExceptionOrNull
 import services.auth.AuthServiceInterface
 import services.checkout.core.CheckoutService
 
+/** Handles `POST /checkout` and creates a hosted payment session for a saved cart. */
 class CreateCheckoutHandler(
     private val checkoutService: CheckoutService,
     private val authService: AuthServiceInterface? = null

@@ -11,13 +11,21 @@ import services.pdf.model.PdfTable
 import services.pdf.model.PdfText
 import services.pdf.model.PdfTextType
 
+/**
+ * Creates the delivery note that accompanies an order to its consignee.
+ *
+ * The document deliberately excludes supplier pricing and focuses on delivered goods,
+ * shipment references, receipt checks, and exception reporting.
+ */
 class DeliveryNotePdf(
     private val generator: PdfGenerator = OpenPdfGenerator()
 ) {
 
+    /** Generates the delivery note and returns its complete PDF bytes. */
     fun generate(documents: DeFerrantiOrderDocuments): ByteArray =
         generator.generate(createDocument(documents))
 
+    /** Generates the delivery note and writes it to [outputPath]. */
     fun generateToFile(
         documents: DeFerrantiOrderDocuments,
         outputPath: String
@@ -25,6 +33,7 @@ class DeliveryNotePdf(
         File(outputPath).writeBytes(generate(documents))
     }
 
+    /** Builds the renderer-independent delivery-note document model. */
     fun createDocument(documents: DeFerrantiOrderDocuments): PdfDocument =
         PdfDocument(
             header =

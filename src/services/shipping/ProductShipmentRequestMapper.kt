@@ -11,18 +11,32 @@ import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import productdatabaseaccesslayer.ProductDataAccess
-import shipment.core.ShipmentAddress
-import shipment.core.ShipmentDimensions
-import shipment.core.ShipmentPackage
-import shipment.core.ShipmentWeight
+import domain.shipment.ShipmentAddress
+import domain.shipment.ShipmentDimensions
+import domain.shipment.ShipmentPackage
+import domain.shipment.ShipmentWeight
 
+/**
+ * Converts catalogue shipping metadata and cart quantities into physical packages.
+ * Cart lines with the same supplier address are grouped into one carrier request;
+ * different supplier addresses produce independent requests.
+ */
 class ProductShipmentRequestMapper(
     private val productDataAccess: ProductDataAccess
 ) {
 
-    fun toShipmentShippingRequest(
+    /**
+     * Builds one carrier-neutral shipment request per supplier origin.
+     *
+     * Products sharing an origin travel in the same FedEx multi-package shipment.
+     * Products from different origins cannot share a carrier shipment and are
+     * therefore returned as separate requests.
+     *
+     * @throws IllegalArgumentException when the cart is empty
+     */
+    fun toShipmentShippingRequests(
         cart: ShoppingCart
-    ): ShipmentShippingRequest {
+    ): List<ShipmentShippingRequest> {
         require(cart.products.isNotEmpty()) {
             "Shipping requires at least one cart product"
         }
@@ -32,24 +46,14 @@ class ProductShipmentRequestMapper(
                 toSingleProductShipmentRequest(it)
             }
 
-        val origins =
-            productRequests
-                .map {
-                    it.from
-                }
-                .distinct()
-
-        require(origins.size == 1) {
-            "All cart products must come from the same supplier"
-        }
-
-        return ShipmentShippingRequest(
-            from = origins.single(),
-            products =
-                productRequests.flatMap {
-                    it.products
-                }
-        )
+        return productRequests
+            .groupBy(ShipmentShippingRequest::from)
+            .map { (origin, requests) ->
+                ShipmentShippingRequest(
+                    from = origin,
+                    products = requests.flatMap(ShipmentShippingRequest::products)
+                )
+            }
     }
 
     private fun toSingleProductShipmentRequest(
@@ -123,6 +127,8 @@ class ProductShipmentRequestMapper(
         return ShipmentShippingRequest(
             from =
                 ShipmentAddress(
+                    addressLine1 = requireString(supplier, "address_2"),
+                    city = requireString(supplier, "city_collection"),
                     postalCode =
                         requireString(
                             supplier,
@@ -184,8 +190,7 @@ class ProductShipmentRequestMapper(
                         ),
                     customsValue =
                         cartProduct.totalPricePerProduct.toDouble(),
-                    customsCurrency = "EUR",
-                    preferredCurrency = "EUR"
+                    customsCurrency = "EUR"
                     )
                 )
         )
@@ -210,6 +215,8 @@ class ProductShipmentRequestMapper(
         return ShipmentShippingRequest(
             from =
                 ShipmentAddress(
+                    addressLine1 = requireString(supplier, "address_2"),
+                    city = requireString(supplier, "city_collection"),
                     postalCode = requireString(supplier, "post_code_collection"),
                     countryCode =
                         countryNameToIso2(
@@ -245,8 +252,7 @@ class ProductShipmentRequestMapper(
                             units = "CM"
                         ),
                     customsValue = cartProduct.totalPricePerProduct.toDouble(),
-                    customsCurrency = "EUR",
-                    preferredCurrency = "EUR"
+                    customsCurrency = "EUR"
                     )
                 )
         )

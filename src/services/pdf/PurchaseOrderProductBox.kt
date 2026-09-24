@@ -5,8 +5,10 @@ import services.pdf.model.PdfRow
 import services.pdf.model.PdfText
 import services.pdf.model.PdfTextType
 
+/** Builds the standard seven-column table row used for purchase-order products. */
 object PurchaseOrderProductBox {
 
+    /** Converts [line] into a numbered PDF row, including available product identifiers. */
     fun row(
         lineNumber: Int,
         line: PurchaseOrderLine

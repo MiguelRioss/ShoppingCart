@@ -1,5 +1,6 @@
 package domain.checkout
 
+/** Provider-neutral lifecycle state for a hosted checkout session. */
 enum class CheckoutSessionStatus(
     val responseValue: String
 ) {

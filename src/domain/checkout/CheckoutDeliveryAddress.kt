@@ -2,8 +2,12 @@ package domain.checkout
 
 import domain.user.User
 import java.util.Locale
-import shipment.core.ShipmentAddress
+import domain.shipment.ShipmentAddress
 
+/**
+ * Customer delivery address used to calculate shipping during checkout.
+ * Carrier mapping currently requires a postcode and ISO country code.
+ */
 data class CheckoutDeliveryAddress(
     val company: String?,
     val addressLine1: String?,
@@ -14,6 +18,17 @@ data class CheckoutDeliveryAddress(
 ) {
     fun toShipmentAddress(): ShipmentAddress =
         ShipmentAddress(
+            addressLine1 =
+                requireNotBlank(
+                    addressLine1,
+                    "deliveryAddress.addressLine1"
+                ),
+            addressLine2 = addressLine2?.trim()?.takeIf(String::isNotEmpty),
+            city =
+                requireNotBlank(
+                    townOrCity,
+                    "deliveryAddress.townOrCity"
+                ),
             postalCode = requireNotBlank(postcode, "deliveryAddress.postcode"),
             countryCode = normalizeCountryCode(
                 requireNotBlank(country, "deliveryAddress.country")
@@ -49,6 +64,7 @@ data class CheckoutDeliveryAddress(
         }
 }
 
+/** Maps delivery fields saved on a user account into checkout input. */
 fun User.toCheckoutDeliveryAddress(): CheckoutDeliveryAddress =
     CheckoutDeliveryAddress(
         company = deliveryCompany,

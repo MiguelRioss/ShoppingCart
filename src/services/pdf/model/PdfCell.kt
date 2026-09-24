@@ -2,6 +2,16 @@ package services.pdf.model
 
 import pdf.model.PdfAlignment
 
+/**
+ * Describes one cell in a [PdfTable].
+ *
+ * @property content ordered text fragments rendered on separate lines
+ * @property alignment horizontal alignment applied to all cell content
+ * @property columnSpan number of table columns occupied by this cell
+ * @property padding whitespace, in PDF points, around the content
+ * @property leading vertical distance, in points, between text baselines
+ * @property minimumHeight optional minimum cell height in PDF points
+ */
 data class PdfCell(
     val content: List<PdfText>,
     val alignment: PdfAlignment = PdfAlignment.LEFT,
@@ -13,6 +23,7 @@ data class PdfCell(
 
     companion object {
 
+        /** Creates a left-aligned cell containing one text fragment. */
         fun text(
             value: String,
             type: PdfTextType = PdfTextType.NORMAL
@@ -26,6 +37,7 @@ data class PdfCell(
                 )
             )
 
+        /** Creates a cell containing a small semantic label. */
         fun label(
             value: String
         ): PdfCell =
@@ -34,6 +46,7 @@ data class PdfCell(
                 PdfTextType.LABEL
             )
 
+        /** Creates a compact centred cell intended for a dark table header row. */
         fun header(
             value: String
         ): PdfCell =
@@ -49,6 +62,7 @@ data class PdfCell(
                 )
             )
 
+        /** Creates a centred cell containing one line of normal text. */
         fun centered(
             value: String
         ): PdfCell =
@@ -61,6 +75,7 @@ data class PdfCell(
                 )
             )
 
+        /** Creates a centred cell containing each supplied value on a separate line. */
         fun centeredLines(
             vararg values: String
         ): PdfCell =
@@ -74,6 +89,7 @@ data class PdfCell(
                     }
             )
 
+        /** Creates a right-aligned cell, commonly used for quantities and monetary values. */
         fun right(
             value: String,
             type: PdfTextType = PdfTextType.NORMAL
@@ -88,6 +104,7 @@ data class PdfCell(
                 )
             )
 
+        /** Creates a labelled cell followed by zero or more body lines. */
         fun titled(
             title: String,
             lines: List<String>
@@ -103,6 +120,7 @@ data class PdfCell(
                             lines.texts()
             )
 
+        /** Creates the taller address block used for purchaser and supplier parties. */
         fun party(
             label: String,
             name: String,

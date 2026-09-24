@@ -12,11 +12,13 @@ import services.common.ServiceErrorCode
 import services.common.ServiceException
 import support.optionalDecimalValue
 
+/** Reads and validates purchasable pricing metadata from catalogue JSON. */
 class PurchasableProductReader(
     private val productDataAccess: ProductDataAccess,
     private val json: Json = Json
 ) {
 
+    /** Loads normal-product terms and optional sample purchase terms. */
     fun load(
         productId: Long
     ): PurchasableProduct {
@@ -152,6 +154,7 @@ class PurchasableProductReader(
     }
 }
 
+/** Catalogue information required to price cart and checkout lines. */
 data class PurchasableProduct(
     val name: String,
     val imageUrl: String?,
@@ -159,6 +162,7 @@ data class PurchasableProduct(
     val pricePerM2: BigDecimal,
     val sample: PurchasableSample?
 )
+/** Availability, price, and per-cart limit for product samples. */
 data class PurchasableSample(
     val available: Boolean,
     val price: BigDecimal?,

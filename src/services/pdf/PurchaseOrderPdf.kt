@@ -10,16 +10,26 @@ import services.pdf.model.PdfRow
 import services.pdf.model.PdfTable
 import services.pdf.model.PdfTextType
 
+/**
+ * Builds and renders De Ferranti supplier purchase orders.
+ *
+ * The class accepts either the purchase-order-specific request or the shared order-document
+ * model. File writing is offered as a convenience; [generate] remains suitable for HTTP and
+ * email integrations that need the bytes directly.
+ */
 class PurchaseOrderPdf(
     private val generator: PdfGenerator = OpenPdfGenerator()
 ) {
 
+    /** Generates a purchase-order PDF from presentation-ready [request] data. */
     fun generate(request: PurchaseOrderPdfRequest): ByteArray =
         generator.generate(createDocument(request))
 
+    /** Maps the shared order data to a purchase order and returns the generated PDF bytes. */
     fun generate(documents: DeFerrantiOrderDocuments): ByteArray =
         generate(documents.toPurchaseOrderRequest())
 
+    /** Generates the requested purchase order and writes it to [outputPath]. */
     fun generateToFile(
         request: PurchaseOrderPdfRequest,
         outputPath: String
@@ -27,6 +37,7 @@ class PurchaseOrderPdf(
         File(outputPath).writeBytes(generate(request))
     }
 
+    /** Maps shared order data and writes the resulting purchase order to [outputPath]. */
     fun generateToFile(
         documents: DeFerrantiOrderDocuments,
         outputPath: String
@@ -37,6 +48,7 @@ class PurchaseOrderPdf(
         )
     }
 
+    /** Creates the renderer-independent document model used to produce the purchase order. */
     fun createDocument(request: PurchaseOrderPdfRequest): PdfDocument =
         PdfDocument(
             header =

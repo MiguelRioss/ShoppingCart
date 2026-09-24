@@ -19,8 +19,16 @@ import pdf.model.PdfAlignment
 import pdf.model.PdfRowType
 import services.pdf.PdfGenerator
 
+/**
+ * [PdfGenerator] implementation backed by the OpenPDF library.
+ *
+ * It translates the neutral PDF model into an A4 document, renders semantic text and row
+ * styles, repeats the configured footer on every page, and returns the result entirely in
+ * memory. No files are created by this class.
+ */
 class OpenPdfGenerator : PdfGenerator {
 
+    /** Renders [document] as an A4 PDF and returns its binary content. */
     override fun generate(
         document: PdfDocument
     ): ByteArray {

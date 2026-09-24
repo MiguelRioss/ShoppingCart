@@ -11,13 +11,118 @@ import productdatabaseaccesslayer.ProductDataAccess
 import shipment.core.ProviderAccount
 import shipment.core.ProviderAuthToken
 import shipment.core.ProviderCredentials
-import shipment.core.ShipmentAddress
-import shipment.core.ShipmentPackage
+import domain.shipment.ShipmentAddress
+import domain.shipment.ShipmentPackage
+import domain.shipment.Shipment
+import domain.shipment.ShipmentRequest
+import domain.shipment.ShipmentRateRequest
 import shipment.core.ShipmentProviderService
 import shipment.core.ShipmentProviderType
-import shipment.core.ShipmentQuote
+import domain.shipment.ShipmentQuote
 
 class ShipmentShippingChargeProviderTest {
+
+    @Test
+    fun `calculateShipping sums cheapest quote from each supplier origin`() {
+        val shipmentProvider =
+            RecordingShipmentProviderService(
+                quotes =
+                    listOf(
+                        ShipmentQuote(
+                            ShipmentProviderType.FEDEX,
+                            "FEDEX_PRIORITY",
+                            "FedEx Priority",
+                            40.0,
+                            "EUR",
+                            "2026-09-18"
+                        ),
+                        ShipmentQuote(
+                            ShipmentProviderType.FEDEX,
+                            "FEDEX_ECONOMY",
+                            "FedEx Economy",
+                            25.0,
+                            "EUR",
+                            "2026-09-21"
+                        )
+                    )
+            )
+
+        val productDataAccess =
+            object : ProductDataAccess {
+                override fun getAllProducts(): String = "[]"
+                override fun getPurchasableProducts(): String = "[]"
+                override fun getProductBySlug(productSlug: String): String = "{}"
+
+                override fun getProductById(productId: Long): String? =
+                    getProductDetailsById(productId)
+
+                override fun getProductDetailsById(productId: Long): String =
+                    when (productId) {
+                        9278L -> productJson(productId)
+                        9279L ->
+                            productJson(
+                                productId = productId,
+                                address = "Rua de Santa Catarina 100",
+                                city = "Porto",
+                                postalCode = "4000-442"
+                            )
+                        else -> error("Unexpected product $productId")
+                    }
+            }
+
+        val charge =
+            ShipmentShippingChargeProvider(
+                shipmentProvider = shipmentProvider,
+                productDataAccess = productDataAccess
+            ).calculateShipping(
+                cart =
+                    ShoppingCart(
+                        id = UUID.fromString("00000000-0000-0000-0000-000000000002"),
+                        userId = null,
+                        dateTime = LocalDateTime.parse("2026-09-16T10:00:00"),
+                        sessionId = "multi-origin-session",
+                        products =
+                            listOf(
+                                ShoppingCartProduct(
+                                    productId = 9278L,
+                                    squareMeters = 0.5,
+                                    amountBoxes = 1,
+                                    totalPricePerProduct = BigDecimal("90.00"),
+                                    isSample = false
+                                ),
+                                ShoppingCartProduct(
+                                    productId = 9279L,
+                                    squareMeters = 0.5,
+                                    amountBoxes = 1,
+                                    totalPricePerProduct = BigDecimal("75.00"),
+                                    isSample = false
+                                )
+                            )
+                    ),
+                destination =
+                    ShipmentAddress(
+                        addressLine1 = "1 Piccadilly",
+                        city = "Manchester",
+                        postalCode = "M1 1AE",
+                        countryCode = "GB"
+                    )
+            )
+
+        assertEquals(2, shipmentProvider.requests.size)
+        assertEquals(1, shipmentProvider.requests[0].packages.size)
+        assertEquals(1, shipmentProvider.requests[1].packages.size)
+        assertEquals(
+            setOf("Albergaria dos Doze", "Porto"),
+            shipmentProvider.requests.map { it.from.city }.toSet()
+        )
+
+        requireNotNull(charge)
+        assertEquals("MULTI_ORIGIN", charge.serviceType)
+        assertEquals("Shipping (2 origins)", charge.serviceName)
+        assertEquals(BigDecimal("50.0"), charge.amountTotal)
+        assertEquals("eur", charge.currency)
+        assertEquals("2026-09-21", charge.estimatedDeliveryDate)
+    }
 
     @Test
     fun `calculateShipping builds shipment request from product data and returns cheapest quote`() {
@@ -79,6 +184,8 @@ class ShipmentShippingChargeProviderTest {
 
         val destination =
             ShipmentAddress(
+                addressLine1 = "Rua do Destinatario 1",
+                city = "Faro",
                 postalCode = "8000-339",
                 countryCode = "PT"
             )
@@ -114,7 +221,12 @@ class ShipmentShippingChargeProviderTest {
             )
 
         assertEquals(
-            ShipmentAddress("3100-097", "PT"),
+            ShipmentAddress(
+                addressLine1 = "Rua da Vidoeira 1",
+                city = "Albergaria dos Doze",
+                postalCode = "3100-097",
+                countryCode = "PT"
+            ),
             shipmentProvider.lastFrom
         )
 
@@ -142,7 +254,7 @@ class ShipmentShippingChargeProviderTest {
         assertEquals("CM", shipmentPackage.dimensions.units)
         assertEquals(90.0, shipmentPackage.customsValue)
         assertEquals("EUR", shipmentPackage.customsCurrency)
-        assertEquals("EUR", shipmentPackage.preferredCurrency)
+        assertEquals("EUR", shipmentProvider.lastRequest?.preferredCurrency)
 
         val samplePackage =
             shipmentPackages[1]
@@ -165,14 +277,19 @@ class ShipmentShippingChargeProviderTest {
     }
 
     private fun productJson(
-        productId: Long
+        productId: Long,
+        address: String = "Rua da Vidoeira 1",
+        city: String = "Albergaria dos Doze",
+        postalCode: String = "3100-097"
     ): String =
         """
         {
           "id": $productId,
           "title": "Azure Tide sample",
           "supplier": {
-            "post_code_collection": "3100-097",
+            "address_2": "$address",
+            "city_collection": "$city",
+            "post_code_collection": "$postalCode",
             "country_collection": "Portugal"
           },
           "purchase_information": {
@@ -218,36 +335,20 @@ class ShipmentShippingChargeProviderTest {
         override val credentials: ProviderCredentials =
             ProviderCredentials("test-client", "test-secret")
 
-        var lastFrom: ShipmentAddress? = null
-        var lastTo: ShipmentAddress? = null
-        var lastProduct: ShipmentPackage? = null
-        var lastProducts: List<ShipmentPackage>? = null
+        val requests = mutableListOf<ShipmentRateRequest>()
+        val lastRequest: ShipmentRateRequest? get() = requests.lastOrNull()
+        val lastFrom: ShipmentAddress? get() = lastRequest?.from
+        val lastTo: ShipmentAddress? get() = lastRequest?.to
+        val lastProducts: List<ShipmentPackage>? get() = lastRequest?.packages
 
         override fun login(): ProviderAuthToken =
             ProviderAuthToken("test-token")
 
-        override fun getQuotes(
-            from: ShipmentAddress,
-            to: ShipmentAddress,
-            product: ShipmentPackage
-        ): List<ShipmentQuote> {
-            lastFrom = from
-            lastTo = to
-            lastProduct = product
-            lastProducts = listOf(product)
+        override fun createShipment(request: ShipmentRequest): Shipment =
+            error("Shipment creation is not used by this rate test")
 
-            return quotes
-        }
-
-        override fun getQuotes(
-            from: ShipmentAddress,
-            to: ShipmentAddress,
-            products: List<ShipmentPackage>
-        ): List<ShipmentQuote> {
-            lastFrom = from
-            lastTo = to
-            lastProducts = products
-
+        override fun getQuotes(request: ShipmentRateRequest): List<ShipmentQuote> {
+            requests += request
             return quotes
         }
     }

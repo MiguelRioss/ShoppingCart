@@ -7,10 +7,12 @@ import java.math.RoundingMode
 import kotlin.math.ceil
 import services.cart.PurchasableProductReader
 
+/** Resolves a saved cart line into a currently priced payment line item. */
 class CheckoutProductResolver(
     private val purchasableProductReader: PurchasableProductReader
 ) {
 
+    /** Handles sample units independently from square-metre product quantities. */
     fun resolve(
         product: ShoppingCartProduct
     ): CheckoutLineItem {

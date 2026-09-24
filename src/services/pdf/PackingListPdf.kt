@@ -11,13 +11,21 @@ import services.pdf.model.PdfTable
 import services.pdf.model.PdfText
 import services.pdf.model.PdfTextType
 
+/**
+ * Creates a packing list for warehouse, courier, and customs handling.
+ *
+ * Product quantities, package dimensions, shipment references, and operational checks are
+ * projected from the shared [DeFerrantiOrderDocuments] model into the PDF layout.
+ */
 class PackingListPdf(
     private val generator: PdfGenerator = OpenPdfGenerator()
 ) {
 
+    /** Generates the packing list and returns its complete PDF bytes. */
     fun generate(documents: DeFerrantiOrderDocuments): ByteArray =
         generator.generate(createDocument(documents))
 
+    /** Generates the packing list and writes it to [outputPath]. */
     fun generateToFile(
         documents: DeFerrantiOrderDocuments,
         outputPath: String
@@ -25,6 +33,7 @@ class PackingListPdf(
         File(outputPath).writeBytes(generate(documents))
     }
 
+    /** Builds the renderer-independent packing-list document model. */
     fun createDocument(documents: DeFerrantiOrderDocuments): PdfDocument =
         PdfDocument(
             header =

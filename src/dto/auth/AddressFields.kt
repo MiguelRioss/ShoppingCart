@@ -3,6 +3,7 @@ package dto.auth
 import kotlinx.serialization.json.JsonObject
 import stringValueIncludingBlank
 
+/** Shared nullable address fields used by account and checkout requests. */
 data class AddressFields(
     val company: String?,
     val addressLine1: String?,
@@ -12,6 +13,7 @@ data class AddressFields(
     val country: String?
 )
 
+/** Extracts address fields while preserving missing and blank input for validation. */
 fun JsonObject.toAddressFields(): AddressFields =
     AddressFields(
         company = stringValueIncludingBlank("company"),
