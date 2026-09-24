@@ -19,7 +19,7 @@ dependencies {
     testImplementation("org.apache.poi:poi:5.4.1")
     testImplementation("org.apache.poi:poi-ooxml:5.4.1")
     implementation("com.github.librepdf:openpdf:3.0.5")
-    implementation(files("libs/FedExApiMiddlwere-1.1.0-beta.6.jar"))
+    implementation(files("libs/ShippingApiProvider-1.1.0-beta.6.jar"))
 }
 
 kotlin {
