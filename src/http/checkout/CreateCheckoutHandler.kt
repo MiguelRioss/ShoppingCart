@@ -7,9 +7,8 @@ import dto.checkout.toDomain
 import dto.checkout.toJson
 import http.AuthenticatedRequest
 import http.HttpError
-import http.HttpRequest
 import http.HttpResponse
-import http.RequestHandler
+import http.RequestWithAuthHandler
 import http.serviceExceptionOrNull
 import services.auth.AuthServiceInterface
 import services.checkout.core.CheckoutService
@@ -17,32 +16,20 @@ import services.checkout.core.CheckoutService
 /** Handles `POST /checkout` and creates a hosted payment session for a saved cart. */
 class CreateCheckoutHandler(
     private val checkoutService: CheckoutService,
-    private val authService: AuthServiceInterface? = null
-) : RequestHandler {
+    authService: AuthServiceInterface
+) : RequestWithAuthHandler(authService) {
 
-    override fun handle(request: HttpRequest): HttpResponse {
+    override fun handleAuthenticated(request: AuthenticatedRequest): HttpResponse {
         return try {
             val checkout =
                 parseCreateCheckoutRequest(
-                    request.body
+                    request.request.body
                 ).toDomain()
-                    .let { checkoutRequest ->
-                        val authenticatedUser =
-                            authService
-                                ?.let {
-                                    AuthenticatedRequest.from(request, it)
-                                }
-                                ?.user
-
-                        authenticatedUser
-                            ?.let {
-                                checkoutRequest.copy(
-                                    deliveryAddress =
-                                        it.toCheckoutDeliveryAddress()
-                                )
-                            }
-                            ?: checkoutRequest
-                    }
+                    .copy(
+                        deliveryAddress = request.user.toCheckoutDeliveryAddress(),
+                        customerEmail = request.user.email,
+                        userId = request.user.id
+                    )
 
             val checkoutSession =
                 checkoutService.createCheckoutSession(

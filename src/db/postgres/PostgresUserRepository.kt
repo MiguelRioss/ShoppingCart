@@ -12,6 +12,23 @@ import java.util.UUID
 class PostgresUserRepository(
     private val database: Database
 ) : UserRepository {
+    override fun listUserSummaries(): List<domain.user.UserSummary> =
+        database.getConnection().use { connection ->
+            connection.prepareStatement(
+                "SELECT id, email, created_at, first_name, last_name, phone FROM public.users ORDER BY created_at DESC, id"
+            ).use { statement ->
+                statement.executeQuery().use { rows ->
+                    buildList {
+                        while (rows.next()) add(domain.user.UserSummary(
+                            rows.getObject("id", UUID::class.java), rows.getString("email"),
+                            rows.getTimestamp("created_at").toLocalDateTime(),
+                            rows.getString("first_name"), rows.getString("last_name"), rows.getString("phone")
+                        ))
+                    }
+                }
+            }
+        }
+
     override fun saveUser(user: User): User {
         database.getConnection().use { connection ->
             connection.prepareStatement(

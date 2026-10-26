@@ -41,8 +41,10 @@ class ShoppingCartManager(
 
     override fun associateCartWithUser(sessionId: String, userId: UUID): ShoppingCart? {
         val cart = shoppingCartRepository.getCartBySessionId(sessionId) ?: return null
-
-        return shoppingCartRepository.saveCart(cart.copy(userId = userId))
+        require(cart.userId == null || cart.userId == userId) { "This shopping cart belongs to another user" }
+        val userCart = shoppingCartRepository.getCartByUserId(userId)
+        val saved = shoppingCartRepository.saveCart(cart.copy(id = userCart?.id ?: cart.id, userId = userId))
+        return saved
     }
 
 
@@ -53,9 +55,13 @@ class ShoppingCartManager(
     ): ShoppingCart {
         val existingCart =
             shoppingCartRepository.getCartBySessionId(sessionId)
+        require(existingCart?.userId == null || existingCart.userId == userId) {
+            "This shopping cart belongs to another user"
+        }
+        val userCart = userId?.let(shoppingCartRepository::getCartByUserId)
 
         val updatedCart = ShoppingCart(
-            id = existingCart?.id ?: UUID.randomUUID(),
+            id = userCart?.id ?: existingCart?.id ?: UUID.randomUUID(),
             userId = userId ?: existingCart?.userId,
             dateTime = LocalDateTime.now(clock),
             sessionId = sessionId,

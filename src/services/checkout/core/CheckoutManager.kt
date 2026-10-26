@@ -22,7 +22,8 @@ class CheckoutManager(
     private val shoppingCartService: ShoppingCartService,
     private val paymentProvider: PaymentProviderInterface,
     private val shippingChargeProvider: ShippingChargeProvider? = null,
-    purchasableProductReader: PurchasableProductReader
+    purchasableProductReader: PurchasableProductReader,
+    private val orderRepository: db.OrderRepository = db.offline.InMemoryOrderRepository()
 ) : CheckoutService {
 
     private val validator =
@@ -46,6 +47,10 @@ class CheckoutManager(
                     description =
                         "No shopping cart exists for sessionId ${request.sessionId}"
                 )
+
+        require(cart.userId == null || cart.userId == request.userId) {
+            "This shopping cart belongs to another user"
+        }
 
         validator.validateCart(
             cart
@@ -90,9 +95,11 @@ class CheckoutManager(
                 lineItems = lineItems
             )
 
-        return paymentProvider.createCheckoutSession(
+        val checkout = paymentProvider.createCheckoutSession(
             paymentRequest
         )
+        orderRepository.create(checkout.id, request.userId, orderSnapshot(request, cart, lineItems))
+        return checkout
     }
 
 

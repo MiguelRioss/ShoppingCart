@@ -26,6 +26,23 @@ import kotlin.test.assertNull
 
 class CreateCheckoutHandlerTest {
 
+    private val users = db.offline.InMemoryUserRepository()
+    private val authService by lazy {
+        val user = services.user.UserManager(users, clock = clock)
+            .registerUser("buyer@example.com", "password-123")
+        users.saveUser(user.copy(
+            deliveryAddressLine1 = "Account street",
+            deliveryTownOrCity = "Lisbon",
+            deliveryPostcode = "1000-001",
+            deliveryCountry = "PT"
+        ))
+        services.auth.AuthManager(users, db.offline.InMemoryAuthTokenRepository(), clock = clock)
+    }
+    private val authHeaders by lazy {
+        val token = authService.login("buyer@example.com", "password-123")
+        mapOf("Authorization" to listOf("Bearer ${token.token}"))
+    }
+
     private val clock =
         Clock.fixed(
             Instant.parse("2026-08-07T13:30:00Z"),
@@ -176,9 +193,28 @@ class CreateCheckoutHandlerTest {
                         paymentProvider =
                             stripePaymentProvider,
 
+                        shippingChargeProvider = object : services.shipping.ShippingChargeProvider {
+                            override fun calculateShipping(
+                                cart: domain.cart.ShoppingCart,
+                                destination: domain.shipment.ShipmentAddress
+                            ): domain.checkout.CheckoutShippingCharge {
+                                assertEquals("Account street", destination.addressLine1)
+                                return domain.checkout.CheckoutShippingCharge(
+                                    serviceType = "STANDARD_DELIVERY",
+                                    serviceName = "Standard delivery",
+                                    amountTotal = java.math.BigDecimal("408.96"),
+                                    currency = "eur",
+                                    estimatedDeliveryDate = "unavailable",
+                                    originalAmount = java.math.BigDecimal("408.96"),
+                                    originalCurrency = "USD"
+                                )
+                            }
+                        },
+
                         purchasableProductReader =
                             purchasableProductReader
-                    )
+                    ),
+                    authService
                 )
 
             val response =
@@ -186,22 +222,13 @@ class CreateCheckoutHandlerTest {
                     HttpRequest(
                         method = "POST",
                         path = "/checkout",
+                        headers = authHeaders,
                         body =
                             """
                             {
                               "sessionId": "session-123",
                               "successUrl": "https://example.com/success",
-                              "cancelUrl": "https://example.com/cancel",
-                              "customerEmail": "buyer@example.com",
-                              "shippingCharge": {
-                                "serviceType": "STANDARD_DELIVERY",
-                                "serviceName": "Standard delivery",
-                                "amountTotal": "408.96",
-                                "currency": "eur",
-                                "estimatedDeliveryDate": "unavailable",
-                                "originalAmount": "408.96",
-                                "originalCurrency": "USD"
-                              }
+                              "cancelUrl": "https://example.com/cancel"
                             }
                             """.trimIndent()
                     )
@@ -402,7 +429,8 @@ class CreateCheckoutHandlerTest {
             CreateCheckoutHandler(
                 createCheckoutManager(
                     shoppingCartService
-                )
+                ),
+                authService
             )
 
         val response =
@@ -410,6 +438,7 @@ class CreateCheckoutHandlerTest {
                 HttpRequest(
                     method = "POST",
                     path = "/checkout",
+                    headers = authHeaders,
                     body =
                         """
                         {
@@ -469,7 +498,8 @@ class CreateCheckoutHandlerTest {
             CreateCheckoutHandler(
                 createCheckoutManager(
                     shoppingCartService
-                )
+                ),
+                authService
             )
 
         val response =
@@ -477,6 +507,7 @@ class CreateCheckoutHandlerTest {
                 HttpRequest(
                     method = "POST",
                     path = "/checkout",
+                    headers = authHeaders,
                     body =
                         """
                         {
@@ -524,7 +555,8 @@ class CreateCheckoutHandlerTest {
             CreateCheckoutHandler(
                 createCheckoutManager(
                     shoppingCartService
-                )
+                ),
+                authService
             )
 
         val response =
@@ -532,6 +564,7 @@ class CreateCheckoutHandlerTest {
                 HttpRequest(
                     method = "POST",
                     path = "/checkout",
+                    headers = authHeaders,
                     body = "{}"
                 )
             )
@@ -548,6 +581,61 @@ class CreateCheckoutHandlerTest {
             productDataAccess,
             clock
         )
+
+    @Test
+    fun `checkout requires a valid bearer token before parsing payload`() {
+        val handler = CreateCheckoutHandler(createCheckoutManager(createShoppingCartService()), authService)
+        for (headers in listOf(emptyMap(), mapOf("Authorization" to listOf("Bearer invalid")))) {
+            val response = handler.handle(HttpRequest("POST", "/checkout", "{}", headers = headers))
+            assertEquals(401, response.statusCode)
+        }
+    }
+
+    @Test
+    fun `checkout rejects delivery address and shipping charge in payload`() {
+        val handler = CreateCheckoutHandler(createCheckoutManager(createShoppingCartService()), authService)
+        for (field in listOf("deliveryAddress", "shippingCharge")) {
+            val response = handler.handle(HttpRequest(
+                "POST", "/checkout",
+                """{"sessionId":"session-123","successUrl":"https://example.com/success","cancelUrl":"https://example.com/cancel","$field":{}}""",
+                headers = authHeaders
+            ))
+            assertEquals(400, response.statusCode)
+        }
+    }
+
+    @Test
+    fun `checkout rejects carts belonging to another user`() {
+        val carts = createShoppingCartService()
+        carts.createCart(
+            sessionId = "another-user-session",
+            products = listOf(CartProductInput(9278L, 0.5, false)),
+            userId = java.util.UUID.randomUUID()
+        )
+        val handler = CreateCheckoutHandler(createCheckoutManager(carts), authService)
+        val response = handler.handle(HttpRequest(
+            "POST", "/checkout",
+            """{"sessionId":"another-user-session","successUrl":"https://example.com/success","cancelUrl":"https://example.com/cancel"}""",
+            headers = authHeaders
+        ))
+        assertEquals(400, response.statusCode)
+    }
+
+    @Test
+    fun `checkout requires complete delivery address saved on account`() {
+        val headers = authHeaders
+        val user = users.getUserByEmail("buyer@example.com")!!
+        users.saveUser(user.copy(deliveryPostcode = null))
+        val carts = createShoppingCartService()
+        carts.createCart("session-123", listOf(CartProductInput(9278L, 0.5, false)), userId = user.id)
+        val handler = CreateCheckoutHandler(createCheckoutManager(carts), authService)
+        val response = handler.handle(HttpRequest(
+            "POST", "/checkout",
+            """{"sessionId":"session-123","successUrl":"https://example.com/success","cancelUrl":"https://example.com/cancel"}""",
+            headers = headers
+        ))
+        assertEquals(400, response.statusCode)
+    }
 
     private fun createCheckoutManager(
         shoppingCartService: ShoppingCartService

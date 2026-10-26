@@ -35,7 +35,6 @@ import services.user.UserManager
 import config.ShippingMode
 import config.ShippingProviderConfig
 import shipment.core.ShippingProvider
-import shipment.core.ShipmentProviderType
 
 /**
  * Builds repositories, services, routes, and the HTTP server.
@@ -72,16 +71,25 @@ class ShoppingCartServer(
         val productCatalogDataSource = ProductCatalogDataSource()
         val shoppingCartService = ShoppingCartManager(shoppingCartRepository, productCatalogDataSource)
         val loginService = LoginService(authService, shoppingCartService)
+        val orderRepository: db.OrderRepository = database?.let { db.postgres.PostgresOrderRepository(it) }
+            ?: db.offline.InMemoryOrderRepository()
         val shippingChargeProvider =
             shippingChargeProvider(productCatalogDataSource)
         val checkoutService = CheckoutManager(
             shoppingCartService = shoppingCartService,
             paymentProvider = StripePaymentProvider(),
             shippingChargeProvider = shippingChargeProvider,
-            purchasableProductReader = PurchasableProductReader(productDataAccess = productCatalogDataSource)
+            purchasableProductReader = PurchasableProductReader(productDataAccess = productCatalogDataSource),
+            orderRepository = orderRepository
         )
 
+        val adminUserIds = config.Environment.get("ADMIN_USER_IDS").orEmpty()
+            .split(',').mapNotNull { runCatching { java.util.UUID.fromString(it.trim()) }.getOrNull() }.toSet()
+
         return listOf(
+            Route("GET", "/orders", http.checkout.GetOrdersHandler(orderRepository, authService)),
+            Route("POST", "/webhooks/stripe", http.checkout.StripeWebhookHandler(orderRepository)),
+            Route("GET", "/admin/users", http.admin.GetUsersHandler(authService, userRepository, adminUserIds)),
             Route("POST", "/register", RegisterHandler(userService, authService, shoppingCartService)),
             Route("POST", "/login", LoginHandler(loginService)),
             Route("GET", "/auth/status", AuthStatusHandler(authService)),
@@ -107,12 +115,7 @@ class ShoppingCartServer(
                 ShippingMode.OFFLINE -> ShippingProvider.offline()
                 ShippingMode.SANDBOX,
                 ShippingMode.PRODUCTION ->
-                    ShippingProvider.login(
-                        type = ShipmentProviderType.FEDEX,
-                        account = requireNotNull(config.account),
-                        credentials = requireNotNull(config.credentials),
-                        environment = requireNotNull(config.providerEnvironment)
-                    )
+                    services.shipping.AccountRoutingShippingProvider()
             }
 
         return ShipmentShippingChargeProvider(

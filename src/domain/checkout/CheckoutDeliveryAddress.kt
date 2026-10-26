@@ -60,7 +60,7 @@ data class CheckoutDeliveryAddress(
                         .getDisplayCountry(Locale.ENGLISH)
                         .equals(country, ignoreCase = true)
                 }
-                ?: error("Unknown country: $country")
+                ?: throw IllegalArgumentException("Unknown account delivery country: $country")
         }
 }
 

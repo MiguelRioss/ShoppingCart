@@ -139,12 +139,11 @@ const cart = await apiFetch("/cart", {
 ```js
 const checkout = await apiFetch("/checkout", {
   method: "POST",
+  token: localStorage.getItem("shoppingCartToken"),
   body: {
     sessionId: getSessionId(),
     successUrl: "https://your-app.example/success",
-    cancelUrl: "https://your-app.example/cart",
-    customerEmail: "buyer@example.com",
-    shippingCharge: null
+    cancelUrl: "https://your-app.example/cart"
   }
 });
 
@@ -153,21 +152,9 @@ window.location.href = checkout.url;
 
 ## Shipping
 
-This ShoppingCart project no longer includes FedEx-specific code. Shipping can still be added to checkout by passing a generic `shippingCharge` object to `POST /checkout`.
-
-If another application calculates shipping separately, send that calculated amount as:
-
-```json
-{
-  "serviceType": "STANDARD_DELIVERY",
-  "serviceName": "Standard delivery",
-  "amountTotal": "25.00",
-  "currency": "eur",
-  "estimatedDeliveryDate": "unavailable",
-  "originalAmount": "25.00",
-  "originalCurrency": "EUR"
-}
-```
+Login is required for checkout. Shipping is calculated by the server using the saved
+delivery address on the authenticated account. Update that address using the account
+endpoint before checkout. Do not send `deliveryAddress` or `shippingCharge` to `/checkout`.
 
 ## Testing With Postman
 

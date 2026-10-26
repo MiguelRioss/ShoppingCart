@@ -560,6 +560,10 @@
     {
       "name": "Create checkout - current cart",
       "request": {
+        "auth": {
+          "type": "bearer",
+          "bearer": [{"key": "token", "value": "{{authToken}}", "type": "string"}]
+        },
         "method": "POST",
         "header": [
           {
@@ -569,7 +573,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"successUrl\": \"https://example.com/success\",\n  \"cancelUrl\": \"https://example.com/cancel\",\n  \"customerEmail\": \"{{email}}\",\n  \"shippingCharge\": null\n}"
+          "raw": "{\n  \"sessionId\": \"{{sessionId}}\",\n  \"successUrl\": \"https://example.com/success\",\n  \"cancelUrl\": \"https://example.com/cancel\"\n}"
         },
         "url": {
           "raw": "{{baseUrl}}/checkout",

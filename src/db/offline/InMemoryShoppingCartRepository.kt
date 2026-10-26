@@ -31,6 +31,9 @@ class InMemoryShoppingCartRepository : ShoppingCartRepository {
      * Saves or replaces a cart by id.
      */
     override fun saveCart(cart: ShoppingCart): ShoppingCart {
+        if (cart.userId != null && cart.sessionId != null) {
+            carts.entries.removeIf { it.key != cart.id && it.value.userId == null && it.value.sessionId == cart.sessionId }
+        }
         carts[cart.id] = cart
         return cart
     }

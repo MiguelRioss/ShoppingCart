@@ -9,6 +9,22 @@ class PostgresSchema(
     fun migrate() {
         database.getConnection().use { connection ->
             connection.createStatement().use { statement ->
+                statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS orders (
+                        id UUID PRIMARY KEY,
+                        checkout_session_id TEXT NOT NULL UNIQUE,
+                        user_id UUID,
+                        status TEXT NOT NULL DEFAULT 'PENDING_PAYMENT'
+                            CHECK (status IN ('PENDING_PAYMENT', 'PAID', 'PAYMENT_FAILED', 'EXPIRED')),
+                        snapshot JSONB NOT NULL,
+                        payment_id TEXT,
+                        amount_paid_minor BIGINT,
+                        paid_currency TEXT,
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        paid_at TIMESTAMPTZ
+                    )
+                """.trimIndent())
+                statement.executeUpdate("CREATE INDEX IF NOT EXISTS orders_user_id_idx ON orders(user_id)")
                 statement.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS users (

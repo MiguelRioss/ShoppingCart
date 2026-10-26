@@ -7,6 +7,8 @@ import java.util.UUID
  * Persistence boundary for users.
  */
 interface UserRepository {
+    fun listUserSummaries(): List<domain.user.UserSummary>
+
     /**
      * Stores a user.
      *

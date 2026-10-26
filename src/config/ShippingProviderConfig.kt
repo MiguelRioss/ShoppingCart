@@ -4,7 +4,7 @@ import shipment.core.ProviderAccount
 import shipment.core.ProviderCredentials
 import shipment.core.ShippingProviderEnvironment
 
-/** Shipping configuration owned and loaded by the ShoppingCart application. */
+/** Separate PT/UK billing accounts; legacy unqualified keys apply only to PT. */
 data class ShippingProviderConfig(
     val mode: ShippingMode,
     val account: ProviderAccount?,
@@ -12,54 +12,29 @@ data class ShippingProviderConfig(
     val providerEnvironment: ShippingProviderEnvironment?
 ) {
     companion object {
-        fun load(): ShippingProviderConfig {
-            val mode =
-                Environment.get("FEDEX_MODE")
-                    ?.uppercase()
-                    ?.let(ShippingMode::valueOf)
-                    ?: ShippingMode.OFFLINE
-
-            if (mode == ShippingMode.OFFLINE) {
-                return ShippingProviderConfig(mode, null, null, null)
+        fun load(accountCountry: String = "PT", read: (String) -> String? = Environment::get): ShippingProviderConfig {
+            val mode = read("FEDEX_MODE")?.trim()?.uppercase()?.let(ShippingMode::valueOf) ?: ShippingMode.OFFLINE
+            if (mode == ShippingMode.OFFLINE) return ShippingProviderConfig(mode, null, null, null)
+            val region = when (accountCountry.trim().uppercase()) {
+                "PT" -> "PT"
+                "GB", "UK" -> "UK"
+                else -> error("Unsupported FedEx billing account country")
             }
-
-            val prefix =
-                when (mode) {
-                    ShippingMode.SANDBOX -> "FEDEX_TEST_"
-                    ShippingMode.PRODUCTION -> "FEDEX_PRODUCTION_"
-                    ShippingMode.OFFLINE -> error("Offline mode has no credentials")
-                }
-
+            val prefix = if (mode == ShippingMode.SANDBOX) "FEDEX_TEST_" else "FEDEX_PRODUCTION_"
+            fun required(suffix: String): String {
+                val name = prefix + region + "_" + suffix
+                return (read(name)?.takeIf(String::isNotBlank)
+                    ?: if (region == "PT") read(prefix + suffix)?.takeIf(String::isNotBlank) else null)
+                    ?.trim() ?: throw IllegalStateException("$name is required for the $region shipping account")
+            }
             return ShippingProviderConfig(
-                mode = mode,
-                account =
-                    ProviderAccount(
-                        accountNumber = required(prefix + "ACCOUNT_NUMBER"),
-                        countryCode = required(prefix + "ACCOUNT_COUNTRY_CODE")
-                    ),
-                credentials =
-                    ProviderCredentials(
-                        clientId = required(prefix + "CLIENT_ID"),
-                        clientSecret = required(prefix + "CLIENT_SECRET")
-                    ),
-                providerEnvironment =
-                    when (mode) {
-                        ShippingMode.SANDBOX -> ShippingProviderEnvironment.SANDBOX
-                        ShippingMode.PRODUCTION -> ShippingProviderEnvironment.PRODUCTION
-                        ShippingMode.OFFLINE -> error("Offline mode has no endpoint")
-                    }
+                mode,
+                ProviderAccount(required("ACCOUNT_NUMBER"), if (region == "UK") "GB" else "PT"),
+                ProviderCredentials(required("CLIENT_ID"), required("CLIENT_SECRET")),
+                if (mode == ShippingMode.SANDBOX) ShippingProviderEnvironment.SANDBOX else ShippingProviderEnvironment.PRODUCTION
             )
         }
-
-        private fun required(name: String): String =
-            requireNotNull(Environment.get(name)?.takeIf(String::isNotBlank)) {
-                "$name is required"
-            }
     }
 }
 
-enum class ShippingMode {
-    OFFLINE,
-    SANDBOX,
-    PRODUCTION
-}
+enum class ShippingMode { OFFLINE, SANDBOX, PRODUCTION }

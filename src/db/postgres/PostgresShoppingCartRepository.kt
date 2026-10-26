@@ -77,9 +77,20 @@ class PostgresShoppingCartRepository(
     }
 
     override fun saveCart(cart: ShoppingCart): ShoppingCart {
+        var savedCart = cart
         database.getConnection().use { connection ->
             connection.autoCommit = false
             try {
+                // Serialize saves for a user, including concurrent saves from new browser sessions.
+                cart.userId?.let { userId ->
+                    connection.prepareStatement("SELECT pg_advisory_xact_lock(hashtextextended(?, 0))").use {
+                        it.setString(1, userId.toString()); it.execute()
+                    }
+                    connection.prepareStatement("SELECT id FROM shopping_carts WHERE user_id = ?").use {
+                        it.setObject(1, userId)
+                        it.executeQuery().use { rows -> if (rows.next()) savedCart = cart.copy(id = rows.getObject("id", UUID::class.java)) }
+                    }
+                }
                 connection.prepareStatement(
                     """
                     INSERT INTO shopping_carts (id, user_id, session_id, date_time)
@@ -90,15 +101,21 @@ class PostgresShoppingCartRepository(
                         date_time = EXCLUDED.date_time
                     """.trimIndent()
                 ).use { statement ->
-                    statement.setObject(1, cart.id)
+                    statement.setObject(1, savedCart.id)
                     statement.setObject(2, cart.userId)
                     statement.setString(3, cart.sessionId)
                     statement.setTimestamp(4, Timestamp.valueOf(cart.dateTime))
                     statement.executeUpdate()
                 }
 
+                if (cart.userId != null && cart.sessionId != null) {
+                    connection.prepareStatement("DELETE FROM shopping_carts WHERE session_id = ? AND id <> ? AND user_id IS NULL").use {
+                        it.setString(1, cart.sessionId); it.setObject(2, savedCart.id); it.executeUpdate()
+                    }
+                }
+
                 connection.prepareStatement("DELETE FROM shopping_cart_products WHERE cart_id = ?").use { statement ->
-                    statement.setObject(1, cart.id)
+                    statement.setObject(1, savedCart.id)
                     statement.executeUpdate()
                 }
 
@@ -117,7 +134,7 @@ class PostgresShoppingCartRepository(
                     """.trimIndent()
                 ).use { statement ->
                     cart.products.forEach { product ->
-                        statement.setObject(1, cart.id)
+                        statement.setObject(1, savedCart.id)
                         statement.setLong(2, product.productId)
                         statement.setObject(3, product.squareMeters)
                         statement.setObject(4, product.amountBoxes)
@@ -138,7 +155,7 @@ class PostgresShoppingCartRepository(
             }
         }
 
-        return cart
+        return savedCart
     }
 
     private fun ResultSet.toCartWithoutProducts(): ShoppingCart =

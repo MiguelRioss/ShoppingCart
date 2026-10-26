@@ -4,8 +4,9 @@ import config.Environment
 import java.net.URI
 import java.net.URLDecoder
 import java.sql.Connection
-import java.sql.DriverManager
 import java.nio.charset.StandardCharsets
+import com.zaxxer.hikari.HikariConfig
+import com.zaxxer.hikari.HikariDataSource
 
 /**
  * Opens JDBC connections using database settings from environment variables.
@@ -14,17 +15,23 @@ class Database(
     private val url: String,
     private val user: String?,
     private val password: String?
-) {
-    init {
-        DriverManager.setLoginTimeout(20)
+) : AutoCloseable {
+    private val pool: HikariDataSource by lazy {
+        HikariDataSource(HikariConfig().apply {
+            jdbcUrl = url
+            if (!user.isNullOrBlank()) { username = user; this.password = this@Database.password }
+            maximumPoolSize = 4
+            minimumIdle = 1
+            connectionTimeout = 60000
+            initializationFailTimeout = 60000
+            addDataSourceProperty("connectTimeout", "5")
+            addDataSourceProperty("tcpKeepAlive", "true")
+        })
     }
 
-    fun getConnection(): Connection =
-        if (user.isNullOrBlank()) {
-            DriverManager.getConnection(url)
-        } else {
-            DriverManager.getConnection(url, user, password)
-        }
+    fun getConnection(): Connection = pool.connection
+
+    override fun close() { pool.close() }
 
     companion object {
         fun fromEnvironment(): Database? {

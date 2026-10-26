@@ -106,3 +106,30 @@ only for rate calculation during checkout.
 - the cheapest EUR quote is selected independently for each origin;
 - the two selected amounts are summed into one checkout shipping charge;
 - a single-origin checkout retains the original FedEx service details.
+
+## FedEx billing account routing
+
+The default billing account is PT. If either the collection/origin or delivery/destination country is GB (UK alias accepted), the UK billing account is used. This decision is made independently for each supplier-origin quote. It changes the billing account, not the collection or delivery address. A missing UK account fails that quote and never falls back to PT. The adapter also routes shipment preparation, but checkout currently requests rates only; it does not book shipments.
+
+FEDEX_MODE controls carrier access: OFFLINE, SANDBOX, or PRODUCTION. SHIPPING_MODE is not read. APP_MODE independently controls database access.
+
+For production configure these server-only values:
+
+- FEDEX_PRODUCTION_PT_ACCOUNT_NUMBER
+- FEDEX_PRODUCTION_PT_CLIENT_ID
+- FEDEX_PRODUCTION_PT_CLIENT_SECRET
+- FEDEX_PRODUCTION_UK_ACCOUNT_NUMBER
+- FEDEX_PRODUCTION_UK_CLIENT_ID
+- FEDEX_PRODUCTION_UK_CLIENT_SECRET
+
+Account country is PT or GB based on the selected route. Existing unqualified FEDEX_PRODUCTION_ACCOUNT_NUMBER / CLIENT_ID / CLIENT_SECRET values are supported only for PT. Sandbox uses the same names with FEDEX_TEST_ instead of FEDEX_PRODUCTION_. Production credentials must not be used in sandbox.
+
+Set FEDEX_MODE=PRODUCTION locally and on the backend host, then restart/redeploy to apply. Local changes do not deploy the Render service.
+
+### Latest live check (26 October 2026)
+
+The originally configured account ended in 7010; the owner confirmed that this is not the PT account. The explicit FEDEX_PRODUCTION_PT_ACCOUNT_NUMBER now uses the supplied PT account ending in 9738. With the existing client credentials, the correct PT number is rejected by FedEx with ACCOUNT.NUMBER.MISMATCH, including a direct rate request with matching shipper and sender-payor account numbers. Check that the PT account is linked/enabled for the production API project or supply its corresponding FEDEX_PRODUCTION_PT_CLIENT_ID and FEDEX_PRODUCTION_PT_CLIENT_SECRET. This response alone does not establish which portal setting is missing.
+
+Earlier GBP quotes came from the wrong account. They do not establish the correct PT account's currency. Direct tests on that old account also found that PREFERRED alone returned EUR, whereas ACCOUNT/LIST/PREFERRED together returned only GBP. Any middleware currency-request change should be verified using the correct PT account after account access is fixed. No automatic currency conversion was added.
+
+UK account credentials are still not configured. Routing/configuration and existing shipping/checkout checks passed (20 tests). The opt-in FedExPtRateSmokeTest (RUN_FEDEX_PT_RATE_SMOKE=true) currently documents the account-mismatch blocker against the correct PT number. Checks request rates only and do not create shipments or labels. These local settings and code changes have not been deployed to Render.

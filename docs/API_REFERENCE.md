@@ -325,42 +325,27 @@ Success `200`:
 
 ```http
 POST /checkout
+Authorization: Bearer <token>
 Content-Type: application/json
 ```
 
-Creates a Stripe Checkout session for the cart.
+Creates a Stripe Checkout session for the cart. Login is required (401 without a valid token).
+Delivery address and email are loaded from the authenticated account. Update the account
+before checkout if the saved delivery address is missing or incorrect.
 
-Request without shipping charge:
-
-```json
-{
-  "sessionId": "browser-session-id",
-  "successUrl": "https://example.com/success",
-  "cancelUrl": "https://example.com/cancel",
-  "customerEmail": "buyer@example.com",
-  "shippingCharge": null
-}
-```
-
-Request with a manually supplied shipping charge:
+Request:
 
 ```json
 {
   "sessionId": "browser-session-id",
   "successUrl": "https://example.com/success",
-  "cancelUrl": "https://example.com/cancel",
-  "customerEmail": "buyer@example.com",
-  "shippingCharge": {
-    "serviceType": "STANDARD_DELIVERY",
-    "serviceName": "Standard delivery",
-    "amountTotal": "25.00",
-    "currency": "eur",
-    "estimatedDeliveryDate": "unavailable",
-    "originalAmount": "25.00",
-    "originalCurrency": "EUR"
-  }
+  "cancelUrl": "https://example.com/cancel"
 }
 ```
+
+`deliveryAddress` is obsolete in this payload and returns 400. `shippingCharge` is
+calculated by the server; supplying it also returns 400. `customerEmail` is taken
+from the authenticated account. Carts attached to another user cannot be checked out.
 
 Success `201`:
 

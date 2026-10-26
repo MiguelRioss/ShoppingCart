@@ -1834,6 +1834,11 @@
 
     async function createCheckout() {
 
+        if (!getToken()) {
+            writeOutput({error: "Login is required before checkout"}, "Checkout");
+            return;
+        }
+
         if (state.cart.length > 0) {
 
             const saveResult =
@@ -1862,6 +1867,7 @@
                 "/checkout",
                 {
                     method: "POST",
+                    auth: true,
 
                     body: {
 
@@ -1876,13 +1882,7 @@
                         cancelUrl:
                             checkoutReturnUrl(
                                 "cancel"
-                            ),
-
-                        customerEmail:
-                            checkoutCustomerEmail(),
-
-                        deliveryAddress:
-                            checkoutDeliveryAddress()
+                            )
                     }
                 }
             );
@@ -1901,6 +1901,13 @@
         ) {
             window.location.href =
                 result.body.url;
+        } else {
+            const errorUrl = new URL(checkoutReturnUrl("error"));
+            const reason = result.body?.description || result.body?.message
+                || result.error || "The checkout service did not return a payment link.";
+            // Keep the explanation in the fragment, which is not sent to the server.
+            errorUrl.hash = new URLSearchParams({message: String(reason).slice(0, 1000)}).toString();
+            window.location.href = errorUrl.href;
         }
     }
 
@@ -2003,44 +2010,6 @@
                     }
                 )
         };
-    }
-
-
-    function checkoutDeliveryAddress() {
-
-        return {
-
-            addressLine1:
-                elements.accountAddressLine1.value ||
-                elements.registerAddressLine1.value,
-
-            townOrCity:
-                elements.accountTownOrCity.value ||
-                elements.registerTownOrCity.value,
-
-            postcode:
-                elements.accountPostcode.value ||
-                elements.registerPostcode.value,
-
-            country:
-                elements.accountCountry.value ||
-                elements.registerCountry.value
-        };
-    }
-
-
-    function checkoutCustomerEmail() {
-
-        const user =
-            getUser();
-
-
-        return (
-            elements.accountEmail.value ||
-            user.email ||
-            elements.loginEmail.value ||
-            elements.registerEmail.value
-        );
     }
 
 
@@ -3353,31 +3322,23 @@
     }
 
 
-    function checkoutReturnUrl(
-        status
-    ) {
-
-        if (
-            window.location.protocol ===
-            "http:" ||
-            window.location.protocol ===
-            "https:"
-        ) {
-
-            return (
-                `${window.location.origin}` +
-                `${window.location.pathname}` +
-                `?checkout=${status}`
-            );
+    function checkoutReturnUrl(status) {
+        const page = status === "success" ? "checkout-success.html" : "checkout-error.html";
+        // The IDE preview can reject the first navigation back from Stripe.
+        // Use the direct frontend server for local IDE previews.
+        if (window.location.protocol === "file:"
+            || (["localhost", "127.0.0.1"].includes(window.location.hostname)
+                && window.location.port === "63342")) {
+            const localUrl = new URL(page, "http://127.0.0.1:5500/");
+            if (status === "cancel") localUrl.searchParams.set("status", "cancel");
+            return localUrl.href;
         }
-
-
-        return (
-            `https://example.com/checkout/` +
-            status
-        );
+        const url = new URL(page, window.location.href);
+        url.search = window.location.search;
+        url.searchParams.delete("checkout");
+        if (status === "cancel") url.searchParams.set("status", "cancel");
+        return url.href;
     }
-
 
     function writeOutput(
         value,

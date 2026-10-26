@@ -12,6 +12,11 @@ import java.util.UUID
 class InMemoryUserRepository : UserRepository {
     private val users = mutableMapOf<UUID, User>()
 
+    override fun listUserSummaries(): List<domain.user.UserSummary> =
+        users.values.sortedWith(compareByDescending<User> { it.createdAt }.thenBy { it.id }).map {
+            domain.user.UserSummary(it.id, it.email, it.createdAt, it.firstName, it.lastName, it.phone)
+        }
+
     /**
      * Saves or replaces a user by id.
      */

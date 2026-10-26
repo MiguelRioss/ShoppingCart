@@ -18,6 +18,9 @@ class HttpModule(
      */
     fun handle(exchange: HttpExchange) {
         exchange.addCorsHeaders()
+        if (exchange.requestURI.path.startsWith("/admin/")) {
+            exchange.responseHeaders.set("Cache-Control", "no-store")
+        }
         if (exchange.requestMethod == "OPTIONS") {
             exchange.sendResponseHeaders(204, -1)
             exchange.close()

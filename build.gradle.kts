@@ -13,6 +13,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
     implementation("org.mindrot:jbcrypt:0.4")
     implementation("org.postgresql:postgresql:42.7.12")
+    implementation("com.zaxxer:HikariCP:7.1.0")
     testImplementation(kotlin("test"))
     testImplementation("io.github.cdimascio:dotenv-kotlin:6.5.1")
     testImplementation("org.junit.jupiter:junit-jupiter:5.11.3")
