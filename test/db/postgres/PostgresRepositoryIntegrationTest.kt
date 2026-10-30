@@ -107,6 +107,30 @@ class PostgresRepositoryIntegrationTest {
         assertNull(shoppingCartRepository.getCartByUserId(UUID.fromString("10000000-0000-0000-0000-000000000099")))
     }
 
+    @Test
+    fun `new session for same user preserves both carts`() {
+        userRepository!!.saveUser(user)
+        val repository = requireNotNull(shoppingCartRepository)
+        repository.saveCart(cart.copy(sessionId = "old-${user.id}"))
+        val replacement = cart.copy(
+            id = UUID.randomUUID(), sessionId = "new-${user.id}",
+            dateTime = cart.dateTime.plusDays(1),
+            products = listOf(cart.products.first().copy(productId = 9278L))
+        )
+        val expected = replacement
+
+        assertEquals(expected, repository.saveCart(replacement))
+        assertEquals(expected, repository.getCartByUserId(user.id))
+        assertEquals(expected, repository.getCartBySessionId(replacement.sessionId!!))
+        assertEquals(cart.copy(sessionId = "old-${user.id}"), repository.getCartBySessionId("old-${user.id}"))
+        database!!.getConnection().use { connection ->
+            connection.prepareStatement("SELECT count(*) FROM shopping_carts WHERE user_id = ?").use {
+                it.setObject(1, user.id)
+                it.executeQuery().use { rows -> rows.next(); assertEquals(2, rows.getInt(1)) }
+            }
+        }
+    }
+
     private fun cleanTestData() {
         database!!.getConnection().use { connection ->
             connection.prepareStatement("DELETE FROM shopping_carts WHERE id = ? OR user_id = ?").use { statement ->

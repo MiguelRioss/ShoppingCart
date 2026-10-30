@@ -11,30 +11,37 @@ import java.util.UUID
  */
 class InMemoryShoppingCartRepository : ShoppingCartRepository {
     private val carts = mutableMapOf<UUID, ShoppingCart>()
+    @Synchronized override fun getCartById(cartId: UUID): ShoppingCart? = carts[cartId]
+    @Synchronized override fun clearCartIfUnchanged(cartId: UUID, savedAt: java.time.LocalDateTime): Boolean {
+        val cart = carts[cartId] ?: return false
+        if (cart.dateTime != savedAt) return false
+        carts.remove(cartId)
+        return true
+    }
 
     /**
-     * Returns the first cart owned by [userId].
+     * Returns the most recently saved cart owned by [userId].
      */
-    override fun getCartByUserId(userId: UUID): ShoppingCart? =
-        carts.values.firstOrNull { it.userId == userId }
+    @Synchronized override fun getCartByUserId(userId: UUID): ShoppingCart? =
+        carts.values.filter { it.userId == userId }.maxWithOrNull(compareBy<ShoppingCart> { it.dateTime }.thenBy { it.id })
 
-    override fun getCartBySessionId(sessionId: String): ShoppingCart? =
+    @Synchronized override fun getCartBySessionId(sessionId: String): ShoppingCart? =
         carts.values.firstOrNull { it.sessionId == sessionId }
 
-    override fun clearCartBySessionId(sessionId: String): Boolean {
+    @Synchronized override fun clearCartBySessionId(sessionId: String): Boolean {
         val cart = getCartBySessionId(sessionId) ?: return false
         carts.remove(cart.id)
         return true
     }
 
     /**
-     * Saves or replaces a cart by id.
+     * Updates only the matching session cart; other carts for the user remain independent.
      */
-    override fun saveCart(cart: ShoppingCart): ShoppingCart {
-        if (cart.userId != null && cart.sessionId != null) {
-            carts.entries.removeIf { it.key != cart.id && it.value.userId == null && it.value.sessionId == cart.sessionId }
-        }
-        carts[cart.id] = cart
-        return cart
+    @Synchronized override fun saveCart(cart: ShoppingCart): ShoppingCart {
+        val existing = cart.sessionId?.let(::getCartBySessionId)
+        require(existing?.userId == null || existing.userId == cart.userId) { "This shopping cart belongs to another user" }
+        val savedCart = existing?.let { cart.copy(id = it.id) } ?: cart
+        carts[savedCart.id] = savedCart
+        return savedCart
     }
 }

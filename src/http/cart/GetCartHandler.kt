@@ -21,17 +21,16 @@ class GetCartHandler(
     private val shoppingCartService: ShoppingCartService
 ) : RequestHandler {
     /**
-     * Returns the cart for the session first, then falls back to the authenticated user's cart.
+     * Returns the explicitly requested session cart, or the latest user cart when no session is supplied.
      *
      * @param request HTTP request with optional sessionId query parameter and optional bearer token
      * @return 200 with cart JSON, or 404 when no cart exists
      */
     override fun handle(request: HttpRequest): HttpResponse {
-        val sessionCart = request.queryParameter("sessionId")
-            ?.takeIf { it.isNotBlank() }
-            ?.let { shoppingCartService.getCartBySessionId(it) }
+        val sessionId = request.queryParameter("sessionId")?.takeIf { it.isNotBlank() }
         val authenticatedUser = AuthenticatedRequest.from(request, authService)?.user
-        val cart = sessionCart ?: authenticatedUser?.let { shoppingCartService.getCartByUserId(it.id) }
+        val cart = (if (sessionId != null) shoppingCartService.getCartBySessionId(sessionId)
+            else authenticatedUser?.let { shoppingCartService.getCartByUserId(it.id) })
             ?: return HttpError.NotFound.toResponse("Shopping cart not found")
 
         return HttpResponse(200, cart.toResponse().toJson())

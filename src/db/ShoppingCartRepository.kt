@@ -7,8 +7,12 @@ import java.util.UUID
  * Persistence boundary for shopping carts.
  */
 interface ShoppingCartRepository {
+    fun getCartById(cartId: UUID): ShoppingCart?
+    /** Deletes only the exact saved version, preserving edits made after checkout. */
+    fun clearCartIfUnchanged(cartId: UUID, savedAt: java.time.LocalDateTime): Boolean
+
     /**
-     * Finds the cart that belongs to a user.
+     * Finds the most recently saved cart belonging to a user.
      *
      * @param userId id of the cart owner
      * @return the user's cart, or null when the user has no cart

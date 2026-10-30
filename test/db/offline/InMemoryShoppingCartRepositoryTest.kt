@@ -33,6 +33,22 @@ class InMemoryShoppingCartRepositoryTest {
     }
 
     @Test
+    fun `new session for same user preserves both carts`() {
+        repository.saveCart(cart.copy(sessionId = "old-browser"))
+        val replacement = cart.copy(
+            id = UUID.randomUUID(), sessionId = "new-browser",
+            dateTime = cart.dateTime.plusDays(1),
+            products = listOf(cart.products.single().copy(productId = 9278L))
+        )
+        val expected = replacement
+
+        assertEquals(expected, repository.saveCart(replacement))
+        assertEquals(expected, repository.getCartByUserId(requireNotNull(cart.userId)))
+        assertEquals(expected, repository.getCartBySessionId("new-browser"))
+        assertEquals(cart.copy(sessionId = "old-browser"), repository.getCartBySessionId("old-browser"))
+    }
+
+    @Test
     fun `saves a cart`() {
         assertEquals(cart, repository.saveCart(cart))
     }

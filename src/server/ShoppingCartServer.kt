@@ -97,6 +97,7 @@ class ShoppingCartServer(
             Route("POST", "/admin/orders/:orderId/email-payload", http.admin.PrepareOrderEmailHandler(authService, orderRepository, emailPayloadBuilder, adminUserIds)),
             Route("GET", "/orders", http.checkout.GetOrdersHandler(orderRepository, authService)),
             Route("POST", "/webhooks/stripe", http.checkout.StripeWebhookHandler(orderRepository,
+                clearPaidCart = services.checkout.core.PaidOrderCartCleaner(orderRepository, shoppingCartRepository)::clear,
                 onPaymentConfirmed = paymentEmails::onPaid)),
             Route("GET", "/admin/orders", http.admin.GetOrdersHandler(authService, orderRepository, adminUserIds)),
             Route("GET", "/admin/users", http.admin.GetUsersHandler(authService, userRepository, adminUserIds)),

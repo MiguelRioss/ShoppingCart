@@ -18,15 +18,15 @@ import kotlin.test.assertFailsWith
 import kotlin.test.assertNull
 
 class ShoppingCartManagerTest {
-    @Test fun `same user saves from two sessions reuse one cart`() {
+    @Test fun `same user saves two independent session carts`() {
         val repository = InMemoryShoppingCartRepository()
         val service = ShoppingCartManager(repository, productDataAccess, clock)
         val user = UUID.randomUUID()
         val first = service.createCart("browser-one", listOf(CartProductInput(9278L, 0.5, false)), user)
         val second = service.createCart("browser-two", listOf(CartProductInput(9278L, 1.0, false)), user)
-        assertEquals(first.id, second.id)
-        assertEquals(second, repository.getCartByUserId(user))
-        assertNull(repository.getCartBySessionId("browser-one"))
+        kotlin.test.assertNotEquals(first.id, second.id)
+        assertEquals(first, repository.getCartBySessionId("browser-one"))
+        assertEquals(second, repository.getCartBySessionId("browser-two"))
     }
 
     @Test fun `another user cannot overwrite an owned session cart`() {
@@ -36,16 +36,16 @@ class ShoppingCartManagerTest {
             service.createCart("owned-session", listOf(CartProductInput(9278L, 1.0, false)), UUID.randomUUID())
         }
     }
-    @Test fun `guest login reuses user cart without leaving a duplicate session`() {
+    @Test fun `guest login attaches its own cart without replacing another user cart`() {
         val repository = InMemoryShoppingCartRepository()
         val service = ShoppingCartManager(repository, productDataAccess, clock)
         val user = UUID.randomUUID()
         val original = service.createCart("old-browser", listOf(CartProductInput(9278L, 0.5, false)), user)
         service.createCart("guest-browser", listOf(CartProductInput(9278L, 1.0, false)), null)
         val attached = service.associateCartWithUser("guest-browser", user)
-        assertEquals(original.id, attached!!.id)
+        kotlin.test.assertNotEquals(original.id, attached!!.id)
         assertEquals(user, service.getCartBySessionId("guest-browser")!!.userId)
-        assertNull(service.getCartBySessionId("old-browser"))
+        assertEquals(original, service.getCartBySessionId("old-browser"))
     }
     private val clock = Clock.fixed(Instant.parse("2026-08-07T13:30:00Z"), ZoneOffset.UTC)
     private val productDataAccess = object : ProductDataAccess {

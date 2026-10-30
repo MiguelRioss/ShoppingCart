@@ -14,6 +14,7 @@ class StripeWebhookHandler(
     private val orders: OrderRepository,
     private val secret: () -> String? = { Environment.get("STRIPE_WEBHOOK_SECRET") },
     private val now: () -> Long = { Instant.now().epochSecond },
+    private val clearPaidCart: (String) -> Unit = {},
     private val onPaymentConfirmed: (String) -> Unit = {}
 ) : RequestHandler {
     override fun handle(request: HttpRequest): HttpResponse {
@@ -47,6 +48,7 @@ class StripeWebhookHandler(
                 return HttpResponse(503, """{"error":"Order not available yet"}""")
             }
             if (status == "PAID") {
+                clearPaidCart(id)
                 try { onPaymentConfirmed(id) }
                 catch (_: Exception) { return HttpResponse(503, """{"error":"Payment saved; confirmation email pending or requires review"}""") }
             }

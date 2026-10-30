@@ -154,6 +154,18 @@ class GetCartHandlerTest {
 
         assertEquals(404, response.statusCode)
     }
+    @Test fun missingExplicitSessionDoesNotReturnAnotherSavedCart() {
+        val users = InMemoryUserRepository()
+        val auth = AuthManager(users, InMemoryAuthTokenRepository(), clock = clock)
+        val user = UserManager(users, clock = clock).registerUser("two-carts@example.com", "password-123")
+        val token = auth.login(user.email, "password-123")
+        val carts = InMemoryShoppingCartRepository()
+        carts.saveCart(ShoppingCart(UUID.randomUUID(), user.id, LocalDateTime.now(), "other-cart"))
+        val handler = GetCartHandler(auth, ShoppingCartManager(carts))
+        val headers = mapOf("Authorization" to listOf("Bearer ${token.token}"))
+        assertEquals(404, handler.handle(HttpRequest("GET", "/cart?sessionId=already-paid", "", headers)).statusCode)
+        assertEquals(200, handler.handle(HttpRequest("GET", "/cart", "", headers)).statusCode)
+    }
 }
 
 

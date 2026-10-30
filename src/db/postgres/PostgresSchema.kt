@@ -86,12 +86,14 @@ class PostgresSchema(
                     """
                     CREATE TABLE IF NOT EXISTS shopping_carts (
                         id UUID PRIMARY KEY,
-                        user_id UUID UNIQUE REFERENCES users(id) ON DELETE CASCADE,
+                        user_id UUID REFERENCES users(id) ON DELETE CASCADE,
                         session_id TEXT,
                         date_time TIMESTAMP NOT NULL
                     )
                     """.trimIndent()
                 )
+                statement.executeUpdate("ALTER TABLE shopping_carts DROP CONSTRAINT IF EXISTS shopping_carts_user_id_key")
+                statement.executeUpdate("CREATE INDEX IF NOT EXISTS shopping_carts_user_id_idx ON shopping_carts(user_id)")
                 addColumnIfMissing(statement, "shopping_carts", "session_id", "TEXT")
                 statement.executeUpdate("ALTER TABLE shopping_carts ALTER COLUMN user_id DROP NOT NULL")
                 statement.executeUpdate(

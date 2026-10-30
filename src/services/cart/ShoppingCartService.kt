@@ -8,7 +8,7 @@ import java.util.UUID
  */
 interface ShoppingCartService {
     /**
-     * Finds the cart owned by a user.
+     * Finds the most recently saved cart owned by a user.
      *
      * @param userId authenticated user's id
      * @return cart for the user, or null when none exists
