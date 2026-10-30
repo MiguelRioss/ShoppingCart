@@ -28,7 +28,8 @@ class CreateCheckoutHandler(
                     .copy(
                         deliveryAddress = request.user.toCheckoutDeliveryAddress(),
                         customerEmail = request.user.email,
-                        userId = request.user.id
+                        userId = request.user.id,
+                        customerFirstName = request.user.firstName
                     )
 
             val checkoutSession =

@@ -5,6 +5,22 @@ import java.util.UUID
 import kotlinx.serialization.json.*
 
 class PostgresOrderRepository(private val database: Database) : OrderRepository {
+    override fun findForEmail(orderId: String): JsonObject? = database.getConnection().use { connection ->
+        connection.prepareStatement("SELECT id, checkout_session_id, user_id, status, snapshot FROM orders WHERE id::text = ?").use {
+            it.setString(1, orderId)
+            it.executeQuery().use { rows -> if (!rows.next()) null else buildJsonObject {
+                put("id", rows.getString("id")); put("checkoutSessionId", rows.getString("checkout_session_id"))
+                put("userId", rows.getString("user_id")?.let(::JsonPrimitive) ?: JsonNull)
+                put("status", rows.getString("status")); put("snapshot", Json.parseToJsonElement(rows.getString("snapshot")))
+            } }
+        }
+    }
+    override fun snapshotForCheckout(checkoutId: String): JsonObject? = database.getConnection().use { connection ->
+        connection.prepareStatement("SELECT snapshot FROM orders WHERE checkout_session_id = ?").use {
+            it.setString(1, checkoutId)
+            it.executeQuery().use { rows -> if (rows.next()) Json.parseToJsonElement(rows.getString("snapshot")).jsonObject else null }
+        }
+    }
     override fun create(checkoutId: String, userId: UUID?, snapshot: JsonObject) {
         database.getConnection().use { connection ->
             connection.prepareStatement("INSERT INTO orders (id, checkout_session_id, user_id, snapshot) VALUES (?, ?, ?, ?::jsonb) ON CONFLICT (checkout_session_id) DO NOTHING").use {
@@ -26,6 +42,29 @@ class PostgresOrderRepository(private val database: Database) : OrderRepository 
                 it.setString(7, status); it.setString(8, checkoutId); it.executeUpdate() > 0
             }
         }
+    override fun listAll(): List<JsonObject> = database.getConnection().use { connection ->
+        connection.prepareStatement("""SELECT id, checkout_session_id, user_id, status, created_at,
+            snapshot->>'customerEmail' AS customer_email, snapshot->>'total' AS total,
+            snapshot->>'currency' AS currency, snapshot->'items' AS items, amount_paid_minor, paid_currency
+            FROM orders ORDER BY created_at DESC, id""").use { statement ->
+            statement.executeQuery().use { rows -> buildList {
+                while (rows.next()) add(buildJsonObject {
+                    put("items", rows.getString("items")?.let { Json.parseToJsonElement(it) } ?: JsonArray(emptyList()))
+                    put("id", rows.getString("id"))
+                    put("checkoutSessionId", rows.getString("checkout_session_id"))
+                    put("userId", rows.getString("user_id")?.let(::JsonPrimitive) ?: JsonNull)
+                    put("status", rows.getString("status"))
+                    put("createdAt", rows.getString("created_at"))
+                    put("customerEmail", rows.getString("customer_email")?.let(::JsonPrimitive) ?: JsonNull)
+                    put("total", rows.getString("total")?.let(::JsonPrimitive) ?: JsonNull)
+                    put("currency", rows.getString("currency")?.let(::JsonPrimitive) ?: JsonNull)
+                    put("amountPaidMinor", rows.getString("amount_paid_minor")?.toLong()?.let(::JsonPrimitive) ?: JsonNull)
+                    put("paidCurrency", rows.getString("paid_currency")?.let(::JsonPrimitive) ?: JsonNull)
+                })
+            } }
+        }
+    }
+
     override fun list(userId: UUID): List<JsonObject> = database.getConnection().use { connection ->
         connection.prepareStatement("SELECT * FROM orders WHERE user_id = ? ORDER BY created_at DESC").use { statement ->
             statement.setObject(1, userId)

@@ -1,0 +1,205 @@
+# Read-only payload preparation; none of these requests sends an email.
+# Replace variables with real stored workflow/document values before running.
+@baseUrl = http://127.0.0.1:8081
+@token = REPLACE_WITH_ADMIN_LOGIN_TOKEN
+@orderId = REPLACE_WITH_ORDER_UUID
+@supplierId = REPLACE_WITH_CATALOGUE_SUPPLIER_ID
+@documentId = REPLACE_WITH_STORED_DOCUMENT_ID
+@documentUrl = https://REPLACE_WITH_DOCUMENT_STORAGE_URL
+@expectedDespatchDate = REPLACE_WITH_YYYY-MM-DD
+@invoiceNumber = REPLACE_WITH_REAL_VALUE
+@poNumber = REPLACE_WITH_REAL_VALUE
+@requiredDespatchDate = REPLACE_WITH_YYYY-MM-DD
+@grossWeight = REPLACE_WITH_REAL_VALUE
+@packageCount = REPLACE_WITH_REAL_VALUE
+@packageDimensions = REPLACE_WITH_REAL_VALUE
+@packingListNumber = REPLACE_WITH_REAL_VALUE
+@quantityUnits = REPLACE_WITH_REAL_VALUE
+@courier = REPLACE_WITH_REAL_VALUE
+@deliveryNoteNumber = REPLACE_WITH_REAL_VALUE
+@incoterm = REPLACE_WITH_REAL_VALUE
+@trackingNumber = REPLACE_WITH_REAL_VALUE
+@previousDespatchDate = REPLACE_WITH_YYYY-MM-DD
+@revisedDespatchDate = REPLACE_WITH_YYYY-MM-DD
+@despatchUpdateNote = REPLACE_WITH_REAL_VALUE
+@estimatedDeliveryDate = REPLACE_WITH_YYYY-MM-DD
+@trackingUrl = https://REPLACE_WITH_REAL_URL
+@deliveryDate = REPLACE_WITH_YYYY-MM-DD
+@discountCode = REPLACE_WITH_REAL_VALUE
+@marketingConsentLink = https://REPLACE_WITH_REAL_URL
+@discountTerms = REPLACE_WITH_REAL_VALUE
+
+### order-confirmation — customer
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "order-confirmation",
+  "context": {
+    "fields": {
+      "expected_despatch_date": "{{expectedDespatchDate}}",
+      "invoice_number": "{{invoiceNumber}}"
+    },
+    "documents": {
+      "invoice": {
+        "orderId": "{{orderId}}",
+        "documentId": "{{documentId}}",
+        "filename": "invoice.pdf",
+        "url": "{{documentUrl}}"
+      }
+    }
+  }
+}
+
+### supplier-purchase-order — supplier
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "supplier-purchase-order",
+  "context": {
+    "supplierId": "{{supplierId}}",
+    "fields": {
+      "po_number": "{{poNumber}}",
+      "required_despatch_date": "{{requiredDespatchDate}}"
+    },
+    "documents": {
+      "purchase-order": {
+        "orderId": "{{orderId}}",
+        "supplierId": "{{supplierId}}",
+        "documentId": "{{documentId}}",
+        "filename": "purchase-order.pdf",
+        "url": "{{documentUrl}}"
+      }
+    }
+  }
+}
+
+### incomplete-checkout — customer
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "incomplete-checkout"
+}
+
+### supplier-packing-list — supplier
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "supplier-packing-list",
+  "context": {
+    "supplierId": "{{supplierId}}",
+    "fields": {
+      "gross_weight": "{{grossWeight}}",
+      "package_count": "{{packageCount}}",
+      "package_dimensions": "{{packageDimensions}}",
+      "packing_list_number": "{{packingListNumber}}",
+      "quantity_units": "{{quantityUnits}}"
+    },
+    "documents": {
+      "packing-list": {
+        "orderId": "{{orderId}}",
+        "supplierId": "{{supplierId}}",
+        "documentId": "{{documentId}}",
+        "filename": "packing-list.pdf",
+        "url": "{{documentUrl}}"
+      }
+    }
+  }
+}
+
+### supplier-delivery-note — supplier
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "supplier-delivery-note",
+  "context": {
+    "supplierId": "{{supplierId}}",
+    "fields": {
+      "courier": "{{courier}}",
+      "delivery_note_number": "{{deliveryNoteNumber}}",
+      "incoterm": "{{incoterm}}",
+      "tracking_number": "{{trackingNumber}}"
+    },
+    "documents": {
+      "delivery-note": {
+        "orderId": "{{orderId}}",
+        "supplierId": "{{supplierId}}",
+        "documentId": "{{documentId}}",
+        "filename": "delivery-note.pdf",
+        "url": "{{documentUrl}}"
+      }
+    }
+  }
+}
+
+### revised-despatch-date — customer
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "revised-despatch-date",
+  "context": {
+    "fields": {
+      "previous_despatch_date": "{{previousDespatchDate}}",
+      "revised_despatch_date": "{{revisedDespatchDate}}",
+      "despatchUpdateNote": "{{despatchUpdateNote}}"
+    }
+  }
+}
+
+### goods-despatched — customer
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "goods-despatched",
+  "context": {
+    "fields": {
+      "courier": "{{courier}}",
+      "estimated_delivery_date": "{{estimatedDeliveryDate}}",
+      "tracking_number": "{{trackingNumber}}",
+      "tracking_url": "{{trackingUrl}}"
+    }
+  }
+}
+
+### delivery-confirmation — customer
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "delivery-confirmation",
+  "context": {
+    "fields": {
+      "delivery_date": "{{deliveryDate}}"
+    }
+  }
+}
+
+### post-delivery-thank-you — customer
+POST {{baseUrl}}/admin/orders/{{orderId}}/email-payload
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "templateId": "post-delivery-thank-you",
+  "context": {
+    "fields": {
+      "discount_code": "{{discountCode}}",
+      "marketing_consent_link": "{{marketingConsentLink}}",
+      "discount_terms": "{{discountTerms}}"
+    }
+  }
+}
