@@ -47,19 +47,9 @@ sourceSets {
 }
 
 tasks.test {
-    useJUnitPlatform { excludeTags("journey") }
+    useJUnitPlatform()
     outputs.upToDateWhen { false }
     testLogging {
         showStandardStreams = true
     }
-}
-
-tasks.register<Test>("clientJourneyTest") {
-    description = "Runs the customer journey through local ShoppingCart and EMAIL_SENDER APIs; no real payments or SMTP."
-    group = "verification"
-    testClassesDirs = sourceSets["test"].output.classesDirs
-    classpath = sourceSets["test"].runtimeClasspath
-    useJUnitPlatform { includeTags("journey") }
-    outputs.upToDateWhen { false }
-    testLogging { showStandardStreams = true }
 }
