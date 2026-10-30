@@ -16,8 +16,8 @@ class PurchasableProductReaderTest {
                 """
                 {
                   "id": 9278,
-                  "general_lead_time": "2-4 Weeks",
                   "purchase_information": {
+                    "lead_times_and_quotation": { "general_lead_time": "2-4 Weeks" },
                     "order": {
                       "m2_per_box": "0.5",
                       "client_price_per_m2": "150"

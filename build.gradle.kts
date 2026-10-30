@@ -53,3 +53,12 @@ tasks.test {
         showStandardStreams = true
     }
 }
+
+tasks.register<JavaExec>("prepareEmailSut") {
+    description = "Prepare a real saved-order email request without sending or updating the order."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("tools.PrepareOrderEmailSutKt")
+    args(providers.gradleProperty("orderId").getOrElse(""),
+        providers.gradleProperty("output").getOrElse(".cache/email-sut/payment-confirmation.json"),
+        providers.gradleProperty("revision").getOrElse("real-data-footer-v1"))
+}
