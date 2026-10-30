@@ -16,19 +16,19 @@ Required Render configuration:
 
 ## Duplicate and error handling
 
-Postgres migration creates `payment_email_submissions`, keyed by checkout session. An atomic claim prevents parallel requests and repeated webhook events from submitting twice. `SUBMITTED` means EMAIL_SENDER accepted the request; it is not proof of inbox delivery. Offline mode uses an in-memory equivalent only.
+EMAIL_SENDER owns delivery history and duplicate suppression in Neon, in its email_deliveries table. ShoppingCart forwards the same stable key when Stripe repeats an event. A successful replay returns the saved acceptance result; in-progress or uncertain records are not sent again.
 
-Invalid data is rejected before claiming so a corrected request can retry. Missing sender URL also releases the claim. Transport errors or a process interruption after claiming can leave an uncertain outcome. These remain `UNCERTAIN` or `SUBMITTING`, and later webhook calls return 503 rather than automatically sending a duplicate. An administrator must reconcile that session with EMAIL_SENDER/SMTP logs before any manual retry. There is no durable exactly-once guarantee across the SMTP network boundary.
+Email failure never rolls back a paid order. The webhook returns 503 so Stripe can retry the same event. EMAIL_SENDER checks the persistent record on each retry. SMTP acceptance is not proof of inbox delivery. Failed/uncertain outcomes require review in EMAIL_SENDER.
 
-Email failure never rolls back a paid order. The webhook returns 503 with a pending/review message so Stripe records the problem. Do not clear an uncertain claim without checking whether the message was already accepted.
+The old ShoppingCart payment_email_submissions table is no longer used. Existing records are retained for reconciliation, not dropped.
 
 ## Checkout test
 
 1. Deploy both services and confirm their shared key and SMTP settings.
 2. Start a new checkout with product lead time populated and complete payment in Stripe's test mode.
-3. Check that the order is paid and `payment_email_submissions.status` becomes `SUBMITTED`.
+3. Check that the order is paid and EMAIL_SENDER’s `email_deliveries.status` becomes `accepted`.
 4. Open the Gmail confirmation; verify products, estimates, logo/footer and payment-summary attachment.
-5. Resend the same paid event from Stripe. Confirm no second SMTP submission and the stored state remains `SUBMITTED`.
+5. Resend the same paid event from Stripe. Confirm no second SMTP submission and the stored state remains `accepted`.
 6. For a delayed payment, the initial unpaid completion must send nothing; the later paid event sends one confirmation.
 
 This does not trigger supplier, shipping, delivery or follow-up emails. Those require their actual fulfilment events.

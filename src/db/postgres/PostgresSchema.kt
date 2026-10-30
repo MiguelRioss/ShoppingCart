@@ -25,13 +25,6 @@ class PostgresSchema(
                     )
                 """.trimIndent())
                 statement.executeUpdate("CREATE INDEX IF NOT EXISTS orders_user_id_idx ON orders(user_id)")
-                statement.executeUpdate("""
-                    CREATE TABLE IF NOT EXISTS payment_email_submissions (
-                        checkout_session_id TEXT PRIMARY KEY REFERENCES orders(checkout_session_id),
-                        status TEXT NOT NULL CHECK (status IN ('SUBMITTING', 'SUBMITTED', 'UNCERTAIN')),
-                        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
-                    )
-                """.trimIndent())
                 statement.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS users (
