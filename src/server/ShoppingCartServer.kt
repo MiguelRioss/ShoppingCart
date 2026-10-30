@@ -88,11 +88,18 @@ class ShoppingCartServer(
 
         val emailPayloadBuilder = services.orderemail.OrderEmailPayloadBuilder(userRepository, productCatalogDataSource)
         val sendOrderEmail = services.orderemail.SendOrderEmailService(orderRepository, emailPayloadBuilder, services.orderemail.HttpEmailSenderClient())
+        val paymentEmailStore = database?.let { services.orderemail.PostgresPaymentEmailSubmissionStore(it) }
+            ?: services.orderemail.InMemoryPaymentEmailSubmissionStore()
+        val paymentEmails = services.orderemail.AutomaticPaymentEmailService(
+            orderRepository, paymentEmailStore, services.orderemail.PaymentConfirmationPayload(emailPayloadBuilder)::prepare,
+            services.orderemail.HttpEmailSenderClient()
+        )
         return listOf(
             Route("POST", "/admin/orders/:orderId/send-email", http.admin.SendOrderEmailHandler(authService, sendOrderEmail, adminUserIds)),
             Route("POST", "/admin/orders/:orderId/email-payload", http.admin.PrepareOrderEmailHandler(authService, orderRepository, emailPayloadBuilder, adminUserIds)),
             Route("GET", "/orders", http.checkout.GetOrdersHandler(orderRepository, authService)),
-            Route("POST", "/webhooks/stripe", http.checkout.StripeWebhookHandler(orderRepository)),
+            Route("POST", "/webhooks/stripe", http.checkout.StripeWebhookHandler(orderRepository,
+                onPaymentConfirmed = paymentEmails::onPaid)),
             Route("GET", "/admin/orders", http.admin.GetOrdersHandler(authService, orderRepository, adminUserIds)),
             Route("GET", "/admin/users", http.admin.GetUsersHandler(authService, userRepository, adminUserIds)),
             Route("POST", "/register", RegisterHandler(userService, authService, shoppingCartService)),

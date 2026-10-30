@@ -45,8 +45,8 @@ class OrderEmailPayloadBuilderTest {
             })
         }) }
     }
-    @Test fun allNineTemplatesProduceCompletePayloads() {
-        assertEquals(9, OrderEmailTemplate.entries.size)
+    @Test fun allTenTemplatesProduceCompletePayloads() {
+        assertEquals(10, OrderEmailTemplate.entries.size)
         OrderEmailTemplate.entries.forEach { template ->
             val result = builder.prepare(template, order(if(template == OrderEmailTemplate.INCOMPLETE_CHECKOUT) "PENDING_PAYMENT" else "PAID"), context(template))
             assertEquals(template.id, result["templateId"]?.jsonPrimitive?.content)

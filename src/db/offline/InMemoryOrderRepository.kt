@@ -5,6 +5,7 @@ import java.util.UUID
 import kotlinx.serialization.json.*
 
 class InMemoryOrderRepository : OrderRepository {
+    override fun findByCheckoutForEmail(checkoutId: String): JsonObject? = findForEmail(checkoutId)
     @Synchronized override fun snapshotForCheckout(checkoutId: String): JsonObject? = orders[checkoutId]?.second
     @Synchronized override fun findForEmail(orderId: String): JsonObject? = orders[orderId]?.let { (userId, snapshot) ->
         buildJsonObject {
@@ -20,7 +21,7 @@ class InMemoryOrderRepository : OrderRepository {
     @Synchronized override fun updatePayment(checkoutId: String, status: String, amountMinor: Long?, currency: String?, paymentId: String?): Boolean {
         val order = orders[checkoutId] ?: return false
         if (order.second["status"]?.jsonPrimitive?.content != "PAID") {
-            orders[checkoutId] = order.first to JsonObject(order.second + mapOf("status" to JsonPrimitive(status), "paymentId" to (paymentId?.let(::JsonPrimitive) ?: JsonNull)))
+            orders[checkoutId] = order.first to JsonObject(order.second + mapOf("status" to JsonPrimitive(status), "paymentId" to (paymentId?.let(::JsonPrimitive) ?: JsonNull), "amountPaidMinor" to (amountMinor?.let(::JsonPrimitive) ?: JsonNull), "paidCurrency" to (currency?.let(::JsonPrimitive) ?: JsonNull)))
         }
         return true
     }

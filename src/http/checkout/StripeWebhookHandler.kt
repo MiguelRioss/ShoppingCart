@@ -13,7 +13,8 @@ import kotlinx.serialization.json.*
 class StripeWebhookHandler(
     private val orders: OrderRepository,
     private val secret: () -> String? = { Environment.get("STRIPE_WEBHOOK_SECRET") },
-    private val now: () -> Long = { Instant.now().epochSecond }
+    private val now: () -> Long = { Instant.now().epochSecond },
+    private val onPaymentConfirmed: (String) -> Unit = {}
 ) : RequestHandler {
     override fun handle(request: HttpRequest): HttpResponse {
         val signingSecret = secret()?.takeIf { it.isNotBlank() }
@@ -44,6 +45,10 @@ class StripeWebhookHandler(
             if (!orders.updatePayment(id, status, amount, currency, session["payment_intent"]?.jsonPrimitive?.contentOrNull)) {
                 // Let Stripe retry if its notification raced checkout persistence.
                 return HttpResponse(503, """{"error":"Order not available yet"}""")
+            }
+            if (status == "PAID") {
+                try { onPaymentConfirmed(id) }
+                catch (_: Exception) { return HttpResponse(503, """{"error":"Payment saved; confirmation email pending or requires review"}""") }
             }
             HttpResponse(200, """{"received":true}""")
         } catch (_: IllegalArgumentException) {

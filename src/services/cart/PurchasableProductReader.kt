@@ -97,6 +97,7 @@ class PurchasableProductReader(
                     "client_price_per_m2"
                 ),
             sample = sample,
+            generalLeadTime = (product["general_lead_time"] ?: purchaseInformation?.get("general_lead_time"))?.jsonPrimitive?.contentOrNull,
         )
     }
 
@@ -160,7 +161,8 @@ data class PurchasableProduct(
     val imageUrl: String?,
     val m2PerBox: BigDecimal,
     val pricePerM2: BigDecimal,
-    val sample: PurchasableSample?
+    val sample: PurchasableSample?,
+    val generalLeadTime: String? = null
 )
 /** Availability, price, and per-cart limit for product samples. */
 data class PurchasableSample(

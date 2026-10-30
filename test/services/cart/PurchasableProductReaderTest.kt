@@ -16,6 +16,7 @@ class PurchasableProductReaderTest {
                 """
                 {
                   "id": 9278,
+                  "general_lead_time": "2-4 Weeks",
                   "purchase_information": {
                     "order": {
                       "m2_per_box": "0.5",
@@ -31,6 +32,7 @@ class PurchasableProductReaderTest {
 
         assertEquals(BigDecimal("0.5"), product.m2PerBox)
         assertEquals(BigDecimal("150"), product.pricePerM2)
+        assertEquals("2-4 Weeks", product.generalLeadTime)
     }
 
     @Test

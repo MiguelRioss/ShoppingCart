@@ -18,6 +18,7 @@ internal fun orderSnapshot(request: CreateCheckoutSessionRequest, cart: Shopping
         put("amountTotal", item.amountTotal.toPlainString()); put("currency", item.currency)
         item.description?.let { put("description", it) }
         item.imageUrl?.let { put("imageUrl", it) }
+        item.generalLeadTime?.let { put("generalLeadTime", it) }
     }) } })
     request.deliveryAddress?.let { address -> put("deliveryAddress", buildJsonObject {
         address.company?.let { put("company", it) }; address.addressLine1?.let { put("addressLine1", it) }

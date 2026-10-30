@@ -9,6 +9,22 @@ import kotlinx.serialization.json.*
 import kotlin.test.*
 
 class StripeWebhookHandlerTest {
+    @Test fun `callback runs only after verified paid persistence and retries email errors`() {
+        val notified = mutableListOf<String>()
+        val callbackHandler = StripeWebhookHandler(orders, { "whsec_test" }, { 1000L }, onPaymentConfirmed = {
+            assertEquals("PAID", orders.findByCheckoutForEmail(it)?.get("status")?.jsonPrimitive?.content)
+            notified += it
+        })
+        orders.create("cs_test", user, buildJsonObject {})
+        assertEquals(400, callbackHandler.handle(request(body()).copy(headers = emptyMap())).statusCode)
+        assertEquals(200, callbackHandler.handle(request(body(paid = false))).statusCode)
+        assertTrue(notified.isEmpty())
+        assertEquals(200, callbackHandler.handle(request(body("checkout.session.async_payment_succeeded"))).statusCode)
+        assertEquals(listOf("cs_test"), notified)
+        val failing = StripeWebhookHandler(orders, { "whsec_test" }, { 1000L }, onPaymentConfirmed = { error("unavailable") })
+        assertEquals(503, failing.handle(request(body())).statusCode)
+        assertEquals("PAID", orders.findByCheckoutForEmail("cs_test")?.get("status")?.jsonPrimitive?.content)
+    }
     private val orders = InMemoryOrderRepository()
     private val user = UUID.randomUUID()
     private val handler = StripeWebhookHandler(orders, { "whsec_test" }, { 1000L })

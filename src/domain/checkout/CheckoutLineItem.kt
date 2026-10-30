@@ -20,7 +20,8 @@ data class CheckoutLineItem(
     val amountTotal: BigDecimal,
     val currency: String = "eur",
     val imageUrl: String? = null,
-    val description: String? = null
+    val description: String? = null,
+    val generalLeadTime: String? = null
 )
 
 

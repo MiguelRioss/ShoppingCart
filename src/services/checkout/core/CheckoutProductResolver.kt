@@ -40,7 +40,8 @@ class CheckoutProductResolver(
                         .setScale(2, RoundingMode.HALF_UP),
                 currency = "eur",
                 imageUrl = purchasableProduct.imageUrl,
-                description = "Product sample"
+                description = "Product sample",
+                generalLeadTime = purchasableProduct.generalLeadTime
             )
         }
 
@@ -82,8 +83,8 @@ class CheckoutProductResolver(
             imageUrl =
                 purchasableProduct.imageUrl,
 
-            description =
-                null
+            description = null,
+            generalLeadTime = purchasableProduct.generalLeadTime
         )
     }
 }

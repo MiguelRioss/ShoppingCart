@@ -4,6 +4,7 @@ import java.util.UUID
 import kotlinx.serialization.json.JsonObject
 
 interface OrderRepository {
+    fun findByCheckoutForEmail(checkoutId: String): JsonObject?
     fun findForEmail(orderId: String): JsonObject?
 
     fun snapshotForCheckout(checkoutId: String): JsonObject?

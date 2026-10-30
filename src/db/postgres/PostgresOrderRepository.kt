@@ -5,6 +5,17 @@ import java.util.UUID
 import kotlinx.serialization.json.*
 
 class PostgresOrderRepository(private val database: Database) : OrderRepository {
+    override fun findByCheckoutForEmail(checkoutId: String): JsonObject? = database.getConnection().use { connection ->
+        connection.prepareStatement("SELECT id, user_id, status, snapshot, amount_paid_minor, paid_currency FROM orders WHERE checkout_session_id = ?").use {
+            it.setString(1, checkoutId)
+            it.executeQuery().use { rows -> if (!rows.next()) null else buildJsonObject {
+                put("id", rows.getString("id")); put("checkoutSessionId", checkoutId)
+                put("userId", rows.getString("user_id")?.let(::JsonPrimitive) ?: JsonNull)
+                put("status", rows.getString("status")); put("snapshot", Json.parseToJsonElement(rows.getString("snapshot")))
+                put("amountPaidMinor", rows.getLong("amount_paid_minor")); put("paidCurrency", rows.getString("paid_currency"))
+            } }
+        }
+    }
     override fun findForEmail(orderId: String): JsonObject? = database.getConnection().use { connection ->
         connection.prepareStatement("SELECT id, checkout_session_id, user_id, status, snapshot FROM orders WHERE id::text = ?").use {
             it.setString(1, orderId)

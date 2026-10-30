@@ -8,6 +8,7 @@ enum class OrderEmailTemplate(
     val productCards: Boolean = false,
     val documentType: String? = null
 ) {
+    PAYMENT_CONFIRMATION("payment-confirmation", setOf("lead_time_summary"), productCards = true),
     ORDER_CONFIRMATION("order-confirmation", setOf("expected_despatch_date", "invoice_number"), productCards = true, documentType = "invoice"),
     SUPPLIER_PURCHASE_ORDER("supplier-purchase-order", setOf("po_number", "required_despatch_date"), supplier = true, productCards = true, documentType = "purchase-order"),
     INCOMPLETE_CHECKOUT("incomplete-checkout", emptySet(), productCards = true),

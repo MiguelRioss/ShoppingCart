@@ -14,7 +14,7 @@ class OrderEmailPayloadBuilder(private val users: UserRepository, private val ca
     fun prepare(template: OrderEmailTemplate, order: JsonObject, context: JsonObject, generatedPdf: EmailPdfAttachment? = null): JsonObject {
         val snapshot = order["snapshot"] as? JsonObject ?: throw EmailPayloadValidationException(listOf("order.snapshot"))
         val status = order.text("status")
-        if (template == OrderEmailTemplate.ORDER_CONFIRMATION && status != "PAID") throw EmailPayloadConflictException("Order confirmation requires a paid order")
+        if (template in setOf(OrderEmailTemplate.ORDER_CONFIRMATION, OrderEmailTemplate.PAYMENT_CONFIRMATION) && status != "PAID") throw EmailPayloadConflictException("Order confirmation requires a paid order")
         if (template.supplier && status != "PAID") throw EmailPayloadConflictException("Supplier emails require a paid order")
         if (template == OrderEmailTemplate.INCOMPLETE_CHECKOUT && status !in setOf("PENDING_PAYMENT", "EXPIRED")) throw EmailPayloadConflictException("Incomplete checkout email cannot be prepared for a paid or failed order")
         val fields = context["fields"] as? JsonObject ?: JsonObject(emptyMap())
