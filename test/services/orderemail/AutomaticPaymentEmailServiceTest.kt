@@ -7,7 +7,7 @@ import kotlin.test.*
 
 class AutomaticPaymentEmailServiceTest {
     private val orders = InMemoryOrderRepository()
-    private val payload = buildJsonObject { put("templateId", "payment-confirmation"); put("idempotencyKey", "fixed") }
+    private val payload = buildJsonObject { put("templateId", "order-confirmation"); put("idempotencyKey", "fixed") }
     private fun paid() {
         orders.create("checkout", UUID.randomUUID(), buildJsonObject {})
         orders.updatePayment("checkout", "PAID", 1250, "eur", "payment")

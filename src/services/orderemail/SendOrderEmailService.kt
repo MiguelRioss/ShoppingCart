@@ -21,7 +21,7 @@ class SendOrderEmailService(
         }
     }
 ) {
-    fun send(orderId:String,template:OrderEmailTemplate,context:JsonObject,documentData:DeFerrantiOrderDocuments?):JsonObject {
+    fun prepare(orderId:String,template:OrderEmailTemplate,context:JsonObject,documentData:DeFerrantiOrderDocuments?):JsonObject {
         val order=orders.findForEmail(orderId)?:throw OrderEmailNotFoundException()
         var attachment:EmailPdfAttachment?=null
         var payloadContext=context
@@ -74,6 +74,11 @@ class SendOrderEmailService(
             val expected=products.map{it.jsonObject.getValue("name").jsonPrimitive.content}.sorted()
             if(documentData.goods.map{it.productName}.sorted()!=expected)throw EmailPayloadValidationException(listOf("documentData.goods (must match selected saved order product names)"))
         }
+        return payload
+    }
+
+    fun send(orderId:String,template:OrderEmailTemplate,context:JsonObject,documentData:DeFerrantiOrderDocuments?):JsonObject {
+        val payload = prepare(orderId,template,context,documentData)
         val result=sender.send(payload)
         return buildJsonObject {
             put("status","submitted");put("templateId",template.id);put("orderId",orderId)

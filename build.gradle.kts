@@ -59,6 +59,8 @@ tasks.register<JavaExec>("prepareEmailSut") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("tools.PrepareOrderEmailSutKt")
     args(providers.gradleProperty("orderId").getOrElse(""),
-        providers.gradleProperty("output").getOrElse(".cache/email-sut/payment-confirmation.json"),
-        providers.gradleProperty("revision").getOrElse("real-data-footer-v1"))
+        providers.gradleProperty("output").getOrElse(".cache/email-sut/order-confirmation.json"),
+        providers.gradleProperty("revision").getOrElse("approved-invoice-v1"),
+        providers.gradleProperty("documentData").getOrElse(""),
+        providers.gradleProperty("context").getOrElse(""))
 }

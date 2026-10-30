@@ -5,10 +5,10 @@ ShoppingCart owns PDF generation. The protected action below builds the template
 ## Configuration
 
 - `EMAIL_SENDER_BASE_URL`: EMAIL_SENDER host, for example `https://your-service.onrender.com`. Do not append `/v2/send`. A base ending in `/email-sender` also works.
-- `EMAIL_SENDER_API_KEY`: optional bearer credential, if required by the receiving service.
+- `EMAIL_SENDER_API_KEY`: shared bearer credential required by EMAIL_SENDER V2.
 - `DEFERRANTI_LOGO_PATH`: optional server-controlled logo path; defaults to the bundled logo.
 
-EMAIL_SENDER currently returns `501` for `/v2/send`. This connection is ready, but delivery requires implementing that route, accepting the attachment contract below, and configuring SMTP there.
+EMAIL_SENDER V2 renders the agreed email templates and sends through its SMTP library, recording delivery control in Neon. It requires SMTP configuration, the shared API key and `EMAIL_DATABASE_URL`. Only the existing four PDF generators are used; missing invoice data must be supplied rather than replaced with a new document layout.
 
 ## ShoppingCart action
 

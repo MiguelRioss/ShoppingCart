@@ -89,7 +89,7 @@ class ShoppingCartServer(
         val emailPayloadBuilder = services.orderemail.OrderEmailPayloadBuilder(userRepository, productCatalogDataSource)
         val sendOrderEmail = services.orderemail.SendOrderEmailService(orderRepository, emailPayloadBuilder, services.orderemail.HttpEmailSenderClient())
         val paymentEmails = services.orderemail.AutomaticPaymentEmailService(
-            orderRepository, services.orderemail.PaymentConfirmationPayload(emailPayloadBuilder)::prepare,
+            orderRepository, services.orderemail.OrderConfirmationPayload(sendOrderEmail)::prepare,
             services.orderemail.HttpEmailSenderClient()
         )
         return listOf(
