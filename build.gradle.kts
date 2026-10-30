@@ -64,3 +64,13 @@ tasks.register<JavaExec>("prepareEmailSut") {
         providers.gradleProperty("documentData").getOrElse(""),
         providers.gradleProperty("context").getOrElse(""))
 }
+
+tasks.register<Exec>("emailApiCheck") {
+    description = "Checks ShoppingCart's calls to the deployed EMAIL_SENDER V2 API."
+    group = "verification"
+    val command = mutableListOf("node", "scripts/check-email-api.mjs", "--route", providers.gradleProperty("route").getOrElse("all"))
+    listOf("requestFile" to "request-file", "baseUrl" to "base-url", "reference" to "reference").forEach { (property, option) ->
+        providers.gradleProperty(property).orNull?.let { command.addAll(listOf("--$option", it)) }
+    }
+    commandLine(command)
+}
