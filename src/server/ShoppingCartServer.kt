@@ -1,5 +1,6 @@
 package server
 
+import PaymentProviderResolver
 import db.offline.InMemoryAuthTokenRepository
 import db.offline.InMemoryShoppingCartRepository
 import db.offline.InMemoryUserRepository
@@ -34,6 +35,9 @@ import services.shipping.ShipmentShippingChargeProvider
 import services.user.UserManager
 import config.ShippingMode
 import config.ShippingProviderConfig
+import db.offline.InMemoryOrderRepository
+import db.postgres.PostgresOrderRepository
+import services.checkout.payment.stripe.StripeConfig
 import shipment.core.ShippingProvider
 
 /**
@@ -71,34 +75,47 @@ class ShoppingCartServer(
         val productCatalogDataSource = ProductCatalogDataSource()
         val shoppingCartService = ShoppingCartManager(shoppingCartRepository, productCatalogDataSource)
         val loginService = LoginService(authService, shoppingCartService)
-        val orderRepository: db.OrderRepository = database?.let { db.postgres.PostgresOrderRepository(it) }
-            ?: db.offline.InMemoryOrderRepository()
+        val orderRepository: db.OrderRepository = database?.let { PostgresOrderRepository(it) } ?: InMemoryOrderRepository()
         val shippingChargeProvider =
             shippingChargeProvider(productCatalogDataSource)
-        val checkoutService = CheckoutManager(
-            shoppingCartService = shoppingCartService,
-            paymentProvider = StripePaymentProvider(),
-            shippingChargeProvider = shippingChargeProvider,
-            purchasableProductReader = PurchasableProductReader(productDataAccess = productCatalogDataSource),
-            orderRepository = orderRepository
+
+        val portugueseStripe = StripePaymentProvider(
+            config = StripeConfig.fromEnvironment("PT")
         )
 
+        val britishStripe = StripePaymentProvider(
+            config = StripeConfig.fromEnvironment("UK")
+        )
+
+// Select the appropriate Stripe account
+        val paymentProviderResolver = PaymentProviderResolver(
+            portugueseStripe = portugueseStripe,
+            britishStripe = britishStripe
+        )
+
+        val checkoutService = CheckoutManager(
+            shoppingCartService = shoppingCartService,
+            paymentProviderResolver = paymentProviderResolver,
+            shippingChargeProvider = shippingChargeProvider,
+            purchasableProductReader = PurchasableProductReader(
+                productDataAccess = productCatalogDataSource
+            ),
+            orderService = services.order.OrderManager(orderRepository, productCatalogDataSource)
+        )
         val adminUserIds = config.Environment.get("ADMIN_USER_IDS").orEmpty()
             .split(',').mapNotNull { runCatching { java.util.UUID.fromString(it.trim()) }.getOrNull() }.toSet()
 
-        val emailPayloadBuilder = services.orderemail.OrderEmailPayloadBuilder(userRepository, productCatalogDataSource)
-        val sendOrderEmail = services.orderemail.SendOrderEmailService(orderRepository, emailPayloadBuilder, services.orderemail.HttpEmailSenderClient())
-        val paymentEmails = services.orderemail.AutomaticPaymentEmailService(
-            orderRepository, services.orderemail.OrderConfirmationPayload(sendOrderEmail)::prepare,
-            services.orderemail.HttpEmailSenderClient()
+        val orderManager = services.order.OrderManager(orderRepository, productCatalogDataSource)
+        val clientJourney = services.orderemail.StartClientJourneyService(
+            services.orderemail.StartClientJourneyMapper(orderRepository, orderManager),
+            services.orderemail.HttpClientJourneyClient()
         )
         return listOf(
-            Route("POST", "/admin/orders/:orderId/send-email", http.admin.SendOrderEmailHandler(authService, sendOrderEmail, adminUserIds)),
-            Route("POST", "/admin/orders/:orderId/email-payload", http.admin.PrepareOrderEmailHandler(authService, orderRepository, emailPayloadBuilder, adminUserIds)),
             Route("GET", "/orders", http.checkout.GetOrdersHandler(orderRepository, authService)),
             Route("POST", "/webhooks/stripe", http.checkout.StripeWebhookHandler(orderRepository,
                 clearPaidCart = services.checkout.core.PaidOrderCartCleaner(orderRepository, shoppingCartRepository)::clear,
-                onPaymentConfirmed = paymentEmails::onPaid)),
+                onPaymentConfirmed = clientJourney::onPaid)),
+            //To investigate better
             Route("GET", "/admin/orders", http.admin.GetOrdersHandler(authService, orderRepository, adminUserIds)),
             Route("GET", "/admin/users", http.admin.GetUsersHandler(authService, userRepository, adminUserIds)),
             Route("POST", "/register", RegisterHandler(userService, authService, shoppingCartService)),

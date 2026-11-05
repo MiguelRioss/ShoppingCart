@@ -379,3 +379,5 @@ Common status codes:
 500 Internal Server Error
 502 Bad Gateway
 ```
+
+Multiple saved carts and payment cleanup: see [MULTIPLE_CARTS.md](MULTIPLE_CARTS.md). An explicit GET /cart?sessionId=... no longer falls back to another saved cart when that session is missing.

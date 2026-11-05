@@ -16,13 +16,7 @@ Set `STRIPE_WEBHOOK_SECRET` to the signing secret for the configured webhook end
 
 The browser success page does not mark orders paid. Closing the browser after paying does not prevent a configured webhook from recording payment. Existing checkout sessions created before this change have no order snapshot and cannot be reconstructed by this endpoint.
 
-## Automated checks
+## TODO: tax treatment for invoices
 
-Run the focused regression suite in PowerShell:
+The order currently saves `taxAmount = 0.00` with `taxCalculation = temporary_zero`. Before issuing final invoices, determine the applicable VAT treatment from the selling entity, dispatch country, destination, customer type and relevant registrations. Save the applied rate, amount and legal basis for any exemption in the immutable order record, and render those saved values in the invoice. The temporary zero must not be interpreted as a confirmed exemption.
 
-```powershell
-$env:RUN_ORDER_DB_TEST='true'
-.\gradlew.bat test --tests '*CheckoutLifecycleIntegrationTest' --tests '*OrderRepositoryIntegrationTest' --tests '*ShoppingCartManagerTest' --tests '*StripeWebhookHandlerTest' --tests '*CreateCheckoutHandlerTest'
-```
-
-The database tests use the configured PostgreSQL database and unique disposable test users/orders, which they clean up afterward. The Stripe API is simulated locally in these repeatable tests; no card is charged. Coverage includes two orders from one user across different browser sessions, concurrent cart saves, immutable order totals, success/cancellation URLs, signature validation, asynchronous payment confirmation, expiry, duplicate delivery and prevention of paid-status downgrades. Live Stripe sandbox checkout and CLI forwarding require a separate end-to-end check.

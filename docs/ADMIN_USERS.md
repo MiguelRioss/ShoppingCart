@@ -24,3 +24,11 @@ These changes are local until the backend is deployed. Set ADMIN_USER_IDS on the
 ## Verification
 
 GetUsersHandlerTest covers missing/invalid login, ordinary users, absent admin configuration, permitted fields, null values and safe database errors. AdminUsersReadIntegrationTest is read-only and verifies the configured database connection and administrator account. Frontend browser tests cover login, bearer requests, search, sorting, refresh, TODO sections, sign-out, denied access, session expiry and narrow/wide layouts; UI responses are mocked except the real proxy rejection test. A real administrator sign-in still requires the account holder's password.
+
+## Admin orders dashboard
+
+GET /admin/orders requires the same administrator bearer token and ADMIN_USER_IDS allowlist as /admin/users. Returns an orders array across all customers, newest first. Summary fields: id, checkoutSessionId, userId, status, createdAt, customerEmail, total, currency, amountPaidMinor, paidCurrency. Totals are decimal strings; paid amounts are integer minor units. Nullable fields remain null for pending/unpaid or historical records. Snapshots and delivery addresses are omitted from this summary endpoint. Ordinary customer GET /orders retains its own-user scope. Admin responses are not cached.
+
+Verified locally against five existing orders with the real database and browser. The endpoint and dashboard have not been deployed.
+
+The Orders table now has a View products action. Its dialog shows saved product IDs, names, quantities and line totals from the order's checkout snapshot, excluding productId 0 shipping lines. The admin orders response includes an items array from that snapshot; it still omits delivery addresses and the full snapshot. Older orders without saved items display an explicit empty message. No new database columns or records are required.

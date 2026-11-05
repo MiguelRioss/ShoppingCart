@@ -68,12 +68,8 @@ class ProductCatalogDataSource(
      * Fetches a single product by id from the cached external catalog list.
      */
     override fun getProductById(productId: Long): String? =
-        runCatching {
-            get("product/$productId")
-        }.getOrElse {
-            productsById()[productId]
-                ?.toCompactJson()
-        }
+        productsById()[productId]?.toCompactJson()
+
     /**
      * Fetches a single product by id from the detailed product endpoint.
      */

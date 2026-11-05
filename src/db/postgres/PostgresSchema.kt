@@ -25,6 +25,9 @@ class PostgresSchema(
                     )
                 """.trimIndent())
                 statement.executeUpdate("CREATE INDEX IF NOT EXISTS orders_user_id_idx ON orders(user_id)")
+                statement.executeUpdate("CREATE SEQUENCE IF NOT EXISTS order_invoice_number_seq")
+                statement.executeUpdate("ALTER TABLE orders ADD COLUMN IF NOT EXISTS invoice_number BIGINT")
+                statement.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS orders_invoice_number_idx ON orders(invoice_number)")
                 statement.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS users (

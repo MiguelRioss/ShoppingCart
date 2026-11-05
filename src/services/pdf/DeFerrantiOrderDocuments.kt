@@ -100,7 +100,8 @@ data class DocumentGoodsLine(
 data class DocumentTotals(
     val supplierSubtotal: String,
     val vatTreatment: String,
-    val purchaseOrderTotal: String
+    val purchaseOrderTotal: String,
+    val currency: String = "EUR"
 )
 
 data class PackingDetails(
@@ -120,7 +121,9 @@ data class ShipmentDetails(
     val awb: String,
     val purpose: String,
     val incoterm: String,
-    val deliveryTerms: String
+    val deliveryTerms: String,
+    val shippingCharged: String? = null,
+    val paymentStatus: String? = null
 )
 
 data class DocumentChecks(

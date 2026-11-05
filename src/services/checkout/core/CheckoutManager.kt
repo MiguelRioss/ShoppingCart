@@ -1,5 +1,6 @@
 package services.checkout.core
 
+import PaymentProviderResolver
 import domain.checkout.payment.CheckoutPaymentRequest
 import domain.checkout.CheckoutSession
 import domain.checkout.toCheckoutLineItem
@@ -11,6 +12,7 @@ import services.checkout.payment.core.PaymentProviderInterface
 import services.common.ServiceErrorCode
 import services.common.ServiceException
 import services.shipping.ShippingChargeProvider
+import services.order.OrderService
 
 /**
  * Creates checkout sessions for saved shopping carts.
@@ -20,10 +22,10 @@ import services.shipping.ShippingChargeProvider
  */
 class CheckoutManager(
     private val shoppingCartService: ShoppingCartService,
-    private val paymentProvider: PaymentProviderInterface,
+    private val paymentProviderResolver: PaymentProviderResolver,
     private val shippingChargeProvider: ShippingChargeProvider? = null,
     purchasableProductReader: PurchasableProductReader,
-    private val orderRepository: db.OrderRepository = db.offline.InMemoryOrderRepository()
+    private val orderService: OrderService = services.order.OrderManager(db.offline.InMemoryOrderRepository())
 ) : CheckoutService {
 
     private val validator =
@@ -95,10 +97,26 @@ class CheckoutManager(
                 lineItems = lineItems
             )
 
+        val paymentProvider = paymentProviderResolver.resolve(
+            originCountry = "PT",
+            destinationCountry = requireNotNull(
+                request.deliveryAddress?.country
+            ) {
+                "Delivery country is required to select the Stripe account"
+            }
+        )
+
         val checkout = paymentProvider.createCheckoutSession(
             paymentRequest
         )
-        orderRepository.create(checkout.id, request.userId, orderSnapshot(request, cart, lineItems))
+
+        orderService.createForCheckout(
+            checkout.id,
+            request,
+            cart,
+            productLineItems,
+            shippingCharge
+        )
         return checkout
     }
 

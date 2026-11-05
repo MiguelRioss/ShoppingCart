@@ -10,6 +10,7 @@ interface OrderRepository {
     fun snapshotForCheckout(checkoutId: String): JsonObject?
 
     fun create(checkoutId: String, userId: UUID?, snapshot: JsonObject)
+    fun invoiceNumberForOrder(orderId: String): String
     /** Returns false if checkout creation has not finished saving the order yet. */
     fun updatePayment(checkoutId: String, status: String, amountMinor: Long?, currency: String?, paymentId: String?): Boolean
     fun listAll(): List<JsonObject>

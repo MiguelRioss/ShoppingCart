@@ -279,3 +279,5 @@ Common statuses:
 6. Use `POST /cart` to save or update the cart.
 7. Use `GET /cart` to load the logged-in user's cart.
 8. Use `POST /cart/clear` to clear the cart for the current `sessionId`.
+
+Multiple carts: different sessionId values create independent carts for the same user. Always fetch and checkout using the selected sessionId. Verified paid webhooks remove only the unchanged purchased cart. See docs/MULTIPLE_CARTS.md.

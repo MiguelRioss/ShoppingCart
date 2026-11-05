@@ -17,7 +17,7 @@ import services.checkout.payment.core.PaymentProviderType
 /** Stripe adapter responsible for creating and reading hosted Checkout Sessions. */
 class StripePaymentProvider(
     private val config: StripeConfig =
-        StripeConfig.fromEnvironment()
+        StripeConfig.fromEnvironment("PT")
 ) : PaymentProvider() {
 
     override val type: PaymentProviderType =

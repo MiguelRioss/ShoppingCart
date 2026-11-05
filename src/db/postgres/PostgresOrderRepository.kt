@@ -5,24 +5,43 @@ import java.util.UUID
 import kotlinx.serialization.json.*
 
 class PostgresOrderRepository(private val database: Database) : OrderRepository {
+    override fun invoiceNumberForOrder(orderId: String): String = database.getConnection().use { connection ->
+        connection.prepareStatement("UPDATE orders SET invoice_number = nextval('order_invoice_number_seq') WHERE id::text = ? AND status = 'PAID' AND invoice_number IS NULL RETURNING invoice_number").use { statement ->
+            statement.setString(1, orderId)
+            statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) }
+        }
+        connection.prepareStatement("SELECT invoice_number, status FROM orders WHERE id::text = ?").use { statement ->
+            statement.setString(1, orderId)
+            statement.executeQuery().use { rows ->
+                require(rows.next()) { "Order not found: $orderId" }
+                require(rows.getString("status") == "PAID") { "Invoice number requires a paid order" }
+                val number = rows.getLong("invoice_number")
+                require(!rows.wasNull()) { "Invoice number could not be assigned" }
+                "INV-${number.toString().padStart(10, '0')}"
+            }
+        }
+    }
     override fun findByCheckoutForEmail(checkoutId: String): JsonObject? = database.getConnection().use { connection ->
-        connection.prepareStatement("SELECT id, user_id, status, snapshot, amount_paid_minor, paid_currency FROM orders WHERE checkout_session_id = ?").use {
+        connection.prepareStatement("SELECT id, user_id, status, snapshot, amount_paid_minor, paid_currency, paid_at FROM orders WHERE checkout_session_id = ?").use {
             it.setString(1, checkoutId)
             it.executeQuery().use { rows -> if (!rows.next()) null else buildJsonObject {
                 put("id", rows.getString("id")); put("checkoutSessionId", checkoutId)
                 put("userId", rows.getString("user_id")?.let(::JsonPrimitive) ?: JsonNull)
                 put("status", rows.getString("status")); put("snapshot", Json.parseToJsonElement(rows.getString("snapshot")))
-                put("amountPaidMinor", rows.getLong("amount_paid_minor")); put("paidCurrency", rows.getString("paid_currency"))
+                rows.getLong("amount_paid_minor").takeUnless { rows.wasNull() }?.let { amount -> put("amountPaidMinor", amount) }
+                rows.getString("paid_currency")?.let { paidCurrency -> put("paidCurrency", paidCurrency) }
+                rows.getTimestamp("paid_at")?.toInstant()?.toString()?.let { paidAt -> put("paidAt", paidAt) }
             } }
         }
     }
     override fun findForEmail(orderId: String): JsonObject? = database.getConnection().use { connection ->
-        connection.prepareStatement("SELECT id, checkout_session_id, user_id, status, snapshot FROM orders WHERE id::text = ?").use {
+        connection.prepareStatement("SELECT id, checkout_session_id, user_id, status, snapshot, invoice_number FROM orders WHERE id::text = ?").use {
             it.setString(1, orderId)
             it.executeQuery().use { rows -> if (!rows.next()) null else buildJsonObject {
                 put("id", rows.getString("id")); put("checkoutSessionId", rows.getString("checkout_session_id"))
                 put("userId", rows.getString("user_id")?.let(::JsonPrimitive) ?: JsonNull)
                 put("status", rows.getString("status")); put("snapshot", Json.parseToJsonElement(rows.getString("snapshot")))
+                rows.getLong("invoice_number").takeUnless { rows.wasNull() }?.let { number -> put("invoiceNumber", "INV-${number.toString().padStart(10, '0')}") }
             } }
         }
     }
@@ -46,11 +65,12 @@ class PostgresOrderRepository(private val database: Database) : OrderRepository 
                 amount_paid_minor = CASE WHEN ? = 'PAID' THEN ? ELSE amount_paid_minor END,
                 paid_currency = CASE WHEN ? = 'PAID' THEN ? ELSE paid_currency END,
                 payment_id = COALESCE(?, payment_id),
-                paid_at = CASE WHEN ? = 'PAID' THEN COALESCE(paid_at, CURRENT_TIMESTAMP) ELSE paid_at END
+                paid_at = CASE WHEN ? = 'PAID' THEN COALESCE(paid_at, CURRENT_TIMESTAMP) ELSE paid_at END,
+                invoice_number = CASE WHEN ? = 'PAID' THEN COALESCE(invoice_number, nextval('order_invoice_number_seq')) ELSE invoice_number END
                 WHERE checkout_session_id = ?""").use {
                 it.setString(1, status); it.setString(2, status); it.setObject(3, amountMinor)
                 it.setString(4, status); it.setString(5, currency); it.setString(6, paymentId)
-                it.setString(7, status); it.setString(8, checkoutId); it.executeUpdate() > 0
+                it.setString(7, status); it.setString(8, status); it.setString(9, checkoutId); it.executeUpdate() > 0
             }
         }
     override fun listAll(): List<JsonObject> = database.getConnection().use { connection ->

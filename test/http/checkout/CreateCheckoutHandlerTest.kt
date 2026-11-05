@@ -1,5 +1,7 @@
 package http.checkout
 
+import PaymentProviderResolver
+
 import com.sun.net.httpserver.HttpServer
 import db.offline.InMemoryShoppingCartRepository
 import http.HttpRequest
@@ -190,8 +192,8 @@ class CreateCheckoutHandlerTest {
                         shoppingCartService =
                             shoppingCartService,
 
-                        paymentProvider =
-                            stripePaymentProvider,
+                        paymentProviderResolver =
+                            PaymentProviderResolver(stripePaymentProvider, stripePaymentProvider),
 
                         shippingChargeProvider = object : services.shipping.ShippingChargeProvider {
                             override fun calculateShipping(
@@ -644,8 +646,8 @@ class CreateCheckoutHandlerTest {
             shoppingCartService =
                 shoppingCartService,
 
-            paymentProvider =
-                StripePaymentProvider(
+            paymentProviderResolver =
+                PaymentProviderResolver(StripePaymentProvider(
                     config =
                         StripeConfig(
                             secretKey =
@@ -654,7 +656,7 @@ class CreateCheckoutHandlerTest {
                             checkoutApiUrl =
                                 "http://127.0.0.1:1/v1/checkout/sessions"
                         )
-                ),
+                ), StripePaymentProvider(StripeConfig("sk_test_not_used", "http://127.0.0.1:1/v1/checkout/sessions"))),
 
             purchasableProductReader =
                 purchasableProductReader

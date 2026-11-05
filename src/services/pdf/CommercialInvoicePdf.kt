@@ -116,6 +116,7 @@ class CommercialInvoicePdf(
                 1f,
                 1f,
                 1f,
+                1f,
                 1f
             ),
 
@@ -130,6 +131,10 @@ class CommercialInvoicePdf(
 
                 PdfCell.label(
                     "ORDER REFERENCE"
+                ),
+
+                PdfCell.label(
+                    "EST. DESPATCH"
                 ),
 
                 PdfCell.label(
@@ -156,6 +161,10 @@ class CommercialInvoicePdf(
 
                 PdfCell.text(
                     documents.references.customerOrderNumber
+                ),
+
+                PdfCell.text(
+                    documents.references.requiredDespatchDate
                 ),
 
                 PdfCell.text(
@@ -226,7 +235,7 @@ class CommercialInvoicePdf(
                             ),
 
                             PdfText(
-                                "Exporter's relationship: fulfilment / dispatch party for De Ferranti Limited."
+                                "Exporter's relationship: fulfilment / dispatch party for ${documents.parties.seller.name}."
                             ),
 
                             PdfText(
@@ -406,7 +415,7 @@ class CommercialInvoicePdf(
 
                                     PdfCell.centered(
                                         line.netWeight
-                                            ?: "NET WEIGHT REQUIRED"
+                                            ?: "Not recorded"
                                     ),
 
                                     PdfCell.centeredLines(
@@ -511,7 +520,7 @@ class CommercialInvoicePdf(
                     "GOODS VALUE",
 
                 amount =
-                    documents.totals.purchaseOrderTotal
+                    documents.totals.supplierSubtotal
             ),
 
             summaryRow(
@@ -526,7 +535,7 @@ class CommercialInvoicePdf(
 
                 amount =
                     documents.packing.packingCost
-                        ?: "EUR 0.00"
+                        ?: "Not recorded"
             ),
 
             summaryRow(
@@ -534,14 +543,14 @@ class CommercialInvoicePdf(
                     "DUTIES / TAXES",
 
                 value =
-                    "Payable by De Ferranti Limited. " +
+                    "Payable by ${documents.parties.importerOfRecord.name}. " +
                             "No import charges are to be collected from consignee.",
 
                 amountLabel =
-                    "FEDEX / DDP",
+                    "SHIPPING CHARGED",
 
                 amount =
-                    "FEDEX API"
+                    documents.shipment.shippingCharged ?: "Not recorded"
             ),
 
             summaryRow(
@@ -572,12 +581,6 @@ class CommercialInvoicePdf(
                 amountLabel =
                     "TOTAL INVOICE",
 
-                /*
-                 * At present your shared model has no separate
-                 * final checkout invoice total.
-                 *
-                 * For this test we use the existing total.
-                 */
                 amount =
                     documents.totals.purchaseOrderTotal
             ),
@@ -587,13 +590,13 @@ class CommercialInvoicePdf(
                     "CURRENCY",
 
                 value =
-                    "EUR",
+                    documents.totals.currency,
 
                 amountLabel =
                     "CUSTOMS GOODS VALUE",
 
                 amount =
-                    documents.totals.purchaseOrderTotal
+                    documents.totals.supplierSubtotal
             ),
 
             PdfRow.normal(
@@ -603,7 +606,7 @@ class CommercialInvoicePdf(
                 ),
 
                 PdfCell.text(
-                    "TEST - CHECKOUT PAYMENT STATUS REQUIRED"
+                    documents.shipment.paymentStatus ?: "PAYMENT STATUS NOT RECORDED"
                 ),
 
                 PdfCell.text(""),
@@ -655,7 +658,7 @@ class CommercialInvoicePdf(
 
             "Country of non-preferential origin: $origin.",
 
-            "No preferential origin claim is made in this test document.",
+            "No preferential origin claim is made in this document.",
 
             "If preferential treatment is claimed, the exporter must provide the required origin declaration and retain supporting evidence."
         )
@@ -715,7 +718,7 @@ class CommercialInvoicePdf(
             documents.goods
                 .firstOrNull()
                 ?.netWeight
-                ?: "NET WEIGHT REQUIRED"
+                ?: "Not recorded separately"
 
         return "Net $net | Gross ${documents.packing.grossWeight}"
     }
@@ -731,15 +734,11 @@ class CommercialInvoicePdf(
         return buildString {
 
             append(
-                "TEST DOCUMENT. "
-            )
-
-            append(
                 "Commercial invoice generated from checkout/product data. "
             )
 
             append(
-                "Customer, tax and FedEx placeholders must be resolved before customs use."
+                "Packing values are estimates from the product catalogue; tax treatment and shipment details require confirmation before customs use."
             )
 
             if (product != null) {

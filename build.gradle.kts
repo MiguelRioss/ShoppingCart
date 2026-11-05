@@ -47,22 +47,13 @@ sourceSets {
 }
 
 tasks.test {
-    useJUnitPlatform()
+    useJUnitPlatform {
+        if (providers.gradleProperty("runLiveEmailTest").orNull != "true") excludeTags("live")
+    }
     outputs.upToDateWhen { false }
     testLogging {
         showStandardStreams = true
     }
-}
-
-tasks.register<JavaExec>("prepareEmailSut") {
-    description = "Prepare a real saved-order email request without sending or updating the order."
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("tools.PrepareOrderEmailSutKt")
-    args(providers.gradleProperty("orderId").getOrElse(""),
-        providers.gradleProperty("output").getOrElse(".cache/email-sut/order-confirmation.json"),
-        providers.gradleProperty("revision").getOrElse("approved-invoice-v1"),
-        providers.gradleProperty("documentData").getOrElse(""),
-        providers.gradleProperty("context").getOrElse(""))
 }
 
 tasks.register<Exec>("emailApiCheck") {

@@ -1,3 +1,4 @@
+
 package services.checkout.payment.stripe
 
 import config.Environment
@@ -10,13 +11,21 @@ data class StripeConfig(
 
     companion object {
 
-        /** Loads the secret key and optional Checkout API override from the environment. */
-        fun fromEnvironment(): StripeConfig {
+        /**
+         * Loads Stripe credentials for a specific account.
+         *
+         * Supported accounts: PT and UK.
+         */
+        fun fromEnvironment(account: String): StripeConfig {
+
+            require(account == "PT" || account == "UK") {
+                "Unsupported Stripe account: $account"
+            }
 
             val secretKey =
-                Environment.get("STRIPE_SECRET_KEY")
+                Environment.get("STRIPE_${account}_SECRET_KEY")
                     ?: error(
-                        "STRIPE_SECRET_KEY is required"
+                        "STRIPE_${account}_SECRET_KEY is required"
                     )
 
             val checkoutApiUrl =

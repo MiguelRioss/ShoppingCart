@@ -5,6 +5,13 @@ import java.util.UUID
 import kotlinx.serialization.json.*
 
 class InMemoryOrderRepository : OrderRepository {
+    private val invoiceNumbers = mutableMapOf<String, String>()
+    private var nextInvoiceNumber = 1L
+    @Synchronized override fun invoiceNumberForOrder(orderId: String): String {
+        val order = orders[orderId] ?: throw IllegalArgumentException("Order not found: $orderId")
+        require(order.second["status"]?.jsonPrimitive?.content == "PAID") { "Invoice number requires a paid order" }
+        return invoiceNumbers.getOrPut(orderId) { "INV-${(nextInvoiceNumber++).toString().padStart(10, '0')}" }
+    }
     override fun findByCheckoutForEmail(checkoutId: String): JsonObject? = findForEmail(checkoutId)
     @Synchronized override fun snapshotForCheckout(checkoutId: String): JsonObject? = orders[checkoutId]?.second
     @Synchronized override fun findForEmail(orderId: String): JsonObject? = orders[orderId]?.let { (userId, snapshot) ->
@@ -12,6 +19,8 @@ class InMemoryOrderRepository : OrderRepository {
             put("id", orderId); put("checkoutSessionId", orderId)
             put("userId", userId?.toString()?.let(::JsonPrimitive) ?: JsonNull)
             put("status", snapshot["status"] ?: JsonPrimitive("PENDING_PAYMENT")); put("snapshot", snapshot)
+            for (field in listOf("amountPaidMinor", "paidCurrency", "paidAt")) snapshot[field]?.let { put(field, it) }
+            invoiceNumbers[orderId]?.let { put("invoiceNumber", it) }
         }
     }
     private val orders = mutableMapOf<String, Pair<UUID?, JsonObject>>()
@@ -21,7 +30,8 @@ class InMemoryOrderRepository : OrderRepository {
     @Synchronized override fun updatePayment(checkoutId: String, status: String, amountMinor: Long?, currency: String?, paymentId: String?): Boolean {
         val order = orders[checkoutId] ?: return false
         if (order.second["status"]?.jsonPrimitive?.content != "PAID") {
-            orders[checkoutId] = order.first to JsonObject(order.second + mapOf("status" to JsonPrimitive(status), "paymentId" to (paymentId?.let(::JsonPrimitive) ?: JsonNull), "amountPaidMinor" to (amountMinor?.let(::JsonPrimitive) ?: JsonNull), "paidCurrency" to (currency?.let(::JsonPrimitive) ?: JsonNull)))
+            orders[checkoutId] = order.first to JsonObject(order.second + mapOf("status" to JsonPrimitive(status), "paymentId" to (paymentId?.let(::JsonPrimitive) ?: JsonNull), "amountPaidMinor" to (amountMinor?.let(::JsonPrimitive) ?: JsonNull), "paidCurrency" to (currency?.let(::JsonPrimitive) ?: JsonNull), "paidAt" to (if (status == "PAID") JsonPrimitive(java.time.Instant.now().toString()) else JsonNull)))
+            if (status == "PAID") invoiceNumbers.getOrPut(checkoutId) { "INV-${(nextInvoiceNumber++).toString().padStart(10, '0')}" }
         }
         return true
     }

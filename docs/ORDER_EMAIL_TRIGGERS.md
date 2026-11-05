@@ -42,6 +42,6 @@ The existing commercial invoice PDF generator is available, but automatic genera
 - `src/http/checkout/StripeWebhookHandler.kt` — verified payment events.
 - `src/services/pdf/CommercialInvoicePdf.kt` — commercial invoice PDF generator.
 
-## Payload preparation API
+## Client journey API
 
-See [ORDER_EMAIL_PAYLOADS.md](ORDER_EMAIL_PAYLOADS.md) and [ORDER_EMAIL_PAYLOADS.http](ORDER_EMAIL_PAYLOADS.http) for the ShoppingCart-only preparation endpoint and nine template-specific calls. This endpoint does not activate email sending.
+ShoppingCart sends the paid order and ordered template data to EMAIL_SENDER through `POST /v2/start-client-journey`. Later templates remain pending until their required data exists.

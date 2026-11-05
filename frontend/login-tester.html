@@ -3324,16 +3324,11 @@
 
     function checkoutReturnUrl(status) {
         const page = status === "success" ? "checkout-success.html" : "checkout-error.html";
-        // The IDE preview can reject the first navigation back from Stripe.
-        // Use the direct frontend server for local IDE previews.
-        if (window.location.protocol === "file:"
-            || (["localhost", "127.0.0.1"].includes(window.location.hostname)
-                && window.location.port === "63342")) {
-            const localUrl = new URL(page, "http://127.0.0.1:5500/");
-            if (status === "cancel") localUrl.searchParams.set("status", "cancel");
-            return localUrl.href;
+        if (!['http:', 'https:'].includes(window.location.protocol)) {
+            throw new Error('Open the checkout frontend through its HTTP server before starting checkout.');
         }
         const url = new URL(page, window.location.href);
+        url.hash = "";
         url.search = window.location.search;
         url.searchParams.delete("checkout");
         if (status === "cancel") url.searchParams.set("status", "cancel");

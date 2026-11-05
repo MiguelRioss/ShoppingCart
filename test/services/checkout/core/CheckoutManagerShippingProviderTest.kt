@@ -1,5 +1,7 @@
     package services.checkout.core
 
+    import PaymentProviderResolver
+
     import db.offline.InMemoryShoppingCartRepository
     import domain.cart.ShoppingCart
     import domain.checkout.CheckoutSession
@@ -72,7 +74,7 @@
             val checkoutManager =
                 CheckoutManager(
                     shoppingCartService = shoppingCartService,
-                    paymentProvider = paymentProvider,
+                    paymentProviderResolver = PaymentProviderResolver(paymentProvider, paymentProvider),
                     shippingChargeProvider =
                         ShipmentShippingChargeProvider(
                             shipmentProvider =
@@ -167,7 +169,7 @@
             val checkoutManager =
                 CheckoutManager(
                     shoppingCartService = shoppingCartService,
-                    paymentProvider = paymentProvider,
+                    paymentProviderResolver = PaymentProviderResolver(paymentProvider, paymentProvider),
                     shippingChargeProvider =
                         FixedShippingChargeProvider(
                             CheckoutShippingCharge(
@@ -240,7 +242,7 @@
             val checkoutManager =
                 CheckoutManager(
                     shoppingCartService = shoppingCartService,
-                    paymentProvider = RecordingPaymentProvider(),
+                    paymentProviderResolver = PaymentProviderResolver(RecordingPaymentProvider(), RecordingPaymentProvider()),
                     shippingChargeProvider =
                         FixedShippingChargeProvider(
                             CheckoutShippingCharge(
@@ -297,7 +299,7 @@
             val checkoutManager =
                 CheckoutManager(
                     shoppingCartService = shoppingCartService,
-                    paymentProvider = RecordingPaymentProvider(),
+                    paymentProviderResolver = PaymentProviderResolver(RecordingPaymentProvider(), RecordingPaymentProvider()),
                     shippingChargeProvider = null,
                     purchasableProductReader = PurchasableProductReader(productDataAccess)
                 )
