@@ -1,0 +1,166 @@
+package services.order
+
+import kotlin.test.Test
+import kotlin.test.assertContains
+import kotlin.test.assertFailsWith
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+import java.nio.file.Files
+import java.nio.file.Path
+import java.math.BigDecimal
+import java.time.LocalDate
+import org.junit.jupiter.api.TestInstance
+import services.pdf.OrderPdfData
+import services.pdf.DocumentTotals
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.Json
+import org.openpdf.text.pdf.PdfReader
+import org.openpdf.text.pdf.parser.PdfTextExtractor
+
+/** Every test reads the same paid order from a local, in-memory repository. */
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
+class OrderPdfDataReadinessTest {
+    private val sut = OrderSUT.create()
+
+    private fun documents() = OrderInvoicePreview(sut.catalogue).build(
+        sut.id,
+        sut.order.getValue("snapshot").jsonObject,
+        sut.manager.invoiceNumber(sut.id),
+        sut.manager.invoiceIssuer(sut.id),
+        requireNotNull(sut.manager.despatchEstimate(sut.id))
+    )
+
+    @Test
+    fun `invoice uses the saved order and creates a labelled test PDF`() {
+        assertEquals("PAID", sut.order.getValue("status").jsonPrimitive.content)
+        val data = documents().let { it.copy(branding = it.branding.copy(subtitle = "TEST DATA - CUSTOMER AND PAYMENT SIMULATED")) }
+        val pdf = OrderPdfData.Invoice(data).generate()
+        assertTrue(pdf.size > 1000)
+        val output = Path.of("test", "services", "order", "generated-pdfs","oneProductOrder", "invoice-test.pdf")
+        Files.createDirectories(output.parent)
+        Files.write(output, pdf)
+        assertTrue(Files.size(output) == pdf.size.toLong())
+        PdfReader(pdf).use { reader ->
+            assertTrue(reader.numberOfPages > 0)
+            val content = (1..reader.numberOfPages).joinToString("\n") { PdfTextExtractor(reader).getTextFromPage(it) }
+            val snapshot = sut.order.getValue("snapshot").jsonObject
+            val product = snapshot.getValue("items").jsonArray.first().jsonObject
+            val catalogueProduct = sut.catalogue.getProductDetailsById(product.getValue("productId").jsonPrimitive.content.toLong())!!
+                .let { kotlinx.serialization.json.Json.parseToJsonElement(it).jsonObject }
+            val supplier = catalogueProduct.getValue("supplier").jsonObject
+            val purchase = catalogueProduct.getValue("purchase_information").jsonObject
+            val productOrder = purchase.getValue("order").jsonObject
+            val customs = purchase.getValue("tax_freight_and_customs").jsonObject
+            val compact = content.replace(Regex("\\s+"), "")
+            assertContains(content, "TEST DATA - CUSTOMER AND PAYMENT SIMULATED")
+            for (value in listOf(
+                sut.manager.invoiceNumber(sut.id), sut.id,
+                sut.manager.invoiceIssuer(sut.id).name,
+                product.getValue("name").jsonPrimitive.content,
+                snapshot.getValue("total").jsonPrimitive.content,
+                supplier.getValue("address_2").jsonPrimitive.content,
+                productOrder.getValue("product_sku").jsonPrimitive.content,
+                supplier.getValue("supplier_product_id").jsonPrimitive.content,
+                customs.getValue("hs_commodity_code").jsonPrimitive.content,
+                customs.getValue("country_of_origin").jsonPrimitive.content
+            )) assertContains(compact, value.replace(Regex("\\s+"), ""))
+            assertTrue(!content.contains("DE FERRANTI LIMITED"))
+        }
+    }
+
+    @Test
+    fun `purchase order uses the same saved order and reports missing reference`() {
+        assertContains(assertFailsWith<IllegalArgumentException> { OrderPdfData.PurchaseOrder(documents()).generate() }.message.orEmpty(), "references.purchaseOrderNumber")
+    }
+
+    @Test
+    fun `packing list uses the same saved order and reports missing packing data`() {
+        val message = assertFailsWith<IllegalArgumentException> { OrderPdfData.PackingList(documents()).generate() }.message.orEmpty()
+        assertContains(message, "references.packingListNumber")
+        assertContains(message, "references.packingDate")
+    }
+
+    @Test
+    fun `delivery note uses the same saved order and reports missing tracking`() {
+        val message = assertFailsWith<IllegalArgumentException> { OrderPdfData.DeliveryNote(documents()).generate() }.message.orEmpty()
+        assertContains(message, "references.deliveryNoteNumber")
+        assertContains(message, "references.deliveryDate")
+        assertContains(message, "shipment.trackingNumber")
+    }
+
+    @Test
+    fun `oneProductOrder generates four PDFs`() = generateFourPdfs(OrderSUT.oneProductOrder())
+
+    @Test
+    fun `9_5m_ProductOrder generates four PDFs`() = generateFourPdfs(OrderSUT.nineAndHalfProductOrder())
+}
+
+/** Shared artifact check used by the PDF suite and by each client journey scenario. */
+internal fun generateFourPdfs(multi: OrderSUT) {
+        val input = Json.parseToJsonElement(
+            Files.readString(Path.of("test", "services", "order", "fixtures", "fulfilment-test.json"))
+        ).jsonObject
+        val date = LocalDate.now().toString()
+        val original = OrderInvoicePreview(multi.catalogue).build(
+            multi.id, multi.order.getValue("snapshot").jsonObject,
+            multi.manager.invoiceNumber(multi.id), multi.manager.invoiceIssuer(multi.id),
+            requireNotNull(multi.manager.despatchEstimate(multi.id))
+        )
+        assertEquals(multi.order.getValue("snapshot").jsonObject.getValue("cartProducts").jsonArray.size, original.goods.size)
+        val data = original.copy(
+            branding = original.branding.copy(subtitle = "TEST DATA - CUSTOMER, PAYMENT AND FULFILMENT SIMULATED"),
+            references = original.references.copy(
+                purchaseOrderNumber = "PO-TEST-${multi.id}",
+                packingListNumber = "PL-TEST-${multi.id}",
+                packingDate = date,
+                deliveryNoteNumber = "DN-TEST-${multi.id}",
+                deliveryDate = date
+            ),
+            shipment = original.shipment.copy(
+                trackingNumber = input.getValue("trackingNumber").jsonPrimitive.content,
+                awb = input.getValue("awb").jsonPrimitive.content
+            )
+        )
+        val supplierUnitPrice = input.getValue("supplierUnitPrice").jsonPrimitive.content.toBigDecimal()
+        val supplierGoods = data.goods.map { line ->
+            val quantity = line.area.substringBefore(" m2").toBigDecimal()
+            line.copy(
+                unitPrice = "${data.totals.currency} $supplierUnitPrice",
+                lineTotal = "${data.totals.currency} ${supplierUnitPrice.multiply(quantity)}"
+            )
+        }
+        val supplierTotal = supplierGoods.sumOf { it.lineTotal!!.substringAfter(' ').toBigDecimal() }
+        val purchaseOrder = data.copy(
+            goods = supplierGoods,
+            totals = DocumentTotals(
+                "${data.totals.currency} $supplierTotal",
+                "${data.totals.currency} ${BigDecimal.ZERO}",
+                "${data.totals.currency} $supplierTotal",
+                data.totals.currency
+            )
+        )
+        val output = Path.of("test", "services", "order", "generated-pdfs", multi.scenarioName)
+        Files.createDirectories(output)
+        val documents = mapOf(
+            "invoice.pdf" to OrderPdfData.Invoice(data).generate(),
+            "purchase-order.pdf" to OrderPdfData.PurchaseOrder(purchaseOrder).generate(),
+            "packing-list.pdf" to OrderPdfData.PackingList(data).generate(),
+            "delivery-note.pdf" to OrderPdfData.DeliveryNote(data).generate()
+        )
+        documents.forEach { (name, bytes) ->
+            val path = output.resolve(name)
+            Files.write(path, bytes)
+            assertTrue(Files.size(path) > 1000, "$name missing")
+            PdfReader(bytes).use { reader ->
+                val text = (1..reader.numberOfPages).joinToString("\n") { PdfTextExtractor(reader).getTextFromPage(it) }
+                assertContains(text, "TEST DATA - CUSTOMER, PAYMENT AND FULFILMENT SIMULATED")
+                val compact = text.replace(Regex("\\s+"), "")
+                data.goods.forEach { line ->
+                    assertContains(compact, line.productName.replace(Regex("\\s+"), ""))
+                }
+            }
+            println("GENERATED_ORDER_PDF=${path.toAbsolutePath()}")
+        }
+}
