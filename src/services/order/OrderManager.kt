@@ -20,11 +20,11 @@ class OrderManager(
     private val orderRepository: OrderRepository,
     private val products: ProductDataAccess = ProductCatalogDataSource()
 ) : OrderService {
-    fun invoicePreview(orderId: String): ByteArray {
+    fun invoicePreview(orderId: String, paidSnapshot: JsonObject? = null): ByteArray {
         val order = orderRepository.findForEmail(orderId)
             ?: throw IllegalArgumentException("Order not found: $orderId")
         require((order["status"] as? JsonPrimitive)?.content == "PAID") { "Invoice preview requires a paid order" }
-        val snapshot = order["snapshot"] as? JsonObject
+        val snapshot = paidSnapshot ?: order["snapshot"] as? JsonObject
             ?: throw IllegalArgumentException("Order snapshot is missing")
         val document = OrderInvoicePreview(products).build(
             orderId,

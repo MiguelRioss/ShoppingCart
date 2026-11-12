@@ -43,7 +43,7 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
         val shipFrom = DocumentParty(
             name = supplierName,
             addressLines = listOfNotNull(
-                supplier.text("address_2") ?: missing("supplier.address_2"),
+                supplier.text("address_2")?.trim() ?: missing("supplier.address_2"),
                 listOfNotNull(supplier.text("post_code_collection"), supplier.text("city_collection")).joinToString(" ").takeIf(String::isNotBlank),
                 supplier.text("country_collection") ?: missing("supplier.country_collection")
             )
@@ -75,6 +75,10 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
             val area = selection?.text("squareMeters")?.toBigDecimalOrNull() ?: missing("cartProducts.squareMeters")
             val boxes = selection.text("amountBoxes")?.toIntOrNull() ?: missing("cartProducts.amountBoxes")
             val units = order.text("units_per_box")?.toIntOrNull() ?: missing("catalogue.product.${item.text("productId")}.units_per_box")
+            val netWeightPerTile = order.text("net_weight_per_tile_item")
+                ?.toBigDecimalOrNull()
+                ?.takeIf { it > BigDecimal.ZERO }
+            val netWeight = netWeightPerTile?.multiply(BigDecimal(boxes.toLong() * units.toLong()))
             val lineTotal = item.text("amountTotal")?.toBigDecimalOrNull() ?: missing("items[$index].amountTotal")
             DocumentGoodsLine(
                 productName = item.text("name") ?: missing("items[$index].name"),
@@ -88,6 +92,7 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
                 supplierProductId = product.objectValue("supplier").text("supplier_product_id"),
                 hsCode = customs.text("hs_commodity_code") ?: missing("catalogue.product.${item.text("productId")}.hs_commodity_code"),
                 originCountry = customs.text("country_of_origin") ?: missing("catalogue.product.${item.text("productId")}.country_of_origin"),
+                netWeight = netWeight?.stripTrailingZeros()?.toPlainString()?.let { "$it kg" },
                 grossWeight = "${packing.text("packed_weight")} kg",
                 packageDescription = packing.text("packaging") ?: "Package"
             )
@@ -106,7 +111,7 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
             references = DocumentReferences("", date.toString(), orderId, estimate, "", "", "", "", invoiceNumber),
             parties = DocumentParties(customer, supplierParty, shipFrom, customer, seller, seller),
             goods = goods,
-            totals = DocumentTotals("$currency ${snapshot.text("productSubtotal") ?: missing("productSubtotal")}", "$currency $taxAmount (temporary)", "$currency ${snapshot.text("total") ?: missing("total")}", currency),
+            totals = DocumentTotals("$currency ${snapshot.text("productSubtotal") ?: missing("productSubtotal")}", "$currency $taxAmount" + if (snapshot.text("taxCalculation") == "temporary_zero") " (temporary)" else "", "$currency ${snapshot.text("total") ?: missing("total")}", currency),
             packing = PackingDetails(packings.map { it.text("packaging") ?: "Package" }.distinct().joinToString(", "), "${packings.size} estimated", packageDescriptions.joinToString("; "), "$grossWeight kg estimated", goods.joinToString("; ") { it.boxes }, "$currency $packingCost estimated"),
             shipment = ShipmentDetails(shipping?.text("serviceName")?.substringBefore(' ') ?: "Courier pending", shipping?.text("serviceName") ?: shipping?.text("serviceType") ?: "Pending", "", "", "Sale of goods", "DDP", "DDP", "$currency $shippingTotal", "PAID - CHECKOUT PAYMENT CONFIRMED"),
             checks = DocumentChecks(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),

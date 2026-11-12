@@ -24,8 +24,10 @@ class StartClientJourneyMapper(
             ?.takeIf { it >= 0 } ?: missing("order.snapshot.currency")
         val total = snapshot.text("total")?.toBigDecimalOrNull() ?: missing("order.snapshot.total")
         val paid = order.text("amountPaidMinor")?.toLongOrNull() ?: missing("order.amountPaidMinor")
-        require(total.movePointRight(digits).longValueExact() == paid) { "Paid amount does not match order total" }
+        val subtotalMinor = total.movePointRight(digits).longValueExact()
+        require(paid >= subtotalMinor) { "Paid amount is less than order total" }
         require(order.text("paidCurrency")?.uppercase() == currency) { "Paid currency does not match order" }
+        val paidSnapshot = paidSnapshot(snapshot, paid, subtotalMinor, digits)
         val email = snapshot.text("customerEmail") ?: missing("order.snapshot.customerEmail")
         require(Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$").matches(email)) { "Invalid customer email" }
         snapshot.text("customerFirstName") ?: missing("order.snapshot.customerFirstName")
@@ -49,7 +51,7 @@ class StartClientJourneyMapper(
         }
         orderManager.despatchEstimate(id) ?: missing("order.snapshot.items.generalLeadTime")
         val number = orderManager.invoiceNumber(id)
-        val pdf = orderManager.invoicePreview(id)
+        val pdf = orderManager.invoicePreview(id, paidSnapshot)
         require(pdf.size >= 5 && pdf.copyOfRange(0, 5).toString(Charsets.US_ASCII) == "%PDF-") {
             "Invoice generator did not return PDF bytes"
         }
@@ -57,7 +59,10 @@ class StartClientJourneyMapper(
             put("schemaVersion", 1)
             put("eventId", "paid:$id")
             put("idempotencyKey", "order:$id:start-client-journey")
-            put("order", JsonObject(order + mapOf("invoiceNumber" to JsonPrimitive(number))))
+            put("order", JsonObject(order + mapOf(
+                "invoiceNumber" to JsonPrimitive(number),
+                "snapshot" to paidSnapshot
+            )))
             put("documents", buildJsonObject {
                 put("invoice", buildJsonObject {
                     put("number", number)
@@ -67,6 +72,18 @@ class StartClientJourneyMapper(
                 })
             })
         }
+    }
+
+    internal fun paidSnapshot(snapshot: JsonObject, paidMinor: Long, subtotalMinor: Long, digits: Int): JsonObject {
+        val scale = java.math.BigDecimal.TEN.pow(digits)
+        val tax = java.math.BigDecimal.valueOf(paidMinor - subtotalMinor).divide(scale)
+        val paidTotal = java.math.BigDecimal.valueOf(paidMinor).divide(scale)
+        return JsonObject(snapshot + mapOf(
+            "preTaxTotal" to snapshot.getValue("total"),
+            "taxAmount" to JsonPrimitive(tax.toPlainString()),
+            "taxCalculation" to JsonPrimitive("stripe_checkout_difference"),
+            "total" to JsonPrimitive(paidTotal.toPlainString())
+        ))
     }
 
     private fun JsonObject.text(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank)
