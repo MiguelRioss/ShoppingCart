@@ -6,7 +6,18 @@ import domain.shipment.ShipmentAddress
 import domain.shipment.ShipmentRateRequest
 import domain.shipment.ShipmentRequest
 import shipment.core.ShippingProvider
-import shipment.core.ShipmentProviderType
+import auth.fedex.FedExAuthClient
+import auth.fedex.FedExAuthHttpClient
+import auth.fedex.FedExAuthTokenManager
+import domain.auth.FedExCredentials
+import dto.fedex.rate.FedExRateRequest
+import http.fedex.FedExHttpClient
+import shipment.fedex.FedExShipmentProviderService
+import shipment.fedex.rate.FedExRateHttpClient
+import shipment.fedex.rate.FedExRateSelector
+import shipment.fedex.rate.FedExRateService
+import shipment.fedex.ship.FedExShipClient
+import shipment.fedex.ship.FedExShipHttpClient
 
 /** Chooses the billing account for each origin/destination pair, including each multi-origin quote. */
 class AccountRoutingShippingProvider(
@@ -28,12 +39,31 @@ class AccountRoutingShippingProvider(
         private fun configuredProvider(country: String): ShippingProvider {
             val config = ShippingProviderConfig.load(country)
             check(config.mode != ShippingMode.OFFLINE) { "Online FedEx account routing requires SANDBOX or PRODUCTION mode" }
-            return ShippingProvider.login(
-                type = ShipmentProviderType.FEDEX,
-                account = requireNotNull(config.account),
-                credentials = requireNotNull(config.credentials),
-                environment = requireNotNull(config.providerEnvironment)
+            val account = requireNotNull(config.account)
+            val credentials = requireNotNull(config.credentials)
+            val baseUrl = if (config.mode == ShippingMode.SANDBOX)
+                "https://apis-sandbox.fedex.com" else "https://apis.fedex.com"
+            val httpClient = FedExHttpClient(baseUrl)
+            val auth = FedExAuthTokenManager(
+                FedExAuthClient(FedExAuthHttpClient(httpClient)),
+                FedExCredentials(credentials.clientId, credentials.clientSecret)
             )
+            val rateHttp = FedExRateHttpClient(httpClient)
+            val rateService = object : FedExRateService {
+                override fun getRates(request: FedExRateRequest, accessToken: String) =
+                    parseFedExRates(rateHttp.getRates(request, accessToken).body,
+                        request.shipper.countryCode,
+                        request.recipient.countryCode)
+            }
+            val service = FedExShipmentProviderService(
+                account, credentials, auth, rateService,
+                FedExShipClient(FedExShipHttpClient(httpClient)), FedExRateSelector.PreferredAccount
+            )
+            service.login()
+            return object : ShippingProvider {
+                override fun getQuotes(request: ShipmentRateRequest) = service.getQuotes(request)
+                override fun prepareShipping(request: ShipmentRequest) = service.prepareShipping(request)
+            }
         }
     }
 }
