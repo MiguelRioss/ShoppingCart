@@ -27,8 +27,8 @@ class StartClientJourneyMapper(
         val subtotalMinor = total.movePointRight(digits).longValueExact()
         require(paid >= subtotalMinor) { "Paid amount is less than order total" }
         require(order.text("paidCurrency")?.uppercase() == currency) { "Paid currency does not match order" }
-        val paidSnapshot = paidSnapshot(snapshot, paid, subtotalMinor, digits)
-        val email = snapshot.text("customerEmail") ?: missing("order.snapshot.customerEmail")
+        val paidSnapshot = orderManager.withProductLeadTimes(paidSnapshot(snapshot, paid, subtotalMinor, digits))
+        val email = paidSnapshot.text("customerEmail") ?: missing("order.snapshot.customerEmail")
         require(Regex("^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$").matches(email)) { "Invalid customer email" }
         snapshot.text("customerFirstName") ?: missing("order.snapshot.customerFirstName")
         snapshot.text("productSubtotal") ?: missing("order.snapshot.productSubtotal")
@@ -36,7 +36,7 @@ class StartClientJourneyMapper(
         val address = snapshot["deliveryAddress"] as? JsonObject ?: missing("order.snapshot.deliveryAddress")
         for (field in listOf("addressLine1", "townOrCity", "postcode", "country"))
             address.text(field) ?: missing("order.snapshot.deliveryAddress.$field")
-        val items = (snapshot["items"] as? JsonArray)?.map { it.jsonObject }
+        val items = (paidSnapshot["items"] as? JsonArray)?.map { it.jsonObject }
             ?.filter { it.text("productId") != "0" }.orEmpty()
         require(items.isNotEmpty()) { "Order has no products" }
         val cartProducts = (snapshot["cartProducts"] as? JsonArray)?.map { it.jsonObject }.orEmpty()
@@ -49,7 +49,7 @@ class StartClientJourneyMapper(
             val field = if (cart["isSample"]?.jsonPrimitive?.booleanOrNull == true) "sampleUnits" else "squareMeters"
             cart.text(field) ?: missing("order.snapshot.cartProducts[$index].$field")
         }
-        orderManager.despatchEstimate(id) ?: missing("order.snapshot.items.generalLeadTime")
+        orderManager.despatchEstimate(id, paidSnapshot) ?: missing("order.snapshot.items.generalLeadTime")
         val number = orderManager.invoiceNumber(id)
         val pdf = orderManager.invoicePreview(id, paidSnapshot)
         require(pdf.size >= 5 && pdf.copyOfRange(0, 5).toString(Charsets.US_ASCII) == "%PDF-") {

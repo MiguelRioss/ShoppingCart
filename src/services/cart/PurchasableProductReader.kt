@@ -97,8 +97,13 @@ class PurchasableProductReader(
                     "client_price_per_m2"
                 ),
             sample = sample,
-            generalLeadTime = ((purchaseInformation?.get("lead_times_and_quotation") as? JsonObject)?.get("general_lead_time")
-                ?: product["general_lead_time"] ?: purchaseInformation?.get("general_lead_time"))?.jsonPrimitive?.contentOrNull,
+            generalLeadTime = (((purchaseInformation?.get("lead_times_and_quotation") as? JsonObject)?.get("general_lead_time")
+                ?: product["general_lead_time"] ?: purchaseInformation?.get("general_lead_time"))?.jsonPrimitive?.contentOrNull
+                ?: productDataAccess.getProductDetailsById(productId)?.let { details ->
+                    val detailed = json.parseToJsonElement(details).jsonObject
+                    ((detailed["purchase_information"] as? JsonObject)?.get("lead_times_and_quotation") as? JsonObject)
+                        ?.get("general_lead_time")?.jsonPrimitive?.contentOrNull
+                }),
         )
     }
 

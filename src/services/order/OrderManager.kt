@@ -11,6 +11,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.Json
 import services.pdf.DocumentParty
 import services.pdf.OrderPdfData
 import productdatabaseaccesslayer.ProductDataAccess
@@ -31,7 +32,7 @@ class OrderManager(
             snapshot,
             invoiceNumber(orderId),
             invoiceIssuer(orderId),
-            despatchEstimate(orderId) ?: throw IllegalArgumentException("Product lead time is missing")
+            despatchEstimate(orderId, snapshot) ?: throw IllegalArgumentException("Product lead time is missing")
         )
         return OrderPdfData.Invoice(document).generate()
     }
@@ -48,8 +49,8 @@ class OrderManager(
         return InvoiceIssuers.forAccount(account)
     }
     fun importerOfRecord(orderId: String): DocumentParty = invoiceIssuer(orderId)
-    fun despatchEstimate(orderId: String): String? {
-        val snapshot = orderRepository.findForEmail(orderId)?.get("snapshot") as? JsonObject
+    fun despatchEstimate(orderId: String, snapshotOverride: JsonObject? = null): String? {
+        val snapshot = snapshotOverride ?: orderRepository.findForEmail(orderId)?.get("snapshot") as? JsonObject
             ?: throw IllegalArgumentException("Order not found: $orderId")
         val items = (snapshot["items"] as? JsonArray).orEmpty().map { it.jsonObject }
             .filter { (it["productId"] as? JsonPrimitive)?.content != "0" }
@@ -60,6 +61,25 @@ class OrderManager(
             ?: items.zip(estimates).joinToString("; ") { (item, estimate) ->
                 "${(item["name"] as? JsonPrimitive)?.contentOrNull ?: "Product"}: $estimate"
             }
+    }
+
+    fun withProductLeadTimes(snapshot: JsonObject): JsonObject {
+        val items = snapshot["items"] as? JsonArray ?: return snapshot
+        val updated = items.map { element ->
+            val item = element.jsonObject
+            if ((item["generalLeadTime"] as? JsonPrimitive)?.contentOrNull?.isNotBlank() == true) return@map element
+            val productId = (item["productId"] as? JsonPrimitive)?.contentOrNull?.toLongOrNull()
+                ?.takeIf { it != 0L } ?: return@map element
+            val details = products.getProductDetailsById(productId) ?: return@map element
+            val product = Json.parseToJsonElement(details).jsonObject
+            val purchase = product["purchase_information"] as? JsonObject
+            val lead = ((purchase?.get("lead_times_and_quotation") as? JsonObject)?.get("general_lead_time")
+                ?: (purchase?.get("order") as? JsonObject)?.get("product_lead_time"))
+                ?.let { it as? JsonPrimitive }?.contentOrNull?.takeIf(String::isNotBlank)
+                ?: return@map element
+            JsonObject(item + ("generalLeadTime" to JsonPrimitive(lead)))
+        }
+        return JsonObject(snapshot + ("items" to JsonArray(updated)))
     }
 
     fun missingInvoiceFields(orderId: String): List<String> {
