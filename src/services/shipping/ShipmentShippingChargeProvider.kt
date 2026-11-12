@@ -19,7 +19,8 @@ import java.math.BigDecimal
  */
 class ShipmentShippingChargeProvider(
     private val shipmentProvider: ShippingProvider,
-    private val productDataAccess: ProductDataAccess
+    private val productDataAccess: ProductDataAccess,
+    private val dutyTaxEstimator: DutyTaxEstimator? = null
 ) : ShippingChargeProvider {
 
     private val shipmentShippingRequestMapper =
@@ -41,7 +42,9 @@ class ShipmentShippingChargeProvider(
                 cart
             )
 
-        val selectedQuotes =
+        val requiresDdpEstimate = destination.countryCode.uppercase() !in EU_COUNTRIES &&
+            destination.countryCode.uppercase() !in setOf("GB", "UK")
+        val selectedCharges =
             shipmentRequests.map { shipmentRequest ->
                 shipmentProvider.getQuotes(
                     ShipmentRateRequest(
@@ -54,8 +57,25 @@ class ShipmentShippingChargeProvider(
                     .filter {
                         it.currency.equals("EUR", ignoreCase = true)
                     }
+                    .map { quote ->
+                        val charge = quote.toCheckoutShippingCharge()
+                        if (!requiresDdpEstimate) charge else {
+                            val estimate = requireNotNull(dutyTaxEstimator) {
+                                "DDP duty and tax estimator is required for exports outside the EU"
+                            }.estimate(
+                                shipmentRequest.from, destination, shipmentRequest.products,
+                                charge.amountTotal, quote.serviceType
+                            )
+                            require(estimate >= BigDecimal.ZERO) { "Invalid DDP estimate" }
+                            charge.copy(
+                                serviceName = "${charge.serviceName ?: "Shipping"} (DDP estimate)",
+                                amountTotal = charge.amountTotal + estimate,
+                                originalAmount = charge.amountTotal + estimate
+                            )
+                        }
+                    }
                     .minByOrNull {
-                        it.amount
+                        it.amountTotal
                     }
                     ?: throw ServiceException(
                         errorCode = ServiceErrorCode.ShippingQuoteCurrencyUnavailable,
@@ -65,24 +85,33 @@ class ShipmentShippingChargeProvider(
                     )
             }
 
-        if (selectedQuotes.size == 1) {
-            return selectedQuotes.single().toCheckoutShippingCharge()
+        if (selectedCharges.size == 1) {
+            return selectedCharges.single()
         }
 
         val total =
-            selectedQuotes.fold(BigDecimal.ZERO) { amount, quote ->
-                amount + BigDecimal.valueOf(quote.amount)
+            selectedCharges.fold(BigDecimal.ZERO) { amount, charge ->
+                amount + charge.amountTotal
             }
 
         return CheckoutShippingCharge(
             serviceType = "MULTI_ORIGIN",
-            serviceName = "Shipping (${selectedQuotes.size} origins)",
+            serviceName = "Shipping (${selectedCharges.size} origins)" +
+                if (requiresDdpEstimate) " (DDP estimate)" else "",
             amountTotal = total,
             currency = "eur",
             estimatedDeliveryDate =
-                selectedQuotes.mapNotNull { it.estimatedDeliveryDate }.maxOrNull(),
+                selectedCharges.mapNotNull { it.estimatedDeliveryDate }.maxOrNull(),
             originalAmount = total,
             originalCurrency = "EUR"
+        )
+    }
+
+    companion object {
+        private val EU_COUNTRIES = setOf(
+            "AT", "BE", "BG", "HR", "CY", "CZ", "DK", "EE", "FI", "FR", "DE", "GR",
+            "HU", "IE", "IT", "LV", "LT", "LU", "MT", "NL", "PL", "PT", "RO", "SK",
+            "SI", "ES", "SE"
         )
     }
 }

@@ -148,7 +148,10 @@ class ShoppingCartServer(
 
         return ShipmentShippingChargeProvider(
             shipmentProvider = shippingProvider,
-            productDataAccess = productCatalogDataSource
+            productDataAccess = productCatalogDataSource,
+            dutyTaxEstimator =
+                if (config.mode == ShippingMode.OFFLINE) null
+                else services.shipping.FedExDutyTaxEstimator(config)
         )
     }
 }

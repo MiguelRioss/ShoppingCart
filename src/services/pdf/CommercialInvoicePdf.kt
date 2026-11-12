@@ -714,11 +714,14 @@ class CommercialInvoicePdf(
         documents: DeFerrantiOrderDocuments
     ): String {
 
-        val net =
-            documents.goods
-                .firstOrNull()
-                ?.netWeight
-                ?: "Not recorded separately"
+        val weights = documents.goods.map { line ->
+            line.netWeight?.removeSuffix(" kg")?.toBigDecimalOrNull()
+        }
+        val net = if (weights.isNotEmpty() && weights.all { it != null }) {
+            "${weights.filterNotNull().sumOf { it }.stripTrailingZeros().toPlainString()} kg"
+        } else {
+            "Not recorded separately"
+        }
 
         return "Net $net | Gross ${documents.packing.grossWeight}"
     }

@@ -11,6 +11,7 @@ import java.math.BigDecimal
 import java.time.LocalDate
 import org.junit.jupiter.api.TestInstance
 import services.pdf.OrderPdfData
+import productdatabaseaccesslayer.ProductDataAccess
 import services.pdf.DocumentTotals
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonArray
@@ -33,9 +34,35 @@ class OrderPdfDataReadinessTest {
     )
 
     @Test
+    fun `invoice calculates net weight from tile count`() {
+        val catalogue = object : ProductDataAccess by sut.catalogue {
+            override fun getProductDetailsById(productId: Long): String? =
+                sut.catalogue.getProductDetailsById(productId)?.replace(
+                    "\"net_weight_per_tile_item\":\"\"",
+                    "\"net_weight_per_tile_item\":\"0.214\""
+                )
+        }
+        val data = OrderInvoicePreview(catalogue).build(
+            sut.id, sut.order.getValue("snapshot").jsonObject,
+            sut.manager.invoiceNumber(sut.id), sut.manager.invoiceIssuer(sut.id),
+            requireNotNull(sut.manager.despatchEstimate(sut.id))
+        )
+        assertEquals("34.24 kg", data.goods.single().netWeight)
+        assertEquals("40 kg estimated", data.packing.grossWeight)
+        val pdf = OrderPdfData.Invoice(data).generate()
+        PdfReader(pdf).use { reader ->
+            val content = (1..reader.numberOfPages).joinToString("\n") {
+                PdfTextExtractor(reader).getTextFromPage(it)
+            }
+            assertContains(content, "34.24 kg")
+        }
+    }
+
+    @Test
     fun `invoice uses the saved order and creates a labelled test PDF`() {
         assertEquals("PAID", sut.order.getValue("status").jsonPrimitive.content)
         val data = documents().let { it.copy(branding = it.branding.copy(subtitle = "TEST DATA - CUSTOMER AND PAYMENT SIMULATED")) }
+        assertTrue(data.parties.shipFrom.addressLines.none { it != it.trim() || it.contains('\n') || it.contains('\r') })
         val pdf = OrderPdfData.Invoice(data).generate()
         assertTrue(pdf.size > 1000)
         val output = Path.of("test", "services", "order", "generated-pdfs","oneProductOrder", "invoice-test.pdf")

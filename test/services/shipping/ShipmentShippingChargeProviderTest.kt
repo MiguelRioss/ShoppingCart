@@ -276,6 +276,38 @@ class ShipmentShippingChargeProviderTest {
         assertEquals("EUR", charge.originalCurrency)
     }
 
+    @Test
+    fun `export quote includes estimated duties taxes and fees`() {
+        val shippingProvider = RecordingShipmentProviderService(
+            listOf(ShipmentQuote(ShipmentProviderType.FEDEX, "INTERNATIONAL_PRIORITY", "FedEx Priority", 40.0, "EUR", "2026-09-21"))
+        )
+        val estimator = DutyTaxEstimator { origin, destination, packages, shippingCost, serviceType ->
+            assertEquals("PT", origin.countryCode)
+            assertEquals("US", destination.countryCode)
+            assertEquals(1, packages.size)
+            assertEquals(BigDecimal("40.0"), shippingCost)
+            assertEquals("INTERNATIONAL_PRIORITY", serviceType)
+            BigDecimal("38.46")
+        }
+        val catalogue = object : ProductDataAccess {
+            override fun getAllProducts() = "[]"
+            override fun getPurchasableProducts() = "[]"
+            override fun getProductBySlug(productSlug: String) = "{}"
+            override fun getProductById(productId: Long) = productJson(productId)
+            override fun getProductDetailsById(productId: Long) = productJson(productId)
+        }
+        val cart = ShoppingCart(
+            id = UUID.randomUUID(), dateTime = LocalDateTime.parse("2026-09-16T10:00:00"),
+            sessionId = "ddp-test", products = listOf(
+                ShoppingCartProduct(9278L, 0.5, 1, BigDecimal("90.00"), false)
+            )
+        )
+        val charge = ShipmentShippingChargeProvider(shippingProvider, catalogue, estimator)
+            .calculateShipping(cart, ShipmentAddress("1 Test Street", city = "New York", postalCode = "10001", countryCode = "US"))
+        assertEquals(BigDecimal("78.46"), charge?.amountTotal)
+        assertEquals("FedEx Priority (DDP estimate)", charge?.serviceName)
+    }
+
     private fun productJson(
         productId: Long,
         address: String = "Rua da Vidoeira 1",
