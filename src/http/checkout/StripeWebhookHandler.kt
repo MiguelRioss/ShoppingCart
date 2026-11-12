@@ -36,7 +36,7 @@ class StripeWebhookHandler(
             val status = when {
                 type == "checkout.session.expired" -> "EXPIRED"
                 type == "checkout.session.async_payment_failed" -> "PAYMENT_FAILED"
-                session["payment_status"]?.jsonPrimitive?.content == "paid" -> "PAID"
+                type == "checkout.session.async_payment_succeeded" || session["payment_status"]?.jsonPrimitive?.content == "paid" -> "PAID"
                 else -> "PENDING_PAYMENT"
             }
             val id = session.getValue("id").jsonPrimitive.content

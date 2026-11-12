@@ -26,7 +26,7 @@ import kotlinx.serialization.json.longOrNull
  */
 class ProductCatalogDataSource(
     private val httpClient: HttpClient = HttpClient.newHttpClient(),
-    private val cacheFile: Path = Path.of(".cache", "product-catalog", "products-all.json")
+    private val cacheFile: Path = Path.of(".cache", "product-catalog", "instawp-products-all.json")
 ) : ProductDataAccess {
     private var allProductsCache: String? = null
     private var productElementsCache: List<JsonElement>? = null
@@ -140,7 +140,7 @@ class ProductCatalogDataSource(
         }
 
     private companion object {
-        const val BASE_URL = "https://cms.deferranti.com/wp-json/custom/v1"
+        const val BASE_URL = "https://deferranti.instawp.site/wp-json/custom/v1"
     }
 
     private fun JsonElement.toCompactJson(): String = Json.encodeToString(JsonElement.serializer(), this)
