@@ -53,7 +53,10 @@ class StripeWebhookHandler(
             if (status == "PAID") {
                 clearPaidCart(id)
                 try { onPaymentConfirmed(id) }
-                catch (_: Exception) { return HttpResponse(503, """{"error":"Payment saved; confirmation email pending or requires review"}""") }
+                catch (error: Exception) {
+                    System.err.println("Stripe confirmation failed for checkout $id: ${error.javaClass.simpleName}: ${error.message}")
+                    return HttpResponse(503, """{"error":"Payment saved; confirmation email pending or requires review"}""")
+                }
             }
             HttpResponse(200, """{"received":true}""")
         } catch (_: IllegalArgumentException) {
