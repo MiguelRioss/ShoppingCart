@@ -17,9 +17,9 @@ data class CreateCheckoutRequest(
 
 fun parseCreateCheckoutRequest(requestBody: String, json: Json = Json): CreateCheckoutRequest {
     val body = json.parseToJsonElement(requestBody).jsonObject
-    require("deliveryAddress" !in body) {
+  /*  require("deliveryAddress" !in body) {
         "deliveryAddress is obsolete for checkout; update the delivery address on your account"
-    }
+    }*/
     require("shippingCharge" !in body) {
         "shippingCharge is calculated by the server and cannot be supplied"
     }
