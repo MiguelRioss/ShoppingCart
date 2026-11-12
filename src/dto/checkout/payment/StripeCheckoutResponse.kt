@@ -14,7 +14,8 @@ import services.common.ServiceException
 data class StripeCheckoutResponse(
     val id: String,
     val status: String?,
-    val url: String?
+    val url: String?,
+    val amountTax: Long? = null
 ) {
 
     /** Converts Stripe status and identifiers into a provider-neutral session. */
@@ -78,7 +79,14 @@ data class StripeCheckoutResponse(
                 url =
                     body["url"]
                         ?.jsonPrimitive
+                        ?.contentOrNull,
+                amountTax =
+                    body["total_details"]
+                        ?.jsonObject
+                        ?.get("amount_tax")
+                        ?.jsonPrimitive
                         ?.contentOrNull
+                        ?.toLongOrNull()
             )
         }
     }

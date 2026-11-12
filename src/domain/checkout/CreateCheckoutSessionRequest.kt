@@ -22,5 +22,6 @@ data class CreateCheckoutSessionRequest(
     val shippingCharge: CheckoutShippingCharge?,
     val deliveryAddress: CheckoutDeliveryAddress? = null,
     val userId: java.util.UUID? = null,
-    val customerFirstName: String? = null
+    val customerFirstName: String? = null,
+    val customerLastName: String? = null
 )

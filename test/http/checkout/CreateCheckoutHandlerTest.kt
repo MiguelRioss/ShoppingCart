@@ -33,6 +33,8 @@ class CreateCheckoutHandlerTest {
         val user = services.user.UserManager(users, clock = clock)
             .registerUser("buyer@example.com", "password-123")
         users.saveUser(user.copy(
+            firstName = "Test",
+            lastName = "Buyer",
             deliveryAddressLine1 = "Account street",
             deliveryTownOrCity = "Lisbon",
             deliveryPostcode = "1000-001",
@@ -105,12 +107,20 @@ class CreateCheckoutHandlerTest {
 
         val capturedRequest =
             CapturedStripeRequest()
+        val capturedCustomer = CapturedStripeRequest()
 
         val server =
             HttpServer.create(
                 InetSocketAddress(0),
                 0
             ).apply {
+
+                createContext("/v1/customers") { exchange ->
+                    capturedCustomer.body = exchange.requestBody.bufferedReader().use { it.readText() }
+                    val responseBody = """{"id":"cus_test_123"}"""
+                    exchange.sendResponseHeaders(200, responseBody.toByteArray().size.toLong())
+                    exchange.responseBody.use { it.write(responseBody.toByteArray()) }
+                }
 
                 createContext(
                     "/v1/checkout/sessions"
@@ -297,30 +307,20 @@ class CreateCheckoutHandlerTest {
                 form["locale"]
             )
 
-            assertEquals(
-                "card",
-                form["payment_method_types[0]"]
-            )
-
-            assertEquals(
-                "paypal",
-                form["payment_method_types[1]"]
-            )
-
-            assertEquals(
-                "link",
-                form["payment_method_types[2]"]
-            )
-
-            assertEquals(
-                "mb_way",
-                form["payment_method_types[3]"]
-            )
-
-            assertEquals(
-                "klarna",
-                form["payment_method_types[4]"]
-            )
+            assertEquals(null, form["payment_method_types[0]"])
+            assertEquals("true", form["automatic_tax[enabled]"])
+            assertEquals("cus_test_123", form["customer"])
+            assertNull(form["customer_email"])
+            assertNull(form["billing_address_collection"])
+            assertNull(form["shipping_address_collection[allowed_countries][0]"])
+            val customerForm = capturedCustomer.formValues()
+            assertEquals("Test Buyer", customerForm["shipping[name]"])
+            assertEquals("Account street", customerForm["shipping[address][line1]"])
+            assertEquals("Lisbon", customerForm["shipping[address][city]"])
+            assertEquals("1000-001", customerForm["shipping[address][postal_code]"])
+            assertEquals("PT", customerForm["shipping[address][country]"])
+            assertEquals("exclusive", form["line_items[0][price_data][tax_behavior]"])
+            assertEquals("exclusive", form["shipping_options[0][shipping_rate_data][tax_behavior]"])
 
             assertEquals(
                 "https://example.com/success",
@@ -332,10 +332,7 @@ class CreateCheckoutHandlerTest {
                 form["cancel_url"]
             )
 
-            assertEquals(
-                "buyer@example.com",
-                form["customer_email"]
-            )
+            assertEquals("buyer@example.com", customerForm["email"])
 
             assertEquals(
                 "1",
@@ -377,44 +374,11 @@ class CreateCheckoutHandlerTest {
                 ]
             )
 
-            assertEquals(
-                "1",
-                form["line_items[1][quantity]"]
-            )
-
-            assertEquals(
-                "eur",
-                form[
-                    "line_items[1][price_data][currency]"
-                ]
-            )
-
-            assertEquals(
-                "40896",
-                form[
-                    "line_items[1][price_data][unit_amount]"
-                ]
-            )
-
-            assertEquals(
-                "Standard delivery",
-                form[
-                    "line_items[1][price_data][product_data][name]"
-                ]
-            )
-
-            assertNull(
-                form[
-                    "line_items[1][price_data][product_data][description]"
-                ]
-            )
-
-            assertEquals(
-                "0",
-                form[
-                    "line_items[1][price_data][product_data][metadata][product_id]"
-                ]
-            )
+            assertEquals("fixed_amount", form["shipping_options[0][shipping_rate_data][type]"])
+            assertEquals("eur", form["shipping_options[0][shipping_rate_data][fixed_amount][currency]"])
+            assertEquals("40896", form["shipping_options[0][shipping_rate_data][fixed_amount][amount]"])
+            assertEquals("Standard delivery", form["shipping_options[0][shipping_rate_data][display_name]"])
+            assertNull(form["line_items[1][price_data][unit_amount]"])
 
         } finally {
             server.stop(0)

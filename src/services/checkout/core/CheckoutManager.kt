@@ -94,6 +94,10 @@ class CheckoutManager(
                 successUrl = request.successUrl,
                 cancelUrl = request.cancelUrl,
                 customerEmail = request.customerEmail,
+                destinationCountry = request.deliveryAddress?.toShipmentAddress()?.countryCode,
+                customerName = listOfNotNull(request.customerFirstName, request.customerLastName)
+                    .joinToString(" ").takeIf(String::isNotBlank),
+                deliveryAddress = request.deliveryAddress,
                 lineItems = lineItems
             )
 

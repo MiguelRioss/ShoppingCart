@@ -1,6 +1,7 @@
 package domain.checkout.payment
 
 import domain.checkout.CheckoutLineItem
+import domain.checkout.CheckoutDeliveryAddress
 
 /**
  * Payment-provider command for creating a checkout session.
@@ -18,5 +19,8 @@ data class CheckoutPaymentRequest(
     val successUrl: String,
     val cancelUrl: String,
     val customerEmail: String? = null,
+    val destinationCountry: String? = null,
+    val customerName: String? = null,
+    val deliveryAddress: CheckoutDeliveryAddress? = null,
     val lineItems: List<CheckoutLineItem>
 )

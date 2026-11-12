@@ -25,19 +25,15 @@ data class StripeCheckoutRequest(
 
         /** Maps provider-neutral checkout line items and metadata to Stripe fields. */
         fun from(
-            request: CheckoutPaymentRequest
+            request: CheckoutPaymentRequest,
+            stripeCustomerId: String? = null
         ): StripeCheckoutRequest {
 
             val values =
                 mutableListOf(
                     "mode" to "payment",
                     "locale" to "en",
-
-                    "payment_method_types[0]" to "card",
-                    "payment_method_types[1]" to "paypal",
-                    "payment_method_types[2]" to "link",
-                    "payment_method_types[3]" to "mb_way",
-                    "payment_method_types[4]" to "klarna",
+                    "automatic_tax[enabled]" to "true",
 
                     "success_url" to request.successUrl,
                     "cancel_url" to request.cancelUrl,
@@ -48,7 +44,10 @@ data class StripeCheckoutRequest(
                     "metadata[session_id]" to request.sessionId
                 )
 
+            stripeCustomerId?.let { values += "customer" to it }
+
             request.customerEmail
+                ?.takeIf { stripeCustomerId == null }
                 ?.takeIf {
                     it.isNotBlank()
                 }
@@ -57,7 +56,24 @@ data class StripeCheckoutRequest(
                         "customer_email" to email
                 }
 
-            request.lineItems.forEachIndexed { index, item ->
+            request.destinationCountry?.takeIf { stripeCustomerId == null }?.let { country ->
+                values += "shipping_address_collection[allowed_countries][0]" to country
+            }
+            if (stripeCustomerId == null) values += "billing_address_collection" to "required"
+
+            val shippingItems = request.lineItems.filter { it.productId == 0L }
+            require(shippingItems.size <= 1) { "Stripe Checkout supports one shipping charge" }
+            shippingItems.singleOrNull()?.let { shipping ->
+                values += "shipping_options[0][shipping_rate_data][type]" to "fixed_amount"
+                values += "shipping_options[0][shipping_rate_data][display_name]" to shipping.name
+                values += "shipping_options[0][shipping_rate_data][fixed_amount][amount]" to
+                    shipping.unitAmountInCents().toString()
+                values += "shipping_options[0][shipping_rate_data][fixed_amount][currency]" to
+                    shipping.currency.lowercase()
+                values += "shipping_options[0][shipping_rate_data][tax_behavior]" to "exclusive"
+            }
+
+            request.lineItems.filter { it.productId != 0L }.forEachIndexed { index, item ->
 
                 values +=
                     "line_items[$index][quantity]" to
@@ -70,6 +86,9 @@ data class StripeCheckoutRequest(
                 values +=
                     "line_items[$index][price_data][unit_amount]" to
                             item.unitAmountInCents().toString()
+
+                values +=
+                    "line_items[$index][price_data][tax_behavior]" to "exclusive"
 
                 values +=
                     "line_items[$index][price_data][product_data][name]" to
