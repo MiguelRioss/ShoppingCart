@@ -15,19 +15,22 @@ class StripeWebhookHandler(
     private val secret: () -> String? = { Environment.get("STRIPE_WEBHOOK_SECRET") },
     private val now: () -> Long = { Instant.now().epochSecond },
     private val clearPaidCart: (String) -> Unit = {},
-    private val onPaymentConfirmed: (String) -> Unit = {}
+    private val onPaymentConfirmed: (String) -> Unit = {},
+    private val ukSecret: () -> String? = { Environment.get("STRIPE_UK_WEBHOOK_SECRET") }
 ) : RequestHandler {
     override fun handle(request: HttpRequest): HttpResponse {
-        val signingSecret = secret()?.takeIf { it.isNotBlank() }
-            ?: return HttpResponse(503, """{"error":"Stripe webhook secret is not configured"}""")
+        val signingSecrets = listOfNotNull(secret()?.takeIf { it.isNotBlank() }, ukSecret()?.takeIf { it.isNotBlank() })
+        if (signingSecrets.isEmpty()) return HttpResponse(503, """{"error":"Stripe webhook secret is not configured"}""")
         return try {
             val parts = request.header("Stripe-Signature").orEmpty().split(',').map { it.trim().split('=', limit = 2) }
             val timestamp = parts.firstOrNull { it.size == 2 && it[0] == "t" }?.get(1)?.toLongOrNull()
             require(timestamp != null && timestamp >= now() - 300 && timestamp <= now() + 300)
-            val mac = Mac.getInstance("HmacSHA256")
-            mac.init(SecretKeySpec(signingSecret.toByteArray(Charsets.UTF_8), "HmacSHA256"))
-            val expected = mac.doFinal("$timestamp.${request.body}".toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
-            require(parts.any { it.size == 2 && it[0] == "v1" && MessageDigest.isEqual(expected.toByteArray(), it[1].toByteArray()) })
+            require(signingSecrets.any { signingSecret ->
+                val mac = Mac.getInstance("HmacSHA256")
+                mac.init(SecretKeySpec(signingSecret.toByteArray(Charsets.UTF_8), "HmacSHA256"))
+                val expected = mac.doFinal("$timestamp.${request.body}".toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+                parts.any { it.size == 2 && it[0] == "v1" && MessageDigest.isEqual(expected.toByteArray(), it[1].toByteArray()) }
+            })
             val event = Json.parseToJsonElement(request.body).jsonObject
             val type = event["type"]?.jsonPrimitive?.content
             val supported = setOf("checkout.session.completed", "checkout.session.async_payment_succeeded", "checkout.session.async_payment_failed", "checkout.session.expired")

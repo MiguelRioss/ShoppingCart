@@ -9,6 +9,21 @@ import kotlinx.serialization.json.*
 import kotlin.test.*
 
 class StripeWebhookHandlerTest {
+    @Test fun `accepts UK account signature with separate webhook secret`() {
+        val orders = InMemoryOrderRepository()
+        val checkoutId = "cs_test_${UUID.randomUUID()}"
+        orders.create(checkoutId, null, buildJsonObject {})
+        val body = """{"type":"checkout.session.completed","data":{"object":{"id":"$checkoutId","payment_status":"paid","amount_total":1000,"currency":"gbp"}}}"""
+        val mac = Mac.getInstance("HmacSHA256")
+        mac.init(SecretKeySpec("uk-secret".toByteArray(), "HmacSHA256"))
+        val signature = mac.doFinal("1000.$body".toByteArray()).joinToString("") { "%02x".format(it) }
+        val request = HttpRequest("POST", "/webhooks/stripe", body, mapOf("Stripe-Signature" to listOf("t=1000,v1=$signature")))
+        val handler = StripeWebhookHandler(orders, { "pt-secret" }, { 1000 }, ukSecret = { "uk-secret" })
+
+        repeat(2) { assertEquals(200, handler.handle(request).statusCode) }
+        assertEquals("PAID", orders.findByCheckoutForEmail(checkoutId)!!["status"]!!.jsonPrimitive.content)
+    }
+
     @Test fun `completed and asynchronous success persist payment idempotently`() {
         for (eventType in listOf("checkout.session.completed", "checkout.session.async_payment_succeeded")) {
             val orders = InMemoryOrderRepository()

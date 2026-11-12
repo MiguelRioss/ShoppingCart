@@ -12,7 +12,7 @@ Set `APP_MODE=online` and configure `DATABASE_URL`, then restart the backend. St
 
 ## Enable payment confirmation
 
-Set `STRIPE_WEBHOOK_SECRET` to the signing secret for the configured webhook endpoint and restart the backend. For local testing use Stripe CLI forwarding: `stripe listen --forward-to localhost:8080/webhooks/stripe`, and use the secret printed by that command. For deployment register the public backend's `/webhooks/stripe` endpoint in Stripe and use its own endpoint secret. Match the endpoint's Stripe test/live mode to the checkout key.
+Set `STRIPE_WEBHOOK_SECRET` to the PT endpoint signing secret and, when using the UK Stripe account, `STRIPE_UK_WEBHOOK_SECRET` to the UK endpoint signing secret. Restart the backend after changing either value. For local testing use Stripe CLI forwarding: `stripe listen --forward-to localhost:8080/webhooks/stripe`, and use the secret printed by that command. For deployment register the public backend's `/webhooks/stripe` endpoint in each Stripe account and use each endpoint's own secret. Match each endpoint's Stripe test/live mode to its checkout key.
 
 The browser success page does not mark orders paid. Closing the browser after paying does not prevent a configured webhook from recording payment. Existing checkout sessions created before this change have no order snapshot and cannot be reconstructed by this endpoint.
 
