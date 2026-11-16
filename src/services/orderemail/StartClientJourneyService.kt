@@ -10,7 +10,16 @@ import kotlinx.serialization.json.*
 
 fun interface ClientJourneyClient { fun start(payload: JsonObject): JsonObject }
 
-class EmailSenderUnavailableException(val upstreamStatus: Int? = null) : RuntimeException("EMAIL_SENDER did not accept the request")
+class EmailSenderUnavailableException(
+    val upstreamStatus: Int? = null,
+    val upstreamMessage: String? = null
+) : RuntimeException(
+    buildString {
+        append("EMAIL_SENDER did not accept the request")
+        upstreamStatus?.let { append(" (HTTP ").append(it).append(')') }
+        upstreamMessage?.takeIf(String::isNotBlank)?.let { append(": ").append(it) }
+    }
+)
 class EmailSenderConfigurationException : RuntimeException("EMAIL_SENDER_BASE_URL is not configured")
 
 /** No email or PDF rendering lives in ShoppingCart's paid-order callback. */
@@ -43,10 +52,19 @@ class HttpClientJourneyClient(
             .header("Idempotency-Key", payload.getValue("idempotencyKey").jsonPrimitive.content)
             .POST(HttpRequest.BodyPublishers.ofString(body)).build()
         val response = try { http.send(request, HttpResponse.BodyHandlers.ofString()) }
-        catch (_: InterruptedException) { Thread.currentThread().interrupt(); throw EmailSenderUnavailableException() }
-        catch (_: Exception) { throw EmailSenderUnavailableException() }
-        if (response.statusCode() !in 200..299) throw EmailSenderUnavailableException(response.statusCode())
+        catch (error: InterruptedException) { Thread.currentThread().interrupt(); throw EmailSenderUnavailableException(upstreamMessage = error.javaClass.simpleName) }
+        catch (error: Exception) { throw EmailSenderUnavailableException(upstreamMessage = error.javaClass.simpleName) }
+        if (response.statusCode() !in 200..299) {
+            val message = runCatching {
+                val body = Json.parseToJsonElement(response.body()).jsonObject
+                val fields = body["fields"]?.jsonArray?.joinToString()
+                listOfNotNull(body["message"]?.jsonPrimitive?.contentOrNull, fields)
+                    .joinToString(" ")
+                    .ifBlank { null }
+            }.getOrNull() ?: response.body().take(1000)
+            throw EmailSenderUnavailableException(response.statusCode(), message)
+        }
         return runCatching { Json.parseToJsonElement(response.body()).jsonObject }
-            .getOrElse { throw EmailSenderUnavailableException(response.statusCode()) }
+            .getOrElse { throw EmailSenderUnavailableException(response.statusCode(), "EMAIL_SENDER returned invalid JSON") }
     }
 }
