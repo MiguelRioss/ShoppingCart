@@ -92,11 +92,12 @@ class OpenPdfGenerator : PdfGenerator {
         table.widthPercentage =
             100f
 
-        val logoFile =
-            File(header.logoPath)
-
         val logoCell =
-            if (logoFile.exists()) {
+            if (header.logoPath.startsWith("jar:") || header.logoPath.startsWith("file:")) {
+                val logo = Image.getInstance(header.logoPath)
+                logo.scaleToFit(220f, 80f)
+                PdfPCell(logo)
+            } else if (File(header.logoPath).isFile) {
                 val logo =
                     Image.getInstance(
                         header.logoPath
@@ -110,7 +111,7 @@ class OpenPdfGenerator : PdfGenerator {
                 PdfPCell(logo)
             } else {
                 System.err.println(
-                    "PDF logo not found: ${logoFile.absolutePath}"
+                    "PDF logo not found: ${header.logoPath}"
                 )
 
                 PdfPCell(

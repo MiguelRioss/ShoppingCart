@@ -25,6 +25,15 @@ sealed interface OrderPdfData {
     }
 }
 
+internal fun resolvePdfLogoPath(path: String): String {
+    val file = java.io.File(path)
+    if (file.isFile) return file.absolutePath
+    val resourceName = path.substringAfterLast('/')
+    return requireNotNull(OrderPdfData::class.java.classLoader.getResource(resourceName)) {
+        "Missing PDF logo resource: $resourceName"
+    }.toExternalForm()
+}
+
 private fun requireFields(documents: DeFerrantiOrderDocuments, fields: List<Pair<String, String?>>) {
     val missing = fields.filter { (_, value) -> value.isNullOrBlank() || value.trim().startsWith("[") }
         .map { it.first }

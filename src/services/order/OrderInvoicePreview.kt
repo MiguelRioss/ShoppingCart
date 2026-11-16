@@ -107,7 +107,10 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
         val taxAmount = snapshot.text("taxAmount") ?: missing("taxAmount")
         val date = LocalDate.now(ZoneId.of(if (seller.name == "De Ferranti Limited") "Europe/London" else "Europe/Lisbon"))
         return DeFerrantiOrderDocuments(
-            branding = DocumentBranding("src/main/resources/deferranti-logo.png", footerText = seller.name),
+            branding = DocumentBranding(
+                resolvePdfLogoPath("src/main/resources/deferranti-logo.png"),
+                footerText = seller.name
+            ),
             references = DocumentReferences("", date.toString(), orderId, estimate, "", "", "", "", invoiceNumber),
             parties = DocumentParties(customer, supplierParty, shipFrom, customer, seller, seller),
             goods = goods,

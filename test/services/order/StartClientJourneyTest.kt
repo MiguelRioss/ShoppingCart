@@ -62,7 +62,10 @@ class StartClientJourneyTest {
         val request = calls.single()
         val source = requireNotNull(sut.orders.findByCheckoutForEmail(sut.id))
         val order = request.getValue("order").jsonObject
-        assertEquals(source.getValue("snapshot"), order.getValue("snapshot"))
+        val sentSnapshot = order.getValue("snapshot").jsonObject
+        assertEquals(source.getValue("snapshot").jsonObject.getValue("total"), sentSnapshot.getValue("preTaxTotal"))
+        assertEquals(source.getValue("snapshot").jsonObject.getValue("total"), sentSnapshot.getValue("total"))
+        assertEquals("0", sentSnapshot.getValue("taxAmount").jsonPrimitive.content)
         for (field in listOf("id", "checkoutSessionId", "status", "paidAt", "paidCurrency", "amountPaidMinor"))
             assertEquals(source.getValue(field), order.getValue(field), field)
         assertEquals(sut.manager.invoiceNumber(sut.id), order.getValue("invoiceNumber").jsonPrimitive.content)
