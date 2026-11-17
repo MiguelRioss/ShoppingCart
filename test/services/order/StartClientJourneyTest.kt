@@ -69,7 +69,7 @@ class StartClientJourneyTest {
         for (field in listOf("id", "checkoutSessionId", "status", "paidAt", "paidCurrency", "amountPaidMinor"))
             assertEquals(source.getValue(field), order.getValue(field), field)
         assertEquals(sut.manager.invoiceNumber(sut.id), order.getValue("invoiceNumber").jsonPrimitive.content)
-        assertEquals(sut.manager.purchaseOrderNumber(sut.id), order.getValue("purchaseOrderNumber").jsonPrimitive.content)
+        assertEquals("PO-${sut.id}", order.getValue("purchaseOrderNumber").jsonPrimitive.content)
         val invoice = request.getValue("documents").jsonObject.getValue("invoice").jsonObject
         assertEquals(order.getValue("invoiceNumber"), invoice.getValue("number"))
         assertEquals("invoice.pdf", invoice.getValue("filename").jsonPrimitive.content)

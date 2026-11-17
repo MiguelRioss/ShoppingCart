@@ -52,7 +52,7 @@ class StartClientJourneyMapper(
         }
         orderManager.despatchEstimate(id, paidSnapshot) ?: missing("order.snapshot.items.generalLeadTime")
         val number = orderManager.invoiceNumber(id)
-        val orderManagerPo = orderManager.purchaseOrderNumber(id)
+        val orderManagerPo = "PO-$id"
         val pdfs = mapOf(
             "purchase-order" to ("purchase-order.pdf" to orderManager.purchaseOrderPreview(id, paidSnapshot)),
             "delivery-note" to ("delivery-note.pdf" to orderManager.deliveryNotePreview(id, paidSnapshot)),
