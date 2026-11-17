@@ -14,6 +14,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.Json
 import services.pdf.DocumentParty
 import services.pdf.OrderPdfData
+import services.pdf.DeFerrantiOrderDocuments
 import productdatabaseaccesslayer.ProductDataAccess
 import productdatabaseaccesslayer.ProductCatalogDataSource
 
@@ -22,21 +23,48 @@ class OrderManager(
     private val products: ProductDataAccess = ProductCatalogDataSource()
 ) : OrderService {
     fun invoicePreview(orderId: String, paidSnapshot: JsonObject? = null): ByteArray {
+        return OrderPdfData.Invoice(orderDocuments(orderId, paidSnapshot)).generate()
+    }
+    fun purchaseOrderPreview(orderId: String, paidSnapshot: JsonObject? = null): ByteArray =
+        OrderPdfData.PurchaseOrder(orderDocuments(orderId, paidSnapshot)).generate()
+    fun deliveryNotePreview(orderId: String, paidSnapshot: JsonObject? = null): ByteArray =
+        OrderPdfData.DeliveryNote(orderDocuments(orderId, paidSnapshot)).generate()
+    fun packingListPreview(orderId: String, paidSnapshot: JsonObject? = null): ByteArray =
+        OrderPdfData.PackingList(orderDocuments(orderId, paidSnapshot)).generate()
+
+    fun supplierContact(orderId: String): Pair<String, String> {
+        val snapshot = orderRepository.findForEmail(orderId)?.get("snapshot") as? JsonObject
+            ?: throw IllegalArgumentException("Order not found: $orderId")
+        val productId = (snapshot["items"] as? JsonArray)?.firstOrNull()?.jsonObject?.get("productId")
+            ?.let { (it as? JsonPrimitive)?.contentOrNull?.toLongOrNull() }
+            ?: throw IllegalArgumentException("Order products are missing")
+        val product = products.getProductDetailsById(productId)?.let { Json.parseToJsonElement(it).jsonObject }
+            ?: throw IllegalArgumentException("Product not found: $productId")
+        val supplier = product["supplier"] as? JsonObject ?: throw IllegalArgumentException("Supplier is missing")
+        val name = (supplier["contact_name"] as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank)
+            ?: (supplier["name"] as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank)
+            ?: throw IllegalArgumentException("Supplier contact name is missing")
+        val email = (supplier["email"] as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank)
+            ?: throw IllegalArgumentException("Supplier email is missing")
+        return name to email
+    }
+
+    private fun orderDocuments(orderId: String, snapshotOverride: JsonObject?): DeFerrantiOrderDocuments {
         val order = orderRepository.findForEmail(orderId)
             ?: throw IllegalArgumentException("Order not found: $orderId")
-        require((order["status"] as? JsonPrimitive)?.content == "PAID") { "Invoice preview requires a paid order" }
-        val snapshot = paidSnapshot ?: order["snapshot"] as? JsonObject
+        require((order["status"] as? JsonPrimitive)?.content == "PAID") { "Order documents require a paid order" }
+        val snapshot = snapshotOverride ?: order["snapshot"] as? JsonObject
             ?: throw IllegalArgumentException("Order snapshot is missing")
-        val document = OrderInvoicePreview(products).build(
+        return OrderInvoicePreview(products).build(
             orderId,
             snapshot,
             invoiceNumber(orderId),
             invoiceIssuer(orderId),
             despatchEstimate(orderId, snapshot) ?: throw IllegalArgumentException("Product lead time is missing")
         )
-        return OrderPdfData.Invoice(document).generate()
     }
     fun invoiceNumber(orderId: String): String = orderRepository.invoiceNumberForOrder(orderId)
+    fun purchaseOrderNumber(orderId: String): String = orderRepository.purchaseOrderNumberForOrder(orderId)
     fun invoiceIssuer(orderId: String): DocumentParty {
         val snapshot = orderRepository.findForEmail(orderId)?.get("snapshot") as? JsonObject
             ?: throw IllegalArgumentException("Order not found: $orderId")
@@ -82,30 +110,6 @@ class OrderManager(
         return JsonObject(snapshot + ("items" to JsonArray(updated)))
     }
 
-    fun missingInvoiceFields(orderId: String): List<String> {
-        val order = orderRepository.findForEmail(orderId)
-            ?: throw IllegalArgumentException("Order not found: $orderId")
-        val snapshot = order["snapshot"] as? kotlinx.serialization.json.JsonObject
-            ?: return listOf("order.snapshot")
-        val address = snapshot["deliveryAddress"] as? kotlinx.serialization.json.JsonObject
-        fun text(source: kotlinx.serialization.json.JsonObject?, key: String): String? =
-            (source?.get(key) as? kotlinx.serialization.json.JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank)
-        return buildList {
-            if (text(snapshot, "customerEmail") == null) add("customer.email")
-            if (text(snapshot, "customerFirstName") == null) add("customer.name")
-            for (field in listOf("addressLine1", "townOrCity", "postcode", "country")) {
-                if (text(address, field) == null) add("deliveryAddress.$field")
-            }
-            if ((snapshot["items"] as? kotlinx.serialization.json.JsonArray).isNullOrEmpty()) add("order.items")
-            if (text(snapshot, "total") == null) add("order.total")
-            if (text(snapshot, "currency") == null) add("order.currency")
-            add("invoice.taxTreatment")
-            if (despatchEstimate(orderId) == null) add("invoice.despatchEstimate")
-            if (runCatching { invoiceIssuer(orderId) }.isFailure) add("invoice.seller")
-            add("invoice.supplier")
-            add("invoice.shipFrom")
-        }
-    }
 
     override fun createForCheckout(
         checkoutId: String,

@@ -69,6 +69,7 @@ class StartClientJourneyTest {
         for (field in listOf("id", "checkoutSessionId", "status", "paidAt", "paidCurrency", "amountPaidMinor"))
             assertEquals(source.getValue(field), order.getValue(field), field)
         assertEquals(sut.manager.invoiceNumber(sut.id), order.getValue("invoiceNumber").jsonPrimitive.content)
+        assertEquals(sut.manager.purchaseOrderNumber(sut.id), order.getValue("purchaseOrderNumber").jsonPrimitive.content)
         val invoice = request.getValue("documents").jsonObject.getValue("invoice").jsonObject
         assertEquals(order.getValue("invoiceNumber"), invoice.getValue("number"))
         assertEquals("invoice.pdf", invoice.getValue("filename").jsonPrimitive.content)
@@ -76,6 +77,20 @@ class StartClientJourneyTest {
         val bytes = Base64.getDecoder().decode(invoice.getValue("contentBase64").jsonPrimitive.content)
         assertTrue(bytes.size > 1000)
         assertEquals("%PDF-", bytes.copyOfRange(0, 5).toString(Charsets.US_ASCII))
+        val documents = request.getValue("documents").jsonObject
+        assertEquals(setOf("purchase-order", "delivery-note", "invoice", "packing-list"), documents.keys)
+        for ((type, filename) in mapOf(
+            "purchase-order" to "purchase-order.pdf",
+            "delivery-note" to "delivery-note.pdf",
+            "invoice" to "invoice.pdf",
+            "packing-list" to "packing-list.pdf"
+        )) {
+            val document = documents.getValue(type).jsonObject
+            assertEquals(filename, document.getValue("filename").jsonPrimitive.content)
+            assertEquals("application/pdf", document.getValue("contentType").jsonPrimitive.content)
+            val documentBytes = Base64.getDecoder().decode(document.getValue("contentBase64").jsonPrimitive.content)
+            assertEquals("%PDF-", documentBytes.copyOfRange(0, 5).toString(Charsets.US_ASCII))
+        }
         assertFalse(request.containsKey("templates"))
         assertFalse(request.containsKey("missing"))
         writeJourneyJson(sut, request)

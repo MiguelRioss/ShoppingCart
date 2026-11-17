@@ -5,6 +5,7 @@ import java.util.Base64
 import java.util.Currency
 import kotlinx.serialization.json.*
 import services.order.OrderManager
+import services.pdf.OrderPdfData
 
 /** Checkout facts and generated documents. EMAIL_SENDER chooses how to render them. */
 class StartClientJourneyMapper(
@@ -51,9 +52,18 @@ class StartClientJourneyMapper(
         }
         orderManager.despatchEstimate(id, paidSnapshot) ?: missing("order.snapshot.items.generalLeadTime")
         val number = orderManager.invoiceNumber(id)
-        val pdf = orderManager.invoicePreview(id, paidSnapshot)
-        require(pdf.size >= 5 && pdf.copyOfRange(0, 5).toString(Charsets.US_ASCII) == "%PDF-") {
-            "Invoice generator did not return PDF bytes"
+        val orderManagerPo = orderManager.purchaseOrderNumber(id)
+        val pdfs = mapOf(
+            "purchase-order" to ("purchase-order.pdf" to orderManager.purchaseOrderPreview(id, paidSnapshot)),
+            "delivery-note" to ("delivery-note.pdf" to orderManager.deliveryNotePreview(id, paidSnapshot)),
+            "invoice" to ("invoice.pdf" to orderManager.invoicePreview(id, paidSnapshot)),
+            "packing-list" to ("packing-list.pdf" to orderManager.packingListPreview(id, paidSnapshot))
+        )
+        pdfs.forEach { (type, document) ->
+            val bytes = document.second
+            require(bytes.size >= 5 && bytes.copyOfRange(0, 5).toString(Charsets.US_ASCII) == "%PDF-") {
+                "$type generator did not return PDF bytes"
+            }
         }
         return buildJsonObject {
             put("schemaVersion", 1)
@@ -61,14 +71,49 @@ class StartClientJourneyMapper(
             put("idempotencyKey", "order:$id:start-client-journey")
             put("order", JsonObject(order + mapOf(
                 "invoiceNumber" to JsonPrimitive(number),
+                "purchaseOrderNumber" to JsonPrimitive(orderManagerPo),
                 "snapshot" to paidSnapshot
             )))
             put("documents", buildJsonObject {
-                put("invoice", buildJsonObject {
-                    put("number", number)
-                    put("filename", "invoice.pdf")
-                    put("contentType", "application/pdf")
-                    put("contentBase64", Base64.getEncoder().encodeToString(pdf))
+                pdfs.forEach { (type, document) ->
+                    put(type, buildJsonObject {
+                        if (type == "invoice") put("number", number)
+                        put("filename", document.first)
+                        put("contentType", "application/pdf")
+                        put("contentBase64", Base64.getEncoder().encodeToString(document.second))
+                    })
+                }
+            })
+            val supplier = orderManager.supplierContact(id)
+            val productLines = items.map { item ->
+                val cart = cartProducts.first { it.text("productId") == item.text("productId") }
+                buildJsonObject {
+                    put("name", item.getValue("name"))
+                    put("quantity", cart.getValue(if (cart["isSample"]?.jsonPrimitive?.booleanOrNull == true) "sampleUnits" else "squareMeters"))
+                    put("unit", if (cart["isSample"]?.jsonPrimitive?.booleanOrNull == true) "pieces" else "m²")
+                    put("lineTotal", item.getValue("amountTotal"))
+                    put("currency", item.getValue("currency"))
+                }
+            }
+            val boxes = cartProducts.sumOf { it.text("amountBoxes")?.toIntOrNull() ?: 0 }
+            val area = cartProducts.sumOf { it.text("squareMeters")?.toBigDecimalOrNull() ?: java.math.BigDecimal.ZERO }
+            put("fulfilment", buildJsonObject {
+                put("purchase-order", buildJsonObject {
+                    put("products", JsonArray(productLines)); put("boxes", boxes)
+                    put("po_number", orderManagerPo); put("required_despatch_date", orderManager.despatchEstimate(id, paidSnapshot)!!)
+                    put("supplier_contact_name", supplier.first); put("supplier_email", supplier.second)
+                })
+                put("packing-list", buildJsonObject {
+                    put("products", JsonArray(productLines)); put("boxes", boxes)
+                    put("packing_list_number", "PL-$id"); put("quantity_m2", area.toPlainString()); put("quantity_units", boxes)
+                    put("gross_weight", "See attached packing list"); put("package_count", "See attached packing list")
+                    put("package_dimensions", "See attached packing list")
+                    put("supplier_contact_name", supplier.first); put("supplier_email", supplier.second)
+                })
+                put("delivery-note", buildJsonObject {
+                    put("courier", "See attached delivery note"); put("delivery_note_number", "DN-$id"); put("incoterm", "DDP")
+                    put("supplier_contact_name", supplier.first); put("supplier_email", supplier.second)
+                    put("tracking_number", "Pending carrier booking")
                 })
             })
         }

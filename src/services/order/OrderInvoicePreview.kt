@@ -36,9 +36,13 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
             name = supplierName,
             addressLines = listOfNotNull(
                 supplier.text("address") ?: missing("supplier.address"),
+                supplier.text("address_2")?.trim()?.takeIf(String::isNotBlank),
                 listOfNotNull(supplier.text("post_code"), supplier.text("city")).joinToString(" ").takeIf(String::isNotBlank),
                 supplier.text("country") ?: missing("supplier.country")
-            )
+            ),
+            contactName = supplier.text("contact_name"),
+            phone = supplier.text("phone"),
+            email = supplier.text("email")
         )
         val shipFrom = DocumentParty(
             name = supplierName,
@@ -111,12 +115,22 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
                 resolvePdfLogoPath("src/main/resources/deferranti-logo.png"),
                 footerText = seller.name
             ),
-            references = DocumentReferences("", date.toString(), orderId, estimate, "", "", "", "", invoiceNumber),
+            references = DocumentReferences(
+                purchaseOrderNumber = "PO-$orderId",
+                purchaseOrderDate = date.toString(),
+                customerOrderNumber = orderId,
+                requiredDespatchDate = estimate,
+                packingListNumber = "PL-$orderId",
+                packingDate = date.toString(),
+                deliveryNoteNumber = "DN-$orderId",
+                deliveryDate = date.toString(),
+                invoiceNumber = invoiceNumber
+            ),
             parties = DocumentParties(customer, supplierParty, shipFrom, customer, seller, seller),
             goods = goods,
             totals = DocumentTotals("$currency ${snapshot.text("productSubtotal") ?: missing("productSubtotal")}", "$currency $taxAmount" + if (snapshot.text("taxCalculation") == "temporary_zero") " (temporary)" else "", "$currency ${snapshot.text("total") ?: missing("total")}", currency),
             packing = PackingDetails(packings.map { it.text("packaging") ?: "Package" }.distinct().joinToString(", "), "${packings.size} estimated", packageDescriptions.joinToString("; "), "$grossWeight kg estimated", goods.joinToString("; ") { it.boxes }, "$currency $packingCost estimated"),
-            shipment = ShipmentDetails(shipping?.text("serviceName")?.substringBefore(' ') ?: "Courier pending", shipping?.text("serviceName") ?: shipping?.text("serviceType") ?: "Pending", "", "", "Sale of goods", "DDP", "DDP", "$currency $shippingTotal", "PAID - CHECKOUT PAYMENT CONFIRMED"),
+            shipment = ShipmentDetails(shipping?.text("serviceName")?.substringBefore(' ') ?: "Courier pending", shipping?.text("serviceName") ?: shipping?.text("serviceType") ?: "Pending", "Pending", "Pending", "Sale of goods", "DDP", "DDP", "$currency $shippingTotal", "PAID - CHECKOUT PAYMENT CONFIRMED"),
             checks = DocumentChecks(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),
             notes = DocumentNotes(emptyList(), emptyList(), emptyList(), emptyList(), "", "", "")
         )
