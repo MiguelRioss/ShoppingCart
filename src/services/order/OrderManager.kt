@@ -64,7 +64,6 @@ class OrderManager(
         )
     }
     fun invoiceNumber(orderId: String): String = orderRepository.invoiceNumberForOrder(orderId)
-    fun purchaseOrderNumber(orderId: String): String = orderRepository.purchaseOrderNumberForOrder(orderId)
     fun invoiceIssuer(orderId: String): DocumentParty {
         val snapshot = orderRepository.findForEmail(orderId)?.get("snapshot") as? JsonObject
             ?: throw IllegalArgumentException("Order not found: $orderId")
