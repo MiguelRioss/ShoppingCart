@@ -55,15 +55,33 @@ class OrderManager(
         require((order["status"] as? JsonPrimitive)?.content == "PAID") { "Order documents require a paid order" }
         val snapshot = snapshotOverride ?: order["snapshot"] as? JsonObject
             ?: throw IllegalArgumentException("Order snapshot is missing")
+        val checkoutId = (order["checkoutSessionId"] as? JsonPrimitive)?.contentOrNull
+            ?: throw IllegalArgumentException("Order checkout session is missing")
+        val bookings = orderRepository.shipmentBookings(checkoutId).mapNotNull { it as? JsonObject }
+        require(bookings.isNotEmpty() && bookings.all { booking ->
+            val details = booking["booking"] as? JsonObject ?: booking
+            (booking["status"] as? JsonPrimitive)?.contentOrNull == "BOOKED" &&
+                !(details["masterTrackingNumber"] as? JsonPrimitive)?.contentOrNull.isNullOrBlank()
+        }) { "FedEx AWB is required before generating order documents" }
+        val bookingDetails = bookings.map { it["booking"] as? JsonObject ?: it }
+        val awb = bookingDetails.mapNotNull { (it["masterTrackingNumber"] as? JsonPrimitive)?.contentOrNull }.distinct().joinToString(", ")
+        val trackingNumbers = bookingDetails.flatMap { details ->
+            (details["packages"] as? JsonArray).orEmpty().mapNotNull { packageInfo ->
+                ((packageInfo as? JsonObject)?.get("trackingNumber") as? JsonPrimitive)?.contentOrNull
+            }
+        }.distinct().ifEmpty { bookingDetails.mapNotNull { (it["masterTrackingNumber"] as? JsonPrimitive)?.contentOrNull } }.joinToString(", ")
         return OrderInvoicePreview(products).build(
             orderId,
             snapshot,
             invoiceNumber(orderId),
             invoiceIssuer(orderId),
-            despatchEstimate(orderId, snapshot) ?: throw IllegalArgumentException("Product lead time is missing")
+            despatchEstimate(orderId, snapshot) ?: throw IllegalArgumentException("Product lead time is missing"),
+            trackingNumbers,
+            awb
         )
     }
     fun invoiceNumber(orderId: String): String = orderRepository.invoiceNumberForOrder(orderId)
+    fun purchaseOrderNumber(orderId: String): String = "PO-$orderId"
     fun invoiceIssuer(orderId: String): DocumentParty {
         val snapshot = orderRepository.findForEmail(orderId)?.get("snapshot") as? JsonObject
             ?: throw IllegalArgumentException("Order not found: $orderId")

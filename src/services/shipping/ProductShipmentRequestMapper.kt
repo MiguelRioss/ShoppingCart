@@ -7,11 +7,13 @@ import java.util.Locale
 import kotlin.math.ceil
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.contentOrNull
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import productdatabaseaccesslayer.ProductDataAccess
 import domain.shipment.ShipmentAddress
+import domain.shipment.ShipmentContact
 import domain.shipment.ShipmentDimensions
 import domain.shipment.ShipmentPackage
 import domain.shipment.ShipmentWeight
@@ -22,7 +24,8 @@ import domain.shipment.ShipmentWeight
  * different supplier addresses produce independent requests.
  */
 class ProductShipmentRequestMapper(
-    private val productDataAccess: ProductDataAccess
+    private val productDataAccess: ProductDataAccess,
+    private val validateGrossVsCalculatedNet: Boolean = false
 ) {
 
     /**
@@ -49,8 +52,12 @@ class ProductShipmentRequestMapper(
         return productRequests
             .groupBy(ShipmentShippingRequest::from)
             .map { (origin, requests) ->
+                require(requests.map(ShipmentShippingRequest::shipperContact).distinct().size == 1) {
+                    "Products shipping from $origin have conflicting supplier contacts"
+                }
                 ShipmentShippingRequest(
                     from = origin,
+                    shipperContact = requests.first().shipperContact,
                     products = requests.flatMap(ShipmentShippingRequest::products)
                 )
             }
@@ -76,6 +83,7 @@ class ProductShipmentRequestMapper(
                 "supplier",
                 "Product ${cartProduct.productId} has no supplier"
             )
+        val supplierContact = supplierContact(supplier)
 
         val purchaseInformation =
             requireObject(
@@ -124,6 +132,13 @@ class ProductShipmentRequestMapper(
                 productId = cartProduct.productId
             )
 
+        if (validateGrossVsCalculatedNet) validateCatalogWeights(
+            product, packing,
+            amountBoxes * (purchaseInformation["order"]?.jsonObject?.get("units_per_box")
+                ?.jsonPrimitive?.contentOrNull?.toIntOrNull() ?: 0),
+            cartProduct.productId
+        )
+
         return ShipmentShippingRequest(
             from =
                 ShipmentAddress(
@@ -142,6 +157,7 @@ class ProductShipmentRequestMapper(
                             )
                         )
                 ),
+            shipperContact = supplierContact,
             products =
                 listOf(
                     ShipmentPackage(
@@ -223,6 +239,7 @@ class ProductShipmentRequestMapper(
                             requireString(supplier, "country_collection")
                         )
                 ),
+            shipperContact = supplierContact(supplier),
             products =
                 listOf(
                     ShipmentPackage(
@@ -294,6 +311,25 @@ class ProductShipmentRequestMapper(
                 "No packing size found for $requestedSquareMeters m2 of product $productId"
             )
 
+    private fun validateCatalogWeights(
+        product: JsonObject,
+        packing: JsonObject,
+        tileCount: Int,
+        productId: Long
+    ) {
+        val purchase = product["purchase_information"]?.jsonObject ?: return
+        val order = purchase["order"]?.jsonObject ?: return
+        val netWeightPerTile = order["net_weight_per_tile_item"]
+            ?.jsonPrimitive?.contentOrNull?.toBigDecimalOrNull()?.takeIf { it > BigDecimal.ZERO }
+            ?: return
+        val grossWeight = packing["packed_weight"]?.jsonPrimitive?.contentOrNull?.toBigDecimalOrNull()
+            ?: return
+        val netWeight = netWeightPerTile.multiply(BigDecimal.valueOf(tileCount.toLong()))
+        require(grossWeight >= netWeight) {
+            "Product $productId has gross packed weight $grossWeight kg below calculated net tile weight $netWeight kg"
+        }
+    }
+
     private fun requireObject(
         jsonObject: JsonObject,
         key: String,
@@ -316,6 +352,16 @@ class ProductShipmentRequestMapper(
         }
             .jsonPrimitive
             .content
+
+    private fun supplierContact(supplier: JsonObject): ShipmentContact? {
+        val phone = supplier["phone"]?.jsonPrimitive?.contentOrNull?.takeIf(String::isNotBlank) ?: return null
+        return ShipmentContact(
+            personName = supplier["contact_name"]?.jsonPrimitive?.contentOrNull?.takeIf(String::isNotBlank)
+                ?: requireString(supplier, "name"),
+            phoneNumber = phone,
+            companyName = supplier["name"]?.jsonPrimitive?.contentOrNull
+        )
+    }
 
     private fun countryNameToIso2(
         countryName: String

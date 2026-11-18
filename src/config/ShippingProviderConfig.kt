@@ -4,7 +4,7 @@ import shipment.core.ProviderAccount
 import shipment.core.ProviderCredentials
 import shipment.core.ShippingProviderEnvironment
 
-/** Separate PT/UK billing accounts; legacy unqualified keys apply only to PT. */
+/** Separate FedEx billing accounts for the Portuguese and UK shipment origins. */
 data class ShippingProviderConfig(
     val mode: ShippingMode,
     val account: ProviderAccount?,
@@ -12,7 +12,7 @@ data class ShippingProviderConfig(
     val providerEnvironment: ShippingProviderEnvironment?
 ) {
     companion object {
-        fun load(accountCountry: String = "PT", read: (String) -> String? = Environment::get): ShippingProviderConfig {
+        fun load(accountCountry: String, read: (String) -> String? = { Environment.get(it) }): ShippingProviderConfig {
             val mode = read("FEDEX_MODE")?.trim()?.uppercase()?.let(ShippingMode::valueOf) ?: ShippingMode.OFFLINE
             if (mode == ShippingMode.OFFLINE) return ShippingProviderConfig(mode, null, null, null)
             val region = when (accountCountry.trim().uppercase()) {
@@ -23,9 +23,8 @@ data class ShippingProviderConfig(
             val prefix = if (mode == ShippingMode.SANDBOX) "FEDEX_TEST_" else "FEDEX_PRODUCTION_"
             fun required(suffix: String): String {
                 val name = prefix + region + "_" + suffix
-                return (read(name)?.takeIf(String::isNotBlank)
-                    ?: if (region == "PT") read(prefix + suffix)?.takeIf(String::isNotBlank) else null)
-                    ?.trim() ?: throw IllegalStateException("$name is required for the $region shipping account")
+                return read(name)?.takeIf(String::isNotBlank)?.trim()
+                    ?: throw IllegalStateException("$name is required for the $region shipping account")
             }
             return ShippingProviderConfig(
                 mode,

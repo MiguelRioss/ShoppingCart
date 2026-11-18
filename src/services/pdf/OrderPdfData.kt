@@ -67,17 +67,26 @@ private fun invoiceFields(d: DeFerrantiOrderDocuments) = commonFields(d) + listO
     "goods[$index].unitPrice" to line.unitPrice
 ) }
 
-private fun purchaseOrderFields(d: DeFerrantiOrderDocuments) = commonFields(d) + listOf(
+private fun purchaseOrderFields(d: DeFerrantiOrderDocuments): List<Pair<String, String?>> {
+    val purchaseOrder = d.purchaseOrderFinancials
+    return commonFields(d) + listOf(
     "references.purchaseOrderNumber" to d.references.purchaseOrderNumber,
     "references.purchaseOrderDate" to d.references.purchaseOrderDate,
     "references.requiredDespatchDate" to d.references.requiredDespatchDate,
     "parties.supplier.name" to d.parties.supplier.name,
     "parties.supplier.addressLines" to d.parties.supplier.addressLines.joinToString(),
-    "totals.supplierSubtotal" to d.totals.supplierSubtotal,
+    "totals.supplierSubtotal" to (purchaseOrder?.supplierSubtotal ?: d.totals.supplierSubtotal),
+    "totals.packagingCost" to purchaseOrder?.packagingCost,
+    "totals.shippingFees" to purchaseOrder?.shippingFees,
+    "totals.vatAmount" to purchaseOrder?.vatAmount,
+    "totals.purchaseOrderTotal" to purchaseOrder?.total,
     "packing.packageCount" to d.packing.packageCount,
     "packing.dimensions" to d.packing.dimensions,
     "packing.grossWeight" to d.packing.grossWeight
-) + d.goods.mapIndexed { index, line -> "goods[$index].supplierUnitPrice" to line.unitPrice }
+) + d.goods.mapIndexed { index, line ->
+        "goods[$index].supplierUnitPrice" to (purchaseOrder?.goods?.getOrNull(index)?.unitPrice ?: line.unitPrice)
+    }
+}
 
 private fun packingListFields(d: DeFerrantiOrderDocuments) = commonFields(d) + listOf(
     "references.packingListNumber" to d.references.packingListNumber,

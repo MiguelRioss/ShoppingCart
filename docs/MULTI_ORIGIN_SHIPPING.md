@@ -72,9 +72,23 @@ Stripe payment succeeded
   -> shipment for supplier B -> tracking and label B
 ```
 
-This post-payment orchestration is not yet implemented in ShoppingCart. The
-middleware supports `createShipment`, but ShoppingCart currently integrates it
-only for rate calculation during checkout.
+ShoppingCart now recreates the origin groups from the paid order snapshot and
+calls the carrier shipment-preparation operation once per origin after the
+verified Stripe payment event. This returns FedEx tracking/AWB data and label
+documents. The selected service code for each origin and each booking outcome
+are persisted; `/admin/orders` includes `shipmentBookings` for review.
+
+Shipment booking is enabled only when `FEDEX_MODE=SANDBOX`. A Stripe webhook
+retry does not create a second label: each order/origin is claimed durably before
+the carrier request. If the carrier outcome is uncertain, the booking is marked
+`NEEDS_REVIEW` and is not automatically repeated. Resolve it with FedEx before
+rebooking.
+
+The booking requires the customer's saved phone and supplier contact phone.
+Before submitting a physical product shipment, ShoppingCart checks that the
+catalogue gross package weight is not below calculated net tile weight. A failed
+preflight or FedEx request is recorded for admin review; payment confirmation
+and the customer email can still proceed.
 
 ## Production decisions to evaluate
 
@@ -109,7 +123,7 @@ only for rate calculation during checkout.
 
 ## FedEx billing account routing
 
-The default billing account is PT. If either the collection/origin or delivery/destination country is GB (UK alias accepted), the UK billing account is used. This decision is made independently for each supplier-origin quote. It changes the billing account, not the collection or delivery address. A missing UK account fails that quote and never falls back to PT. The adapter also routes shipment preparation, but checkout currently requests rates only; it does not book shipments.
+Every shipment uses an explicit origin account: PT-origin shipments use the PT account and UK-origin shipments use the UK account. If the destination is GB but the origin is PT, billing still uses the PT account. This decision is made independently for each supplier-origin quote and paid shipment. It changes the billing account, not the collection or delivery address. A missing origin account fails that route; there is no cross-country fallback.
 
 FEDEX_MODE controls carrier access: OFFLINE, SANDBOX, or PRODUCTION. SHIPPING_MODE is not read. APP_MODE independently controls database access.
 
@@ -122,7 +136,7 @@ For production configure these server-only values:
 - FEDEX_PRODUCTION_UK_CLIENT_ID
 - FEDEX_PRODUCTION_UK_CLIENT_SECRET
 
-Account country is PT or GB based on the selected route. Existing unqualified FEDEX_PRODUCTION_ACCOUNT_NUMBER / CLIENT_ID / CLIENT_SECRET values are supported only for PT. Sandbox uses the same names with FEDEX_TEST_ instead of FEDEX_PRODUCTION_. Production credentials must not be used in sandbox.
+Account country is PT or GB based on the shipment origin. Configure separate account number, client ID, and client secret keys for both regions. Sandbox uses the same region-specific names with FEDEX_TEST_ instead of FEDEX_PRODUCTION_. Unqualified account or credential variables are ignored. Production credentials must not be used in sandbox.
 
 Set FEDEX_MODE=PRODUCTION locally and on the backend host, then restart/redeploy to apply. Local changes do not deploy the Render service.
 

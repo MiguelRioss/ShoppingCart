@@ -63,6 +63,13 @@ fun orderSnapshot(
     request.customerFirstName?.let {
         put("customerFirstName", it)
     }
+    request.customerLastName?.let {
+        put("customerLastName", it)
+    }
+
+    request.customerPhone?.takeIf(String::isNotBlank)?.let {
+        put("customerPhone", it)
+    }
 
 
     // Financial summary
@@ -125,6 +132,9 @@ fun orderSnapshot(
 
             shipping.originalCurrency?.let {
                 put("originalCurrency", it)
+            }
+            if (shipping.originServiceTypes.isNotEmpty()) {
+                put("originServiceTypes", JsonArray(shipping.originServiceTypes.map(::JsonPrimitive)))
             }
         })
     }

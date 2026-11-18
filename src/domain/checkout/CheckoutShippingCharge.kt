@@ -23,7 +23,9 @@ data class CheckoutShippingCharge(
     val currency: String?,
     val estimatedDeliveryDate: String? = null,
     val originalAmount: BigDecimal? = null,
-    val originalCurrency: String? = null
+    val originalCurrency: String? = null,
+    /** Per-origin carrier service codes retained for post-payment shipment booking. */
+    val originServiceTypes: List<String> = emptyList()
 )
 
 /**

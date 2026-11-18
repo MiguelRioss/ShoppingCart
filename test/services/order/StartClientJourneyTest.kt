@@ -53,6 +53,16 @@ class StartClientJourneyTest {
         val snapshot = sut.order.getValue("snapshot").jsonObject
         val amount = snapshot.getValue("total").jsonPrimitive.content.toBigDecimal().movePointRight(2).longValueExact()
         sut.orders.updatePayment(sut.id, "PAID", amount, snapshot.getValue("currency").jsonPrimitive.content, null)
+        sut.orders.claimShipmentBooking(sut.id, "origin-1")
+        sut.orders.completeShipmentBooking(sut.id, "origin-1", kotlinx.serialization.json.buildJsonObject {
+            put("provider", kotlinx.serialization.json.JsonPrimitive("FEDEX"))
+            put("masterTrackingNumber", kotlinx.serialization.json.JsonPrimitive("TEST-AWB-${sut.id}"))
+            put("packages", kotlinx.serialization.json.buildJsonArray {
+                add(kotlinx.serialization.json.buildJsonObject {
+                    put("trackingNumber", kotlinx.serialization.json.JsonPrimitive("TEST-TRACKING-${sut.id}"))
+                })
+            })
+        })
         val calls = mutableListOf<JsonObject>()
         StartClientJourneyService(mapper, ClientJourneyClient { payload ->
             calls += payload
@@ -90,6 +100,17 @@ class StartClientJourneyTest {
             assertEquals("application/pdf", document.getValue("contentType").jsonPrimitive.content)
             val documentBytes = Base64.getDecoder().decode(document.getValue("contentBase64").jsonPrimitive.content)
             assertEquals("%PDF-", documentBytes.copyOfRange(0, 5).toString(Charsets.US_ASCII))
+        }
+        val deliveryNote = documents.getValue("delivery-note").jsonObject
+        val deliveryBytes = Base64.getDecoder().decode(deliveryNote.getValue("contentBase64").jsonPrimitive.content)
+        org.openpdf.text.pdf.PdfReader(deliveryBytes).use { reader ->
+            val content = (1..reader.numberOfPages).joinToString("\n") {
+                org.openpdf.text.pdf.parser.PdfTextExtractor(reader).getTextFromPage(it)
+            }
+            val compact = content.replace(Regex("\\s+"), "")
+            assertTrue(compact.contains("TEST-AWB-${sut.id}"))
+            assertTrue(compact.contains("TEST-TRACKING-${sut.id}"))
+            assertFalse(content.contains("Pending"))
         }
         assertFalse(request.containsKey("templates"))
         assertFalse(request.containsKey("missing"))

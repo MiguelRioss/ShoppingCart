@@ -30,7 +30,8 @@ class CreateCheckoutHandler(
                         customerEmail = request.user.email,
                         userId = request.user.id,
                         customerFirstName = request.user.firstName,
-                        customerLastName = request.user.lastName
+                        customerLastName = request.user.lastName,
+                        customerPhone = request.user.phone
                     )
 
             val checkoutSession =

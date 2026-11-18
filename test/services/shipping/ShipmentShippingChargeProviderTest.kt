@@ -118,8 +118,10 @@ class ShipmentShippingChargeProviderTest {
 
         requireNotNull(charge)
         assertEquals("MULTI_ORIGIN", charge.serviceType)
+        assertEquals(listOf("FEDEX_ECONOMY", "FEDEX_ECONOMY"), charge.originServiceTypes)
         assertEquals("Shipping (2 origins)", charge.serviceName)
-        assertEquals(BigDecimal("50.0"), charge.amountTotal)
+        assertEquals(BigDecimal("55.00"), charge.amountTotal)
+        assertEquals(BigDecimal("50.0"), charge.originalAmount)
         assertEquals("eur", charge.currency)
         assertEquals("2026-09-21", charge.estimatedDeliveryDate)
     }
@@ -268,8 +270,9 @@ class ShipmentShippingChargeProviderTest {
 
         requireNotNull(charge)
         assertEquals("FEDEX_ECONOMY", charge.serviceType)
+        assertEquals(listOf("FEDEX_ECONOMY"), charge.originServiceTypes)
         assertEquals("FedEx Economy", charge.serviceName)
-        assertEquals(BigDecimal("25.0"), charge.amountTotal)
+        assertEquals(BigDecimal("27.50"), charge.amountTotal)
         assertEquals("eur", charge.currency)
         assertEquals("2026-09-21", charge.estimatedDeliveryDate)
         assertEquals(BigDecimal("25.0"), charge.originalAmount)
@@ -285,7 +288,7 @@ class ShipmentShippingChargeProviderTest {
             assertEquals("PT", origin.countryCode)
             assertEquals("US", destination.countryCode)
             assertEquals(1, packages.size)
-            assertEquals(BigDecimal("40.0"), shippingCost)
+            assertEquals(BigDecimal("44.00"), shippingCost)
             assertEquals("INTERNATIONAL_PRIORITY", serviceType)
             BigDecimal("38.46")
         }
@@ -304,7 +307,7 @@ class ShipmentShippingChargeProviderTest {
         )
         val charge = ShipmentShippingChargeProvider(shippingProvider, catalogue, estimator)
             .calculateShipping(cart, ShipmentAddress("1 Test Street", city = "New York", postalCode = "10001", countryCode = "US"))
-        assertEquals(BigDecimal("78.46"), charge?.amountTotal)
+        assertEquals(BigDecimal("82.46"), charge?.amountTotal)
         assertEquals("FedEx Priority (DDP estimate)", charge?.serviceName)
     }
 

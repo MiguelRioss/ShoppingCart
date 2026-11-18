@@ -7,11 +7,40 @@ import kotlinx.serialization.json.*
 class InMemoryOrderRepository : OrderRepository {
     private val invoiceNumbers = mutableMapOf<String, String>()
     private var nextInvoiceNumber = 1L
+    private val purchaseOrderNumbers = mutableMapOf<String, String>()
+    private var nextPurchaseOrderNumber = 1L
+    private val shipments = mutableMapOf<Pair<String, String>, JsonObject>()
     @Synchronized override fun invoiceNumberForOrder(orderId: String): String {
         val order = orders[orderId] ?: throw IllegalArgumentException("Order not found: $orderId")
         require(order.second["status"]?.jsonPrimitive?.content == "PAID") { "Invoice number requires a paid order" }
         return invoiceNumbers.getOrPut(orderId) { "INV-${(nextInvoiceNumber++).toString().padStart(10, '0')}" }
     }
+    @Synchronized override fun purchaseOrderNumberForOrder(orderId: String): String {
+        val order = orders[orderId] ?: throw IllegalArgumentException("Order not found: $orderId")
+        require(order.second["status"]?.jsonPrimitive?.content == "PAID") { "Purchase order number requires a paid order" }
+        return purchaseOrderNumbers.getOrPut(orderId) { "PO-${(nextPurchaseOrderNumber++).toString().padStart(10, '0')}" }
+    }
+    @Synchronized override fun claimShipmentBooking(checkoutId: String, originKey: String): Boolean {
+        if (orders[checkoutId] == null) return false
+        return shipments.putIfAbsent(checkoutId to originKey,
+            buildJsonObject { put("status", "BOOKING") }) == null
+    }
+    @Synchronized override fun completeShipmentBooking(checkoutId: String, originKey: String, booking: JsonObject) {
+        val key = checkoutId to originKey
+        require(shipments[key] != null) { "Shipment booking was not claimed" }
+        shipments[key] = JsonObject(booking + ("status" to JsonPrimitive("BOOKED")))
+    }
+    @Synchronized override fun failShipmentBooking(checkoutId: String, originKey: String, reason: String) {
+        val key = checkoutId to originKey
+        if (shipments[key] != null) shipments[key] = buildJsonObject {
+            put("status", "NEEDS_REVIEW"); put("reason", reason.take(1000))
+        }
+    }
+    @Synchronized override fun shipmentBookings(checkoutId: String): JsonArray = JsonArray(
+        shipments.filterKeys { it.first == checkoutId }.entries.sortedBy { it.key.second }.map { (key, value) ->
+            JsonObject(value + ("originKey" to JsonPrimitive(key.second)))
+        }
+    )
     override fun findByCheckoutForEmail(checkoutId: String): JsonObject? = findForEmail(checkoutId)
     @Synchronized override fun snapshotForCheckout(checkoutId: String): JsonObject? = orders[checkoutId]?.second
     @Synchronized override fun findForEmail(orderId: String): JsonObject? = orders[orderId]?.let { (userId, snapshot) ->

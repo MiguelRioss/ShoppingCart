@@ -33,7 +33,7 @@ internal class OrderSUT private constructor(
     fun labelledInvoicePdf(): ByteArray {
         val documents = OrderInvoicePreview(catalogue).build(
             id, order.getValue("snapshot").jsonObject, manager.invoiceNumber(id),
-            manager.invoiceIssuer(id), requireNotNull(manager.despatchEstimate(id))
+            manager.invoiceIssuer(id), requireNotNull(manager.despatchEstimate(id)), "TEST-TRACKING-$id", "TEST-AWB-$id"
         )
         return OrderPdfData.Invoice(
             documents.copy(branding = documents.branding.copy(subtitle = "TEST DATA - CUSTOMER, PAYMENT AND FULFILMENT SIMULATED"))
@@ -61,6 +61,12 @@ internal class OrderSUT private constructor(
             require(productAreas.isNotEmpty()) { "At least one product is required" }
             val products = productAreas.keys.associateWith { productId ->
                 Json.parseToJsonElement(Files.readString(Path.of("test/services/order/fixtures/product-$productId.json"))).jsonObject
+            }.mapValues { (_, product) ->
+                val purchase = product.getValue("purchase_information").jsonObject
+                val order = purchase.getValue("order").jsonObject
+                JsonObject(product + ("purchase_information" to JsonObject(
+                    purchase + ("order" to JsonObject(order + ("supplier_price_per_m2" to kotlinx.serialization.json.JsonPrimitive("75"))))
+                )))
             }
             val input = Json.parseToJsonElement(Files.readString(Path.of("test/services/order/fixtures/checkout-input.json"))).jsonObject
             data class Line(val id: Long, val area: BigDecimal, val boxes: Int, val price: BigDecimal, val product: JsonObject, val leadTime: String?)
@@ -108,8 +114,31 @@ internal class OrderSUT private constructor(
                 lines.map { CheckoutLineItem(it.id, it.product.getValue("title").jsonPrimitive.content, it.boxes, it.price,
                     imageUrl = it.product.value("image"), generalLeadTime = it.leadTime) }, null
             )
-            if (paid) orders.updatePayment(id, "PAID", total.multiply(BigDecimal(100)).longValueExact(), "eur", null)
+            if (paid) {
+                orders.updatePayment(id, "PAID", total.multiply(BigDecimal(100)).longValueExact(), "eur", null)
+                val originCount = snapshotOriginCount(orders, id)
+                repeat(originCount) { index ->
+                    val originKey = "origin-${index + 1}"
+                    orders.claimShipmentBooking(id, originKey)
+                    orders.completeShipmentBooking(id, originKey, kotlinx.serialization.json.buildJsonObject {
+                        put("provider", kotlinx.serialization.json.JsonPrimitive("FEDEX"))
+                        put("masterTrackingNumber", kotlinx.serialization.json.JsonPrimitive("TEST-AWB-$id-${index + 1}"))
+                        put("packages", kotlinx.serialization.json.buildJsonArray {
+                            add(kotlinx.serialization.json.buildJsonObject {
+                                put("trackingNumber", kotlinx.serialization.json.JsonPrimitive("TEST-TRACKING-$id-${index + 1}"))
+                            })
+                        })
+                    })
+                }
+            }
             return OrderSUT(scenarioName, id, orders, manager, catalogue)
+        }
+
+        private fun snapshotOriginCount(orders: InMemoryOrderRepository, checkoutId: String): Int {
+            val snapshot = requireNotNull(orders.snapshotForCheckout(checkoutId))
+            val services = (snapshot["shipping"] as? kotlinx.serialization.json.JsonObject)
+                ?.get("originServiceTypes") as? kotlinx.serialization.json.JsonArray
+            return services?.size ?: 1
         }
     }
 }

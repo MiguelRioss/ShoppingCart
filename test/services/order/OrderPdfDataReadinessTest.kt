@@ -17,6 +17,7 @@ import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonArray
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.JsonObject
 import org.openpdf.text.pdf.PdfReader
 import org.openpdf.text.pdf.parser.PdfTextExtractor
 
@@ -30,7 +31,7 @@ class OrderPdfDataReadinessTest {
         sut.order.getValue("snapshot").jsonObject,
         sut.manager.invoiceNumber(sut.id),
         sut.manager.invoiceIssuer(sut.id),
-        requireNotNull(sut.manager.despatchEstimate(sut.id))
+        requireNotNull(sut.manager.despatchEstimate(sut.id)), "TEST-TRACKING-${sut.id}", "TEST-AWB-${sut.id}"
     )
 
     @Test
@@ -45,7 +46,7 @@ class OrderPdfDataReadinessTest {
         val data = OrderInvoicePreview(catalogue).build(
             sut.id, sut.order.getValue("snapshot").jsonObject,
             sut.manager.invoiceNumber(sut.id), sut.manager.invoiceIssuer(sut.id),
-            requireNotNull(sut.manager.despatchEstimate(sut.id))
+            requireNotNull(sut.manager.despatchEstimate(sut.id)), "TEST-TRACKING-${sut.id}", "TEST-AWB-${sut.id}"
         )
         assertEquals("34.24 kg", data.goods.single().netWeight)
         assertEquals("40 kg estimated", data.packing.grossWeight)
@@ -56,6 +57,64 @@ class OrderPdfDataReadinessTest {
             }
             assertContains(content, "34.24 kg")
         }
+    }
+
+    @Test
+    fun `paid order has a stable system purchase order number and supplier contact`() {
+        val first = sut.manager.purchaseOrderNumber(sut.id)
+        assertTrue(first.startsWith("PO-"))
+        assertEquals(first, sut.manager.purchaseOrderNumber(sut.id))
+        val supplier = documents().parties.supplier
+        assertTrue(!supplier.contactName.isNullOrBlank())
+        assertTrue(!supplier.email.isNullOrBlank())
+    }
+
+    @Test
+    fun `purchase order separates supplier goods packaging shipping buffer and checkout VAT`() {
+        val saved = sut.order.getValue("snapshot").jsonObject
+        val snapshot = JsonObject(saved + mapOf(
+            "preTaxTotal" to kotlinx.serialization.json.JsonPrimitive("126.17"),
+            "shippingTotal" to kotlinx.serialization.json.JsonPrimitive("39.79"),
+            "taxAmount" to kotlinx.serialization.json.JsonPrimitive("29.02"),
+            "total" to kotlinx.serialization.json.JsonPrimitive("155.19")
+        ))
+        val pdf = sut.manager.purchaseOrderPreview(sut.id, snapshot)
+        PdfReader(pdf).use { reader ->
+            val content = (1..reader.numberOfPages).joinToString("\n") {
+                PdfTextExtractor(reader).getTextFromPage(it)
+            }.replace(Regex("\\s+"), " ")
+            assertContains(content, "EUR 150.00") // EUR 75/m² × 2m²
+            assertContains(content, "EUR 15.00") // Catalogue packaging cost for 2m²
+            assertContains(content, "EUR 39.79") // Cheapest FedEx fee with 10% buffer
+            assertContains(content, "VAT (23%)")
+            assertContains(content, "EUR 29.02")
+            assertContains(content, "EUR 233.81")
+        }
+    }
+
+    @Test
+    fun `purchase order accepts the catalogue supplier purchase price field as per square metre`() {
+        val supplierPriceCatalogue = object : ProductDataAccess by sut.catalogue {
+            override fun getProductDetailsById(productId: Long): String? {
+                val product = Json.parseToJsonElement(requireNotNull(sut.catalogue.getProductDetailsById(productId))).jsonObject
+                val purchase = product.getValue("purchase_information").jsonObject
+                val order = JsonObject(purchase.getValue("order").jsonObject - "supplier_price_per_m2")
+                val supplier = JsonObject(product.getValue("supplier").jsonObject + mapOf(
+                    "supplier_purchase_price" to kotlinx.serialization.json.JsonPrimitive("100")
+                ))
+                return JsonObject(product + mapOf(
+                    "supplier" to supplier,
+                    "purchase_information" to JsonObject(purchase + ("order" to order))
+                )).toString()
+            }
+        }
+        val snapshot = sut.order.getValue("snapshot").jsonObject
+        val data = OrderInvoicePreview(supplierPriceCatalogue).build(
+            sut.id, snapshot, sut.manager.invoiceNumber(sut.id), sut.manager.invoiceIssuer(sut.id),
+            requireNotNull(sut.manager.despatchEstimate(sut.id)), "TEST-TRACKING-${sut.id}", "TEST-AWB-${sut.id}"
+        )
+        assertEquals("EUR 100.00", data.purchaseOrderFinancials?.goods?.single()?.unitPrice)
+        assertEquals("EUR 200.00", data.purchaseOrderFinancials?.supplierSubtotal)
     }
 
     @Test
@@ -99,19 +158,32 @@ class OrderPdfDataReadinessTest {
 
     @Test
     fun `purchase order uses the same saved order and reports missing reference`() {
-        assertContains(assertFailsWith<IllegalArgumentException> { OrderPdfData.PurchaseOrder(documents()).generate() }.message.orEmpty(), "references.purchaseOrderNumber")
+        val incomplete = documents().copy(references = documents().references.copy(purchaseOrderNumber = ""))
+        assertContains(assertFailsWith<IllegalArgumentException> { OrderPdfData.PurchaseOrder(incomplete).generate() }.message.orEmpty(), "references.purchaseOrderNumber")
     }
 
     @Test
     fun `packing list uses the same saved order and reports missing packing data`() {
-        val message = assertFailsWith<IllegalArgumentException> { OrderPdfData.PackingList(documents()).generate() }.message.orEmpty()
+        val original = documents()
+        val incomplete = original.copy(
+            references = original.references.copy(packingListNumber = "", packingDate = ""),
+            packing = original.packing.copy(packageCount = "", dimensions = "")
+        )
+        val message = assertFailsWith<IllegalArgumentException> { OrderPdfData.PackingList(incomplete).generate() }.message.orEmpty()
         assertContains(message, "references.packingListNumber")
         assertContains(message, "references.packingDate")
+        assertContains(message, "packing.packageCount")
+        assertContains(message, "packing.dimensions")
     }
 
     @Test
     fun `delivery note uses the same saved order and reports missing tracking`() {
-        val message = assertFailsWith<IllegalArgumentException> { OrderPdfData.DeliveryNote(documents()).generate() }.message.orEmpty()
+        val original = documents()
+        val incomplete = original.copy(
+            references = original.references.copy(deliveryNoteNumber = "", deliveryDate = ""),
+            shipment = original.shipment.copy(trackingNumber = "")
+        )
+        val message = assertFailsWith<IllegalArgumentException> { OrderPdfData.DeliveryNote(incomplete).generate() }.message.orEmpty()
         assertContains(message, "references.deliveryNoteNumber")
         assertContains(message, "references.deliveryDate")
         assertContains(message, "shipment.trackingNumber")
@@ -133,7 +205,7 @@ internal fun generateFourPdfs(multi: OrderSUT) {
         val original = OrderInvoicePreview(multi.catalogue).build(
             multi.id, multi.order.getValue("snapshot").jsonObject,
             multi.manager.invoiceNumber(multi.id), multi.manager.invoiceIssuer(multi.id),
-            requireNotNull(multi.manager.despatchEstimate(multi.id))
+            requireNotNull(multi.manager.despatchEstimate(multi.id)), "TEST-TRACKING-${multi.id}", "TEST-AWB-${multi.id}"
         )
         assertEquals(multi.order.getValue("snapshot").jsonObject.getValue("cartProducts").jsonArray.size, original.goods.size)
         val data = original.copy(

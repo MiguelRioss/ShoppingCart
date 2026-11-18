@@ -26,8 +26,23 @@ class PostgresSchema(
                 """.trimIndent())
                 statement.executeUpdate("CREATE INDEX IF NOT EXISTS orders_user_id_idx ON orders(user_id)")
                 statement.executeUpdate("CREATE SEQUENCE IF NOT EXISTS order_invoice_number_seq")
+                statement.executeUpdate("CREATE SEQUENCE IF NOT EXISTS order_purchase_number_seq")
                 statement.executeUpdate("ALTER TABLE orders ADD COLUMN IF NOT EXISTS invoice_number BIGINT")
+                statement.executeUpdate("ALTER TABLE orders ADD COLUMN IF NOT EXISTS purchase_order_number BIGINT")
                 statement.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS orders_invoice_number_idx ON orders(invoice_number)")
+                statement.executeUpdate("CREATE UNIQUE INDEX IF NOT EXISTS orders_purchase_order_number_idx ON orders(purchase_order_number)")
+                statement.executeUpdate("""
+                    CREATE TABLE IF NOT EXISTS shipment_bookings (
+                        checkout_session_id TEXT NOT NULL REFERENCES orders(checkout_session_id) ON DELETE CASCADE,
+                        origin_key TEXT NOT NULL,
+                        status TEXT NOT NULL CHECK (status IN ('BOOKING', 'BOOKED', 'NEEDS_REVIEW')),
+                        booking JSONB,
+                        error_message TEXT,
+                        created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        updated_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+                        PRIMARY KEY (checkout_session_id, origin_key)
+                    )
+                """.trimIndent())
                 statement.executeUpdate(
                     """
                     CREATE TABLE IF NOT EXISTS users (

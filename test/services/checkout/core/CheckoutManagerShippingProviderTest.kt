@@ -139,7 +139,7 @@
                 }
 
             assertEquals("FedEx EUR", shippingLine.name)
-            assertEquals(BigDecimal("25.0"), shippingLine.amountTotal)
+            assertEquals(BigDecimal("27.50"), shippingLine.amountTotal)
         }
 
         @Test

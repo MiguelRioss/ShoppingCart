@@ -21,4 +21,19 @@ class FedExPtRateSmokeTest {
         assertFalse(quotes.any { it.serviceName.contains("Offline", true) })
         println("Production PT rate check passed: ${quotes.size} carrier quotes returned.")
     }
+
+    @Test fun productionUkAccountReturnsQuotesForUkOrigin() {
+        assumeTrue(System.getenv("RUN_FEDEX_UK_RATE_SMOKE") == "true")
+        assertEquals("PRODUCTION", Environment.get("FEDEX_MODE"))
+        val request = ShipmentRateRequest(
+            from = ShipmentAddress(addressLine1 = "10 Downing Street", city = "London", postalCode = "SW1A 2AA", countryCode = "GB"),
+            to = ShipmentAddress(addressLine1 = "1 Rue de Rivoli", city = "Paris", postalCode = "75001", countryCode = "FR"),
+            packages = listOf(ShipmentPackage("Ceramic tile sample", "PT", 1, "PCS", ShipmentWeight(1.0, "KG"), ShipmentDimensions(10, 10, 10, "CM"), 20.0, "EUR")),
+            preferredCurrency = "GBP"
+        )
+        val quotes = try { AccountRoutingShippingProvider().getQuotes(request) } catch (e: error.FedExServiceException) { error("FedEx UK rate rejected: status=${e.statusCode}, details=${e.description}") }
+        assertTrue(quotes.isNotEmpty(), "FedEx returned no UK-origin quotes")
+        assertFalse(quotes.any { it.serviceName.contains("Offline", true) })
+        println("Production UK rate check passed: ${quotes.size} carrier quotes returned.")
+    }
 }

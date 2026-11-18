@@ -5,6 +5,38 @@ import java.util.UUID
 import kotlinx.serialization.json.*
 
 class PostgresOrderRepository(private val database: Database) : OrderRepository {
+    override fun claimShipmentBooking(checkoutId: String, originKey: String): Boolean = database.getConnection().use { connection ->
+        connection.prepareStatement("INSERT INTO shipment_bookings (checkout_session_id,origin_key,status) VALUES (?,?,'BOOKING') ON CONFLICT DO NOTHING").use {
+            it.setString(1, checkoutId); it.setString(2, originKey); it.executeUpdate() == 1
+        }
+    }
+    override fun completeShipmentBooking(checkoutId: String, originKey: String, booking: JsonObject) {
+        database.getConnection().use { connection ->
+            connection.prepareStatement("UPDATE shipment_bookings SET status='BOOKED',booking=?::jsonb,error_message=NULL,updated_at=CURRENT_TIMESTAMP WHERE checkout_session_id=? AND origin_key=? AND status='BOOKING'").use {
+                it.setString(1, booking.toString()); it.setString(2, checkoutId); it.setString(3, originKey)
+                check(it.executeUpdate() == 1) { "Shipment booking claim is missing or already finalized" }
+            }
+        }
+    }
+    override fun failShipmentBooking(checkoutId: String, originKey: String, reason: String) {
+        database.getConnection().use { connection ->
+            connection.prepareStatement("UPDATE shipment_bookings SET status='NEEDS_REVIEW',error_message=?,updated_at=CURRENT_TIMESTAMP WHERE checkout_session_id=? AND origin_key=? AND status='BOOKING'").use {
+                it.setString(1, reason.take(1000)); it.setString(2, checkoutId); it.setString(3, originKey); it.executeUpdate()
+            }
+        }
+    }
+    override fun shipmentBookings(checkoutId: String): JsonArray = database.getConnection().use { connection ->
+        connection.prepareStatement("SELECT origin_key,status,booking,error_message FROM shipment_bookings WHERE checkout_session_id=? ORDER BY origin_key").use {
+            it.setString(1, checkoutId)
+            it.executeQuery().use { rows -> buildJsonArray {
+                while (rows.next()) add(buildJsonObject {
+                    put("originKey", rows.getString("origin_key")); put("status", rows.getString("status"))
+                    rows.getString("booking")?.let { json -> put("booking", Json.parseToJsonElement(json)) }
+                    rows.getString("error_message")?.let { message -> put("reason", message) }
+                })
+            } }
+        }
+    }
     override fun invoiceNumberForOrder(orderId: String): String = database.getConnection().use { connection ->
         connection.prepareStatement("UPDATE orders SET invoice_number = nextval('order_invoice_number_seq') WHERE id::text = ? AND status = 'PAID' AND invoice_number IS NULL RETURNING invoice_number").use { statement ->
             statement.setString(1, orderId)
@@ -18,6 +50,22 @@ class PostgresOrderRepository(private val database: Database) : OrderRepository 
                 val number = rows.getLong("invoice_number")
                 require(!rows.wasNull()) { "Invoice number could not be assigned" }
                 "INV-${number.toString().padStart(10, '0')}"
+            }
+        }
+    }
+    override fun purchaseOrderNumberForOrder(orderId: String): String = database.getConnection().use { connection ->
+        connection.prepareStatement("UPDATE orders SET purchase_order_number = nextval('order_purchase_number_seq') WHERE id::text = ? AND status = 'PAID' AND purchase_order_number IS NULL RETURNING purchase_order_number").use { statement ->
+            statement.setString(1, orderId)
+            statement.executeQuery().use { rows -> if (rows.next()) rows.getLong(1) }
+        }
+        connection.prepareStatement("SELECT purchase_order_number, status FROM orders WHERE id::text = ?").use { statement ->
+            statement.setString(1, orderId)
+            statement.executeQuery().use { rows ->
+                require(rows.next()) { "Order not found: $orderId" }
+                require(rows.getString("status") == "PAID") { "Purchase order number requires a paid order" }
+                val number = rows.getLong("purchase_order_number")
+                require(!rows.wasNull()) { "Purchase order number could not be assigned" }
+                "PO-${number.toString().padStart(10, '0')}"
             }
         }
     }

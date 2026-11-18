@@ -76,8 +76,13 @@ class ShoppingCartServer(
         val shoppingCartService = ShoppingCartManager(shoppingCartRepository, productCatalogDataSource)
         val loginService = LoginService(authService, shoppingCartService)
         val orderRepository: db.OrderRepository = database?.let { PostgresOrderRepository(it) } ?: InMemoryOrderRepository()
-        val shippingChargeProvider =
-            shippingChargeProvider(productCatalogDataSource)
+        val carrier = shippingProvider()
+        val shippingChargeProvider = ShipmentShippingChargeProvider(
+            shipmentProvider = carrier,
+            productDataAccess = productCatalogDataSource,
+            dutyTaxEstimator = if (ShippingProviderConfig.load("PT").mode == ShippingMode.OFFLINE) null
+                else services.shipping.FedExDutyTaxEstimator()
+        )
 
         val portugueseStripe = StripePaymentProvider(
             config = StripeConfig.fromEnvironment("PT")
@@ -110,11 +115,21 @@ class ShoppingCartServer(
             services.orderemail.StartClientJourneyMapper(orderRepository, orderManager),
             services.orderemail.HttpClientJourneyClient()
         )
+        val paidOrderShipmentBooking = services.shipping.PaidOrderShipmentBookingService(
+            orderRepository,
+            services.shipping.ProductShipmentRequestMapper(productCatalogDataSource, validateGrossVsCalculatedNet = true),
+            carrier
+        )
         return listOf(
             Route("GET", "/orders", http.checkout.GetOrdersHandler(orderRepository, authService)),
             Route("POST", "/webhooks/stripe", http.checkout.StripeWebhookHandler(orderRepository,
                 clearPaidCart = services.checkout.core.PaidOrderCartCleaner(orderRepository, shoppingCartRepository)::clear,
-                onPaymentConfirmed = clientJourney::onPaid)),
+                onPaymentConfirmed = { checkoutId ->
+                    check(paidOrderShipmentBooking.bookPaidOrder(checkoutId)) {
+                        "FedEx booking did not return an AWB for every shipment; fulfillment emails were not sent"
+                    }
+                    clientJourney.onPaid(checkoutId)
+                })),
             //To investigate better
             Route("GET", "/admin/orders", http.admin.GetOrdersHandler(authService, orderRepository, adminUserIds)),
             Route("GET", "/admin/users", http.admin.GetUsersHandler(authService, userRepository, adminUserIds)),
@@ -134,24 +149,11 @@ class ShoppingCartServer(
     }
 
     /** Creates the cart shipping service using the selected carrier implementation. */
-    private fun shippingChargeProvider(
-        productCatalogDataSource: ProductCatalogDataSource
-    ): ShipmentShippingChargeProvider {
-        val config = ShippingProviderConfig.load()
-        val shippingProvider =
-            when (config.mode) {
-                ShippingMode.OFFLINE -> ShippingProvider.offline()
-                ShippingMode.SANDBOX,
-                ShippingMode.PRODUCTION ->
-                    services.shipping.AccountRoutingShippingProvider()
-            }
-
-        return ShipmentShippingChargeProvider(
-            shipmentProvider = shippingProvider,
-            productDataAccess = productCatalogDataSource,
-            dutyTaxEstimator =
-                if (config.mode == ShippingMode.OFFLINE) null
-                else services.shipping.FedExDutyTaxEstimator(config)
-        )
+    private fun shippingProvider(): ShippingProvider {
+        val config = ShippingProviderConfig.load("PT")
+        return when (config.mode) {
+            ShippingMode.OFFLINE -> ShippingProvider.offline()
+            ShippingMode.SANDBOX, ShippingMode.PRODUCTION -> services.shipping.AccountRoutingShippingProvider()
+        }
     }
 }

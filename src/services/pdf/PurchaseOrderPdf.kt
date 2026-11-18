@@ -141,14 +141,17 @@ class PurchaseOrderPdf(
         )
 
     private fun totals(request: PurchaseOrderPdfRequest): PdfTable =
-        PdfTable.withWidths(
-            listOf(4f, 1.8f),
-            amount("SUPPLIER SUBTOTAL", request.totals.subtotal),
-            amount("VAT", request.totals.vat),
+        PdfTable(
+            columnWidths = listOf(4f, 1.8f),
+            rows = listOfNotNull(
+                amount("SUPPLIER SUBTOTAL", request.totals.subtotal),
+                request.totals.packaging?.let { amount("PACKAGING", it) },
+                request.totals.shippingFees?.let { amount("SHIPPING FEES", it) },
+                amount("VAT${request.totals.vatRate?.let { " ($it)" } ?: ""}", request.totals.vat),
             PdfRow.total(
                 PdfCell.text("PURCHASE ORDER TOTAL", PdfTextType.HEADING),
                 PdfCell.right(request.totals.total, PdfTextType.HEADING)
-            )
+            ))
         )
 
     private fun amount(
@@ -192,25 +195,30 @@ class PurchaseOrderPdf(
                                 }.distinct()
                 ),
             delivery = parties.deliverTo.toPurchaseOrderParty(includeCustomerType = false),
-            lines = goods.map { it.toPurchaseOrderLine() },
+            lines = goods.mapIndexed { index, line ->
+                val price = purchaseOrderFinancials?.goods?.getOrNull(index)
+                line.toPurchaseOrderLine().let { purchaseOrderLine ->
+                    if (price == null) purchaseOrderLine else purchaseOrderLine.copy(
+                        unitPrice = price.unitPrice,
+                        lineTotal = price.lineTotal
+                    )
+                }
+            },
             totals =
                 PurchaseOrderTotals(
-                    subtotal = totals.supplierSubtotal,
-                    vat = totals.vatTreatment,
-                    total = totals.purchaseOrderTotal
+                    subtotal = purchaseOrderFinancials?.supplierSubtotal ?: totals.supplierSubtotal,
+                    vat = purchaseOrderFinancials?.vatAmount ?: totals.vatTreatment,
+                    total = purchaseOrderFinancials?.total ?: totals.purchaseOrderTotal,
+                    packaging = purchaseOrderFinancials?.packagingCost,
+                    shippingFees = purchaseOrderFinancials?.shippingFees,
+                    vatRate = purchaseOrderFinancials?.vatRate
                 ),
             packingLines =
                 listOf(
                     "Prepare ${packing.contents} on ${packing.packageCount.lowercase()} ${packing.packageType.lowercase()}.",
                     "Expected packed dimensions: ${packing.dimensions}.",
                     "Expected gross packed weight: ${packing.grossWeight}."
-                ) +
-                        listOfNotNull(
-                            packing.packingCost?.let {
-                                "Packaging cost stored for checkout: $it."
-                            }
-                        ) +
-                        listOf("Do not invoice packaging twice."),
+                ) + listOf("Packaging cost is shown separately in the order totals."),
             directShipmentInstructionLines = listOf(
                 "Ship from ${parties.supplier.name} directly to the checkout consignee.",
                 "Incoterm: ${shipment.incoterm}.",

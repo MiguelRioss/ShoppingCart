@@ -16,7 +16,23 @@ data class DeFerrantiOrderDocuments(
     val packing: PackingDetails,
     val shipment: ShipmentDetails,
     val checks: DocumentChecks,
-    val notes: DocumentNotes
+    val notes: DocumentNotes,
+    val purchaseOrderFinancials: PurchaseOrderFinancials? = null
+)
+
+data class PurchaseOrderLineFinancials(
+    val unitPrice: String,
+    val lineTotal: String
+)
+
+data class PurchaseOrderFinancials(
+    val goods: List<PurchaseOrderLineFinancials>,
+    val supplierSubtotal: String,
+    val packagingCost: String,
+    val shippingFees: String,
+    val vatRate: String,
+    val vatAmount: String,
+    val total: String
 )
 
 data class DocumentBranding(

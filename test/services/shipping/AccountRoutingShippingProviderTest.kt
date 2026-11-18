@@ -5,7 +5,7 @@ import shipment.core.ShippingProvider
 import kotlin.test.*
 
 class AccountRoutingShippingProviderTest {
-    @Test fun choosesUkForEitherEndpointAndPtForAllOtherRoutes() {
+    @Test fun choosesFedExAccountOnlyFromShipmentOrigin() {
         val created = mutableListOf<String>()
         val calls = mutableListOf<String>()
         val router = AccountRoutingShippingProvider { country ->
@@ -19,10 +19,10 @@ class AccountRoutingShippingProviderTest {
             }
         }
         for ((from, to, expected) in listOf(
-            Triple("PT","FR","PT"), Triple("GB","FR","GB"), Triple("PT","GB","GB"),
-            Triple("GB","GB","GB"), Triple("DE","US","PT"), Triple(" uk ","PT","GB")
+            Triple("PT","FR","PT"), Triple("GB","FR","GB"), Triple("PT","GB","PT"),
+            Triple("GB","GB","GB"), Triple(" uk ","PT","GB")
         )) {
-            router.getQuotes(ShipmentRateRequest(address(from), address(to), packages(), "EUR"))
+            router.getQuotes(ShipmentRateRequest(address(from), address(to), packages(from), "EUR"))
             assertEquals(expected, calls.last())
         }
         assertEquals(listOf("PT", "GB"), created)
@@ -30,10 +30,10 @@ class AccountRoutingShippingProviderTest {
     @Test fun missingUkAccountFailsWithoutCallingPortugal() {
         val router = AccountRoutingShippingProvider { country -> error("Missing $country account") }
         val error = assertFailsWith<IllegalStateException> {
-            router.getQuotes(ShipmentRateRequest(address("PT"), address("GB"), packages(), "EUR"))
+            router.getQuotes(ShipmentRateRequest(address("GB"), address("PT"), packages("GB"), "EUR"))
         }
         assertEquals("Missing GB account", error.message)
     }
-    private fun packages() = listOf(ShipmentPackage("Tiles", "PT", 1, "PCS", ShipmentWeight(1.0, "KG"), ShipmentDimensions(10, 10, 10, "CM"), 20.0, "EUR"))
+    private fun packages(origin: String) = listOf(ShipmentPackage("Tiles", origin, 1, "PCS", ShipmentWeight(1.0, "KG"), ShipmentDimensions(10, 10, 10, "CM"), 20.0, "EUR"))
     private fun address(country: String) = ShipmentAddress(addressLine1 = "Street 1", city = "City", postalCode = "1000", countryCode = country)
 }

@@ -57,5 +57,8 @@ data class PurchaseOrderLine(
 data class PurchaseOrderTotals(
     val subtotal: String,
     val vat: String,
-    val total: String
+    val total: String,
+    val packaging: String? = null,
+    val shippingFees: String? = null,
+    val vatRate: String? = null
 )

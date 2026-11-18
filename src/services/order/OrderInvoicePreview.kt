@@ -8,7 +8,8 @@ import java.time.ZoneId
 import java.math.BigDecimal
 
 internal class OrderInvoicePreview(private val products: ProductDataAccess) {
-    fun build(orderId: String, snapshot: JsonObject, invoiceNumber: String, seller: DocumentParty, estimate: String): DeFerrantiOrderDocuments {
+    fun build(orderId: String, snapshot: JsonObject, invoiceNumber: String, seller: DocumentParty, estimate: String,
+              trackingNumber: String, awb: String): DeFerrantiOrderDocuments {
         val address = snapshot.objectValue("deliveryAddress")
         val customer = DocumentParty(
             name = snapshot.text("customerFirstName") ?: address.text("company") ?: missing("customerFirstName"),
@@ -102,13 +103,41 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
             )
         }
         val currency = snapshot.text("currency")?.uppercase() ?: missing("currency")
+        val purchaseOrderGoods = items.mapIndexed { index, item ->
+            val order = details[index].objectValue("purchase_information").objectValue("order")
+            val supplierPrice = (order.text("supplier_price_per_m2")
+                ?: details[index].objectValue("supplier").text("supplier_purchase_price"))?.toBigDecimalOrNull()
+                ?: missing("catalogue.product.${item.text("productId")}.supplier_price_per_m2")
+            val area = cartProducts.firstOrNull { it.text("productId") == item.text("productId") }
+                ?.text("squareMeters")?.toBigDecimalOrNull()
+                ?: missing("cartProducts[${item.text("productId")}].squareMeters")
+            val lineTotal = supplierPrice.multiply(area).setScale(2, java.math.RoundingMode.HALF_UP)
+            PurchaseOrderLineFinancials(
+                unitPrice = formatMoney(currency, supplierPrice),
+                lineTotal = formatMoney(currency, lineTotal)
+            )
+        }
+        val supplierSubtotal = purchaseOrderGoods.sumOf {
+            it.lineTotal.substringAfter(' ').toBigDecimal()
+        }.setScale(2, java.math.RoundingMode.HALF_UP)
         val grossWeight = packings.sumOf { it.text("packed_weight")!!.toBigDecimal() }
-        val packingCost = packings.mapNotNull { it.text("packaging_cost")?.toBigDecimalOrNull() }.fold(BigDecimal.ZERO, BigDecimal::add)
+        val packingCost = packings.mapIndexed { index, packing ->
+            packing.text("packaging_cost")?.toBigDecimalOrNull()
+                ?: missing("catalogue.product.${items[index].text("productId")}.packing_size.packaging_cost")
+        }.fold(BigDecimal.ZERO, BigDecimal::add).setScale(2, java.math.RoundingMode.HALF_UP)
         val packageDescriptions = packings.map { packing ->
             "${packing.text("length")} x ${packing.text("width")} x ${packing.text("height")} cm"
         }
         val shippingTotal = snapshot.text("shippingTotal") ?: missing("shippingTotal")
         val taxAmount = snapshot.text("taxAmount") ?: missing("taxAmount")
+        val shippingFees = shippingTotal.toBigDecimalOrNull() ?: missing("shippingTotal")
+        val vat = taxAmount.toBigDecimalOrNull() ?: missing("taxAmount")
+        val vatBase = (snapshot.text("preTaxTotal") ?: snapshot.text("total"))
+            ?.toBigDecimalOrNull()?.takeIf { it > BigDecimal.ZERO }
+        val vatRate = vatBase?.let { vat.multiply(BigDecimal("100")).divide(it, 2, java.math.RoundingMode.HALF_UP) }
+            ?: BigDecimal.ZERO
+        val vatRateText = "${vatRate.stripTrailingZeros().toPlainString()}%"
+        val purchaseOrderTotal = supplierSubtotal + packingCost + shippingFees + vat
         val date = LocalDate.now(ZoneId.of(if (seller.name == "De Ferranti Limited") "Europe/London" else "Europe/Lisbon"))
         return DeFerrantiOrderDocuments(
             branding = DocumentBranding(
@@ -128,13 +157,25 @@ internal class OrderInvoicePreview(private val products: ProductDataAccess) {
             ),
             parties = DocumentParties(customer, supplierParty, shipFrom, customer, seller, seller),
             goods = goods,
-            totals = DocumentTotals("$currency ${snapshot.text("productSubtotal") ?: missing("productSubtotal")}", "$currency $taxAmount" + if (snapshot.text("taxCalculation") == "temporary_zero") " (temporary)" else "", "$currency ${snapshot.text("total") ?: missing("total")}", currency),
-            packing = PackingDetails(packings.map { it.text("packaging") ?: "Package" }.distinct().joinToString(", "), "${packings.size} estimated", packageDescriptions.joinToString("; "), "$grossWeight kg estimated", goods.joinToString("; ") { it.boxes }, "$currency $packingCost estimated"),
-            shipment = ShipmentDetails(shipping?.text("serviceName")?.substringBefore(' ') ?: "Courier pending", shipping?.text("serviceName") ?: shipping?.text("serviceType") ?: "Pending", "Pending", "Pending", "Sale of goods", "DDP", "DDP", "$currency $shippingTotal", "PAID - CHECKOUT PAYMENT CONFIRMED"),
+            totals = DocumentTotals("$currency ${snapshot.text("productSubtotal") ?: missing("productSubtotal")}", "$currency $taxAmount (${vatRateText})" + if (snapshot.text("taxCalculation") == "temporary_zero") " (temporary)" else "", "$currency ${snapshot.text("total") ?: missing("total")}", currency),
+            packing = PackingDetails(packings.map { it.text("packaging") ?: "Package" }.distinct().joinToString(", "), "${packings.size} estimated", packageDescriptions.joinToString("; "), "$grossWeight kg estimated", goods.joinToString("; ") { it.boxes }, formatMoney(currency, packingCost)),
+            shipment = ShipmentDetails(shipping?.text("serviceName")?.substringBefore(' ') ?: "FedEx", shipping?.text("serviceName") ?: shipping?.text("serviceType") ?: "FedEx", trackingNumber, awb, "Sale of goods", "DDP", "DDP", "$currency $shippingTotal", "PAID - CHECKOUT PAYMENT CONFIRMED"),
             checks = DocumentChecks(emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList(), emptyList()),
-            notes = DocumentNotes(emptyList(), emptyList(), emptyList(), emptyList(), "", "", "")
+            notes = DocumentNotes(emptyList(), emptyList(), emptyList(), emptyList(), "", "", ""),
+            purchaseOrderFinancials = PurchaseOrderFinancials(
+                goods = purchaseOrderGoods,
+                supplierSubtotal = formatMoney(currency, supplierSubtotal),
+                packagingCost = formatMoney(currency, packingCost),
+                shippingFees = formatMoney(currency, shippingFees),
+                vatRate = vatRateText,
+                vatAmount = formatMoney(currency, vat),
+                total = formatMoney(currency, purchaseOrderTotal)
+            )
         )
     }
+
+    private fun formatMoney(currency: String, amount: BigDecimal): String =
+        "$currency ${amount.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()}"
 
     private fun JsonObject.text(key: String): String? = (this[key] as? JsonPrimitive)?.contentOrNull?.takeIf(String::isNotBlank)
     private fun JsonObject.objectValue(key: String): JsonObject = this[key] as? JsonObject ?: missing(key)

@@ -30,7 +30,7 @@ fun interface DutyTaxEstimator {
 }
 
 class FedExDutyTaxEstimator(
-    private val config: ShippingProviderConfig = ShippingProviderConfig.load("PT"),
+    private val configForOrigin: (String) -> ShippingProviderConfig = { country -> ShippingProviderConfig.load(country) },
     private val client: HttpClient = HttpClient.newHttpClient()
 ) : DutyTaxEstimator {
     override fun estimate(
@@ -40,6 +40,12 @@ class FedExDutyTaxEstimator(
         shippingCost: BigDecimal,
         serviceType: String
     ): BigDecimal {
+        val originCountry = when (origin.countryCode.trim().uppercase()) {
+            "PT" -> "PT"
+            "GB", "UK" -> "GB"
+            else -> error("Unsupported FedEx billing account origin: ${origin.countryCode}")
+        }
+        val config = configForOrigin(originCountry)
         require(config.mode != ShippingMode.OFFLINE) { "FedEx Duty and Tax API requires an online account" }
         val credentials = requireNotNull(config.credentials)
         val baseUrl = if (config.mode == ShippingMode.PRODUCTION) "https://apis.fedex.com" else "https://apis-sandbox.fedex.com"

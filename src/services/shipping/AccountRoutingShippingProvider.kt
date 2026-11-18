@@ -19,14 +19,18 @@ import shipment.fedex.rate.FedExRateService
 import shipment.fedex.ship.FedExShipClient
 import shipment.fedex.ship.FedExShipHttpClient
 
-/** Chooses the billing account for each origin/destination pair, including each multi-origin quote. */
+/** Chooses the FedEx billing account from each shipment origin, including multi-origin quotes. */
 class AccountRoutingShippingProvider(
     private val createProvider: (String) -> ShippingProvider = ::configuredProvider
 ) : ShippingProvider {
     private val providers = mutableMapOf<String, ShippingProvider>()
 
     private fun provider(from: ShipmentAddress, to: ShipmentAddress): ShippingProvider {
-        val country = if (isUk(from.countryCode) || isUk(to.countryCode)) "GB" else "PT"
+        val country = when (from.countryCode.trim().uppercase()) {
+            "PT" -> "PT"
+            "GB", "UK" -> "GB"
+            else -> throw IllegalArgumentException("Unsupported FedEx shipment origin: ${from.countryCode}")
+        }
         return synchronized(providers) { providers.getOrPut(country) { createProvider(country) } }
     }
 
@@ -34,8 +38,6 @@ class AccountRoutingShippingProvider(
     override fun prepareShipping(request: ShipmentRequest) = provider(request.from, request.to).prepareShipping(request)
 
     companion object {
-        private fun isUk(country: String) = country.trim().uppercase() in setOf("GB", "UK")
-
         private fun configuredProvider(country: String): ShippingProvider {
             val config = ShippingProviderConfig.load(country)
             check(config.mode != ShippingMode.OFFLINE) { "Online FedEx account routing requires SANDBOX or PRODUCTION mode" }

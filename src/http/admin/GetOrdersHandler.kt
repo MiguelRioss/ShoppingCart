@@ -17,7 +17,12 @@ class GetOrdersHandler(
     override fun handleAuthenticated(request: AuthenticatedRequest): HttpResponse {
         if (request.user.id !in adminUserIds) return HttpResponse(403, "{\"message\":\"Administrator access required\"}")
         return try {
-            HttpResponse(200, buildJsonObject { put("orders", JsonArray(orders.listAll())) }.toString())
+            val enriched = orders.listAll().map { order ->
+                val checkoutId = (order["checkoutSessionId"] as? JsonPrimitive)?.contentOrNull
+                if (checkoutId == null) order
+                else JsonObject(order + ("shipmentBookings" to orders.shipmentBookings(checkoutId)))
+            }
+            HttpResponse(200, buildJsonObject { put("orders", JsonArray(enriched)) }.toString())
         } catch (_: Exception) {
             HttpResponse(503, "{\"message\":\"Unable to load orders\"}")
         }
