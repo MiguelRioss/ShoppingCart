@@ -60,23 +60,20 @@ FEDEX_TEST_UK_ACCOUNT_NUMBER=...
 ```
 
 At application startup, `ShippingProviderConfig` reads those values and the server
-constructs the carrier-neutral provider:
+requires `FEDEX_MODE` to be `SANDBOX` or `PRODUCTION`. `OFFLINE` is only suitable
+for isolated tests and is rejected by the running server. The account is selected
+from each shipment's origin:
 
 ```kotlin
 val config = ShippingProviderConfig.load("PT") // choose PT or GB from shipment origin
 
 val shippingProvider =
-    when (config.mode) {
-        ShippingMode.OFFLINE -> ShippingProvider.offline()
-        ShippingMode.SANDBOX,
-        ShippingMode.PRODUCTION ->
-            ShippingProvider.login(
-                type = ShipmentProviderType.FEDEX,
-                account = requireNotNull(config.account),
-                credentials = requireNotNull(config.credentials),
-                environment = requireNotNull(config.providerEnvironment)
-            )
-    }
+    ShippingProvider.login(
+        type = ShipmentProviderType.FEDEX,
+        account = requireNotNull(config.account),
+        credentials = requireNotNull(config.credentials),
+        environment = requireNotNull(config.providerEnvironment)
+    )
 ```
 
 Application services then depend only on the two carrier-neutral operations:

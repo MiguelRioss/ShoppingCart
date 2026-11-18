@@ -24,8 +24,8 @@
     import services.cart.ShoppingCartManager
     import services.checkout.payment.core.PaymentProviderInterface
     import services.checkout.payment.core.PaymentProviderType
-    import services.shipping.ShippingChargeProvider
-    import services.shipping.ShipmentShippingChargeProvider
+    import services.shipping.rates.ShippingChargeProvider
+    import services.shipping.rates.ShipmentShippingChargeProvider
     import shipment.core.ProviderAccount
     import shipment.core.ProviderAuthToken
     import shipment.core.ProviderCredentials

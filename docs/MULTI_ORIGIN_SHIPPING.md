@@ -125,7 +125,7 @@ and the customer email can still proceed.
 
 Every shipment uses an explicit origin account: PT-origin shipments use the PT account and UK-origin shipments use the UK account. If the destination is GB but the origin is PT, billing still uses the PT account. This decision is made independently for each supplier-origin quote and paid shipment. It changes the billing account, not the collection or delivery address. A missing origin account fails that route; there is no cross-country fallback.
 
-FEDEX_MODE controls carrier access: OFFLINE, SANDBOX, or PRODUCTION. SHIPPING_MODE is not read. APP_MODE independently controls database access.
+FEDEX_MODE controls carrier access and must be SANDBOX or PRODUCTION for the running server; startup rejects OFFLINE or a missing mode. SHIPPING_MODE is not read. APP_MODE independently controls database access. Isolated unit tests can still use the offline provider directly.
 
 For production configure these server-only values:
 

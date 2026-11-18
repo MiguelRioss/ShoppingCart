@@ -12,6 +12,10 @@ class ShippingProviderConfigTest {
         "FEDEX_PRODUCTION_UK_CLIENT_SECRET" to "uk-secret",
         "FEDEX_PRODUCTION_UK_ACCOUNT_NUMBER" to "uk-account"
     )
+    @Test fun globalModeDoesNotRequirePortugueseAccountCredentials() {
+        val ukOnly = mapOf("FEDEX_MODE" to "PRODUCTION")
+        assertEquals(ShippingMode.PRODUCTION, ShippingProviderConfig.mode(ukOnly::get))
+    }
     @Test fun ptAndUkEachUseTheirExplicitCredentials() {
         val pt = ShippingProviderConfig.load("PT", settings::get)
         assertEquals("PT", pt.account?.countryCode)

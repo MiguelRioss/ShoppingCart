@@ -1,5 +1,8 @@
 package services.shipping
 
+import services.shipping.rates.ShipmentShippingChargeProvider
+import services.shipping.rates.DutyTaxEstimator
+
 import ShoppingCartProduct
 import domain.cart.ShoppingCart
 import java.math.BigDecimal

@@ -1,4 +1,4 @@
-package services.shipping
+package services.shipping.rates
 
 import domain.cart.ShoppingCart
 import domain.checkout.CheckoutShippingCharge
@@ -8,6 +8,8 @@ import domain.shipment.ShipmentRateRequest
 import shipment.core.ShippingProvider
 import services.common.ServiceErrorCode
 import services.common.ServiceException
+import services.shipping.ShipmentShippingRequest
+import services.shipping.ProductShipmentRequestMapper
 import java.math.BigDecimal
 
 /**

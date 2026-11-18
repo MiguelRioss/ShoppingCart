@@ -1,4 +1,4 @@
-package services.shipping
+package services.shipping.rates
 
 import domain.checkout.CheckoutShippingCharge
 import java.math.BigDecimal

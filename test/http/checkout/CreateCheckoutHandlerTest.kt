@@ -205,7 +205,7 @@ class CreateCheckoutHandlerTest {
                         paymentProviderResolver =
                             PaymentProviderResolver(stripePaymentProvider, stripePaymentProvider),
 
-                        shippingChargeProvider = object : services.shipping.ShippingChargeProvider {
+                        shippingChargeProvider = object : services.shipping.rates.ShippingChargeProvider {
                             override fun calculateShipping(
                                 cart: domain.cart.ShoppingCart,
                                 destination: domain.shipment.ShipmentAddress

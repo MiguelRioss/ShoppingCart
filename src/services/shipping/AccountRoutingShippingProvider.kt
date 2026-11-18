@@ -18,6 +18,7 @@ import shipment.fedex.rate.FedExRateSelector
 import shipment.fedex.rate.FedExRateService
 import shipment.fedex.ship.FedExShipClient
 import shipment.fedex.ship.FedExShipHttpClient
+import services.shipping.rates.parseFedExRates
 
 /** Chooses the FedEx billing account from each shipment origin, including multi-origin quotes. */
 class AccountRoutingShippingProvider(

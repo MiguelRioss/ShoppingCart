@@ -1,4 +1,4 @@
-package services.shipping
+package services.shipping.fulfillment
 
 import ShoppingCartProduct
 import config.Environment
@@ -14,6 +14,7 @@ import java.util.Base64
 import java.util.UUID
 import kotlinx.serialization.json.*
 import shipment.core.ShippingProvider
+import services.shipping.ProductShipmentRequestMapper
 
 /** Books FedEx shipments only for paid checkouts, and only in explicit sandbox mode. */
 class PaidOrderShipmentBookingService(

@@ -1,4 +1,4 @@
-package services.shipping
+package services.shipping.rates
 
 import domain.cart.ShoppingCart
 import domain.checkout.CheckoutShippingCharge

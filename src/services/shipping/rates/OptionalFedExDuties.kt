@@ -1,4 +1,4 @@
-package services.shipping
+package services.shipping.rates
 
 import dto.fedex.rate.toFedExRateResponse
 import kotlinx.serialization.json.Json

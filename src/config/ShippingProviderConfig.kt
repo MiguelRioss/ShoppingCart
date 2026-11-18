@@ -13,7 +13,7 @@ data class ShippingProviderConfig(
 ) {
     companion object {
         fun load(accountCountry: String, read: (String) -> String? = { Environment.get(it) }): ShippingProviderConfig {
-            val mode = read("FEDEX_MODE")?.trim()?.uppercase()?.let(ShippingMode::valueOf) ?: ShippingMode.OFFLINE
+            val mode = mode(read)
             if (mode == ShippingMode.OFFLINE) return ShippingProviderConfig(mode, null, null, null)
             val region = when (accountCountry.trim().uppercase()) {
                 "PT" -> "PT"
@@ -33,6 +33,10 @@ data class ShippingProviderConfig(
                 if (mode == ShippingMode.SANDBOX) ShippingProviderEnvironment.SANDBOX else ShippingProviderEnvironment.PRODUCTION
             )
         }
+
+        /** Reads the global integration mode without requiring any one region's account credentials. */
+        fun mode(read: (String) -> String? = { Environment.get(it) }): ShippingMode =
+            read("FEDEX_MODE")?.trim()?.uppercase()?.let(ShippingMode::valueOf) ?: ShippingMode.OFFLINE
     }
 }
 

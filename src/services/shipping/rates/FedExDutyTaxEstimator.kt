@@ -1,4 +1,4 @@
-package services.shipping
+package services.shipping.rates
 
 import config.ShippingMode
 import config.ShippingProviderConfig

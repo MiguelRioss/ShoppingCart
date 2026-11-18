@@ -1,5 +1,7 @@
 package services.shipping
 
+import services.shipping.rates.normalizeOptionalDuties
+
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlinx.serialization.json.Json

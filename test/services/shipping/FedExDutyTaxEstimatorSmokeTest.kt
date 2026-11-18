@@ -1,5 +1,7 @@
 package services.shipping
 
+import services.shipping.rates.FedExDutyTaxEstimator
+
 import config.Environment
 import domain.shipment.ShipmentAddress
 import domain.shipment.ShipmentDimensions

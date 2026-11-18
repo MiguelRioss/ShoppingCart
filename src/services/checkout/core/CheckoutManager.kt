@@ -11,7 +11,7 @@ import services.cart.ShoppingCartService
 import services.checkout.payment.core.PaymentProviderInterface
 import services.common.ServiceErrorCode
 import services.common.ServiceException
-import services.shipping.ShippingChargeProvider
+import services.shipping.rates.ShippingChargeProvider
 import services.order.OrderService
 
 /**

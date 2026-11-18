@@ -31,7 +31,9 @@ import services.cart.PurchasableProductReader
 import services.cart.ShoppingCartManager
 import services.checkout.core.CheckoutManager
 import services.checkout.payment.stripe.StripePaymentProvider
-import services.shipping.ShipmentShippingChargeProvider
+import services.shipping.rates.ShipmentShippingChargeProvider
+import services.shipping.rates.FedExDutyTaxEstimator
+import services.shipping.fulfillment.PaidOrderShipmentBookingService
 import services.user.UserManager
 import config.ShippingMode
 import config.ShippingProviderConfig
@@ -76,12 +78,15 @@ class ShoppingCartServer(
         val shoppingCartService = ShoppingCartManager(shoppingCartRepository, productCatalogDataSource)
         val loginService = LoginService(authService, shoppingCartService)
         val orderRepository: db.OrderRepository = database?.let { PostgresOrderRepository(it) } ?: InMemoryOrderRepository()
-        val carrier = shippingProvider()
+        val shippingMode = ShippingProviderConfig.mode()
+        check(shippingMode != ShippingMode.OFFLINE) {
+            "FEDEX_MODE must be SANDBOX or PRODUCTION; OFFLINE is not supported by the running server"
+        }
+        val carrier = shippingProvider(shippingMode)
         val shippingChargeProvider = ShipmentShippingChargeProvider(
             shipmentProvider = carrier,
             productDataAccess = productCatalogDataSource,
-            dutyTaxEstimator = if (ShippingProviderConfig.load("PT").mode == ShippingMode.OFFLINE) null
-                else services.shipping.FedExDutyTaxEstimator()
+            dutyTaxEstimator = FedExDutyTaxEstimator()
         )
 
         val portugueseStripe = StripePaymentProvider(
@@ -115,7 +120,7 @@ class ShoppingCartServer(
             services.orderemail.StartClientJourneyMapper(orderRepository, orderManager),
             services.orderemail.HttpClientJourneyClient()
         )
-        val paidOrderShipmentBooking = services.shipping.PaidOrderShipmentBookingService(
+        val paidOrderShipmentBooking = PaidOrderShipmentBookingService(
             orderRepository,
             services.shipping.ProductShipmentRequestMapper(productCatalogDataSource, validateGrossVsCalculatedNet = true),
             carrier
@@ -149,10 +154,9 @@ class ShoppingCartServer(
     }
 
     /** Creates the cart shipping service using the selected carrier implementation. */
-    private fun shippingProvider(): ShippingProvider {
-        val config = ShippingProviderConfig.load("PT")
-        return when (config.mode) {
-            ShippingMode.OFFLINE -> ShippingProvider.offline()
+    private fun shippingProvider(mode: ShippingMode): ShippingProvider {
+        return when (mode) {
+            ShippingMode.OFFLINE -> error("FEDEX_MODE must be SANDBOX or PRODUCTION")
             ShippingMode.SANDBOX, ShippingMode.PRODUCTION -> services.shipping.AccountRoutingShippingProvider()
         }
     }

@@ -1,5 +1,7 @@
 package services.shipping
 
+import services.shipping.fulfillment.PaidOrderShipmentBookingService
+
 import db.offline.InMemoryOrderRepository
 import domain.shipment.Shipment
 import domain.shipment.ShipmentAddress

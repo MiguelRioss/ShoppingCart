@@ -15,7 +15,7 @@ Password hashes are never selected by the list query. Admin responses use Cache-
 
 ## Local development
 
-Start ShoppingCart with PORT=8081, APP_MODE=online and FEDEX_MODE=OFFLINE, then run gradlew.bat run. The database UI's local proxy defaults to http://127.0.0.1:8081. Override SHOPPING_CART_API_URL in the UI server environment when needed.
+Start ShoppingCart with PORT=8081, APP_MODE=online and FedEx configured as SANDBOX or PRODUCTION, then run gradlew.bat run. The database UI's local proxy defaults to http://127.0.0.1:8081. Override SHOPPING_CART_API_URL in the UI server environment when needed.
 
 ## Deployment
 
