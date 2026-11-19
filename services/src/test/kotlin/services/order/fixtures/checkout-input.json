@@ -1,0 +1,14 @@
+{
+  "customerFirstName": "Test Customer",
+  "customerEmail": "customer@example.com",
+  "successUrl": "https://example.com/success",
+  "cancelUrl": "https://example.com/cancel",
+  "deliveryAddress": {
+    "company": "Test Customer",
+    "addressLine1": "1 Test Street",
+    "townOrCity": "Lisbon",
+    "postcode": "1000-001",
+    "country": "PT"
+  },
+  "squareMeters": "2"
+}

@@ -1,0 +1,39 @@
+package services.auth
+
+import dto.auth.LoginResponse
+import services.cart.ShoppingCartService
+
+/**
+ * Application service for the login flow.
+ *
+ * @param authService authentication dependency that validates credentials and issues tokens
+ */
+class LoginService(
+    private val authService: AuthServiceInterface,
+    private val shoppingCartService: ShoppingCartService? = null
+) : LoginServiceInterface {
+    /**
+     * Validates login input, creates an auth token, and maps it to an API response.
+     *
+     * @param email nullable email from the HTTP request body
+     * @param password nullable password from the HTTP request body
+     * @throws IllegalArgumentException when either field is missing or blank
+     */
+    override fun login(email: String?, password: String?, sessionId: String?): LoginResponse {
+        require(!email.isNullOrBlank() && !password.isNullOrBlank()) {
+            "Email and password are required"
+        }
+
+        val token = authService.login(email, password)
+        if (!sessionId.isNullOrBlank()) {
+            shoppingCartService?.associateCartWithUser(sessionId, token.userId)
+        }
+
+        return LoginResponse(
+            token = token.token,
+            userId = token.userId.toString(),
+            expiresAt = token.expiresAt.toString()
+        )
+    }
+}
+

@@ -1,0 +1,263 @@
+package services.cart
+
+import ShoppingCartProduct
+import db.offline.InMemoryShoppingCartRepository
+import domain.cart.ShoppingCart
+import org.junit.jupiter.api.Test
+import productdatabaseaccesslayer.ProductDataAccess
+import services.common.ServiceErrorCode
+import services.common.ServiceException
+import java.math.BigDecimal
+import java.time.Clock
+import java.time.Instant
+import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.util.UUID
+import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
+import kotlin.test.assertNull
+
+class ShoppingCartManagerTest {
+    @Test fun `same user saves two independent session carts`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = ShoppingCartManager(repository, productDataAccess, clock)
+        val user = UUID.randomUUID()
+        val first = service.createCart("browser-one", listOf(CartProductInput(9278L, 0.5, false)), user)
+        val second = service.createCart("browser-two", listOf(CartProductInput(9278L, 1.0, false)), user)
+        kotlin.test.assertNotEquals(first.id, second.id)
+        assertEquals(first, repository.getCartBySessionId("browser-one"))
+        assertEquals(second, repository.getCartBySessionId("browser-two"))
+    }
+
+    @Test fun `another user cannot overwrite an owned session cart`() {
+        val service = ShoppingCartManager(InMemoryShoppingCartRepository(), productDataAccess, clock)
+        service.createCart("owned-session", listOf(CartProductInput(9278L, 0.5, false)), UUID.randomUUID())
+        assertFailsWith<IllegalArgumentException> {
+            service.createCart("owned-session", listOf(CartProductInput(9278L, 1.0, false)), UUID.randomUUID())
+        }
+    }
+    @Test fun `guest login attaches its own cart without replacing another user cart`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = ShoppingCartManager(repository, productDataAccess, clock)
+        val user = UUID.randomUUID()
+        val original = service.createCart("old-browser", listOf(CartProductInput(9278L, 0.5, false)), user)
+        service.createCart("guest-browser", listOf(CartProductInput(9278L, 1.0, false)), null)
+        val attached = service.associateCartWithUser("guest-browser", user)
+        kotlin.test.assertNotEquals(original.id, attached!!.id)
+        assertEquals(user, service.getCartBySessionId("guest-browser")!!.userId)
+        assertEquals(original, service.getCartBySessionId("old-browser"))
+    }
+    private val clock = Clock.fixed(Instant.parse("2026-08-07T13:30:00Z"), ZoneOffset.UTC)
+    private val productDataAccess = object : ProductDataAccess {
+        override fun getAllProducts(): String {
+            TODO("Not yet implemented")
+        }
+
+        override fun getPurchasableProducts(): String {
+            TODO("Not yet implemented")
+        }
+
+        override fun getProductById(productId: Long): String? =
+            if (productId == 9278L) {
+                """
+                {
+                  "id": 9278,
+                  "purchase_information": {
+                    "order": {
+                      "m2_per_box": "0.5",
+                      "client_price_per_m2": "150"
+                    }
+                  }
+                }
+                """.trimIndent()
+            } else {
+                null
+            }
+
+        override fun getProductBySlug(productSlug: String): String {
+            TODO("Not yet implemented")
+        }
+    }
+
+    @Test
+    fun `creates a session cart with product quantity in m2 and calculated price`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = ShoppingCartManager(repository, productDataAccess, clock)
+
+        val cart = service.createCart(
+            sessionId = "session-123",
+            products =
+                listOf(CartProductInput(productId = 9278L, quantityM2 = 0.5, isSample = false))
+        )
+
+        assertEquals(null, cart.userId)
+        assertEquals("session-123", cart.sessionId)
+        assertEquals(LocalDateTime.parse("2026-08-07T13:30:00"), cart.dateTime)
+        assertEquals(1, cart.products.size)
+        assertEquals(9278L, cart.products[0].productId)
+        assertEquals(0.5, cart.products[0].squareMeters)
+        assertEquals(1, cart.products[0].amountBoxes)
+        assertEquals(BigDecimal("75.00"), cart.products[0].totalPricePerProduct)
+    }
+
+    @Test
+    fun `updates existing cart when session id already exists`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = ShoppingCartManager(repository, productDataAccess, clock)
+        val firstCart = service.createCart(
+            sessionId = "session-123",
+            listOf(CartProductInput(productId = 9278L, quantityM2 = 0.5, isSample = false))
+        )
+
+        val updatedCart = service.createCart(
+            sessionId = "session-123",
+            listOf(CartProductInput(productId = 9278L, quantityM2 = 1.5, isSample = false))
+        )
+
+        assertEquals(firstCart.id, updatedCart.id)
+        assertEquals("session-123", updatedCart.sessionId)
+        assertEquals(1, updatedCart.products.size)
+        assertEquals(1.5, updatedCart.products[0].squareMeters)
+        assertEquals(BigDecimal("225.00"), updatedCart.products[0].totalPricePerProduct)
+        assertEquals(updatedCart, repository.getCartBySessionId("session-123"))
+    }
+
+    @Test
+    fun `associates an existing session cart with a user`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = ShoppingCartManager(repository, productDataAccess, clock)
+        val userId = UUID.fromString("00000000-0000-0000-0000-000000000003")
+        val sessionCart = service.createCart(
+            sessionId = "session-123",
+            listOf(CartProductInput(productId = 9278L, quantityM2 = 0.5, isSample = false))
+        )
+
+        val associatedCart = service.associateCartWithUser("session-123", userId)
+
+        assertEquals(sessionCart.id, associatedCart?.id)
+        assertEquals(userId, associatedCart?.userId)
+        assertEquals(associatedCart, service.getCartByUserId(userId))
+    }
+
+    @Test
+    fun `returns clear error when product purchase information is null`() {
+        val productDataAccess = object : ProductDataAccess {
+            override fun getAllProducts(): String {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPurchasableProducts(): String {
+                TODO("Not yet implemented")
+            }
+
+            override fun getProductById(productId: Long): String =
+                """
+                {
+                  "id": 1864,
+                  "purchase_information": null
+                }
+                """.trimIndent()
+
+            override fun getProductBySlug(productSlug: String): String {
+                TODO("Not yet implemented")
+            }
+        }
+        val service = ShoppingCartManager(InMemoryShoppingCartRepository(), productDataAccess, clock)
+
+        val error = assertFailsWith<ServiceException> {
+            service.createCart(
+                sessionId = "session-123",
+                products = listOf(CartProductInput(productId = 1864L, quantityM2 = 0.5, isSample = false))
+            )
+        }
+
+        assertEquals(ServiceErrorCode.ProductPurchaseInformationMissing, error.errorCode)
+        assertEquals("Product purchase information is missing", error.message)
+        assertEquals("Product 1864 purchase information is missing", error.description)
+    }
+
+    @Test
+    fun `returns clear error when product order information is null`() {
+        val productDataAccess = object : ProductDataAccess {
+            override fun getAllProducts(): String {
+                TODO("Not yet implemented")
+            }
+
+            override fun getPurchasableProducts(): String {
+                TODO("Not yet implemented")
+            }
+
+            override fun getProductById(productId: Long): String =
+                """
+                {
+                  "id": 1864,
+                  "purchase_information": {
+                    "order": null
+                  }
+                }
+                """.trimIndent()
+
+            override fun getProductBySlug(productSlug: String): String {
+                TODO("Not yet implemented")
+            }
+        }
+        val service = ShoppingCartManager(InMemoryShoppingCartRepository(), productDataAccess, clock)
+
+        val error = assertFailsWith<ServiceException> {
+            service.createCart(
+                sessionId = "session-123",
+                products = listOf(CartProductInput(productId = 1864L, quantityM2 = 0.5, isSample = false))
+            )
+        }
+
+        assertEquals(ServiceErrorCode.ProductOrderInformationMissing, error.errorCode)
+        assertEquals("Product order information is missing", error.message)
+        assertEquals("Product 1864 order information is missing", error.description)
+    }
+
+    @Test
+    fun `saves a cart`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = ShoppingCartManager(repository)
+        val cart = ShoppingCart(
+            id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+            userId = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+            dateTime = LocalDateTime.parse("2026-08-07T13:30:00"),
+            products = listOf(
+                ShoppingCartProduct(
+                    productId = 1864L,
+                    squareMeters = 12.5,
+                    amountBoxes = 3,
+                    totalPricePerProduct = BigDecimal("249.99"),
+                    isSample = false
+
+                )
+            )
+        )
+
+        assertEquals(cart, service.saveCart(cart))
+    }
+
+    @Test
+    fun `gets a cart by user id`() {
+        val repository = InMemoryShoppingCartRepository()
+        val service = ShoppingCartManager(repository)
+        val cart = ShoppingCart(
+            id = UUID.fromString("00000000-0000-0000-0000-000000000001"),
+            userId = UUID.fromString("00000000-0000-0000-0000-000000000003"),
+            dateTime = LocalDateTime.parse("2026-08-07T13:30:00")
+        )
+        service.saveCart(cart)
+
+        assertEquals(cart, service.getCartByUserId(requireNotNull(cart.userId)))
+    }
+
+    @Test
+    fun `returns null when user has no cart`() {
+        val service = ShoppingCartManager(InMemoryShoppingCartRepository())
+
+        assertNull(service.getCartByUserId(UUID.fromString("00000000-0000-0000-0000-000000000003")))
+    }
+}
+
+
