@@ -35,7 +35,14 @@ Run tests:
 Run locally:
 
 ```powershell
-.\gradlew.bat run
+.\gradlew.bat :server:run
+```
+
+Build all modules and create the runnable server distribution:
+
+```powershell
+.\gradlew.bat build
+.\gradlew.bat :server:installDist
 ```
 
 The API starts on:
@@ -43,6 +50,19 @@ The API starts on:
 ```text
 http://localhost:8080
 ```
+
+## Gradle Modules
+
+Gradle includes five modules in `settings.gradle.kts`:
+
+- `core` — domain models, shared DTOs, configuration, and product-catalog access.
+- `repository` — repository interfaces and in-memory/PostgreSQL implementations.
+- `services` — business use cases and payment, shipping, email, and PDF integrations.
+- `http` — HTTP server primitives, routes, and request handlers.
+- `server` — application entry point and dependency wiring; this is the runnable module.
+
+Tests live in each owning module under `src/test/kotlin`. Run all tests with
+`.\gradlew.bat test`, or one module with `.\gradlew.bat :services:test`.
 
 ## Shipping Provider
 
