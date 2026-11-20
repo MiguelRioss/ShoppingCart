@@ -7,7 +7,7 @@ import { readFile } from 'node:fs/promises';
 const args = process.argv.slice(2);
 const option = (name, fallback) => { const index = args.indexOf(`--${name}`); return index < 0 ? fallback : args[index + 1]; };
 const route = option('route', 'all');
-const base = option('base-url', process.env.EMAIL_SENDER_BASE_URL || 'https://email-sender-0fks.onrender.com').replace(/\/$/, '');
+const base = option('base-url', process.env.EMAIL_SENDER_BASE_URL || 'https://email-sender-virginia.onrender.com').replace(/\/$/, '');
 const api = base.endsWith('/v2') ? base : base + '/v2';
 const key = process.env.EMAIL_SENDER_API_KEY;
 let reference = option('reference', `API-TEST-${randomUUID()}`);
@@ -15,7 +15,7 @@ const recipient = 'miguelangelorios5f@gmail.com';
 const allowed = ['all', 'templates', 'render', 'auth', 'send', 'history', 'schedule'];
 if (!allowed.includes(route)) { console.error('Choose --route templates, render, auth, send, history, schedule or all'); process.exit(1); }
 
-async function request(path, method = 'GET', body, authenticated = false, expected = 200) {
+async function request(path, method = 'GET', body, authenticated = true, expected = 200) {
   if (authenticated && !key) throw Error('Set EMAIL_SENDER_API_KEY in the root .env first');
   let response;
   try {
@@ -89,7 +89,7 @@ try {
     console.log('PASS: send/history authentication and send input validation (no emails sent)');
   }
   if (route === 'all' || route === 'schedule') {
-    await request('/schedule', 'POST', {}, false, 501);
+    await request('/schedule', 'POST', {}, true, 501);
     console.log('PASS: scheduler correctly reports not implemented (501)');
   }
   if (route === 'all' || route === 'history') {
